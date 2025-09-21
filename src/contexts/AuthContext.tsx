@@ -129,6 +129,15 @@ const mockUsers: AuthUser[] = [
     points: 730,
     level: 3,
     avatar_url: ''
+  },
+  {
+    id: '14',
+    email: 'projetista.externo@visaoprojetosbim.com',
+    full_name: 'Projetista Externo',
+    role: 'user',
+    points: 300,
+    level: 2,
+    avatar_url: ''
   }
 ];
 
