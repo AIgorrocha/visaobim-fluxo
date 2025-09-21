@@ -13,6 +13,8 @@ interface AppDataContextType {
   updateTaskStatus: (taskId: string, status: Task['status']) => void;
   addPoints: (userId: string, points: number) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
+  addProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => void;
+  deleteProject: (projectId: string) => void;
 
   // Getters
   getProjectsByUser: (userId: string) => Project[];
@@ -153,6 +155,23 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     );
   };
 
+  // Add new project
+  const addProject = (projectData: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+    const newProject: Project = {
+      ...projectData,
+      id: (projects.length + 1).toString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    setProjects(prevProjects => [...prevProjects, newProject]);
+  };
+
+  // Delete project
+  const deleteProject = (projectId: string) => {
+    setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+  };
+
   // Get projects by user
   const getProjectsByUser = (userId: string): Project[] => {
     return projects.filter(project => project.responsible_id === userId);
@@ -179,6 +198,8 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     updateTaskStatus,
     addPoints,
     updateProject,
+    addProject,
+    deleteProject,
 
     // Getters
     getProjectsByUser,

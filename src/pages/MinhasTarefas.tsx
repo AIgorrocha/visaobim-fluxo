@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Filter, Trophy } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +65,24 @@ const MinhasTarefas = () => {
     return project?.name || 'Projeto não encontrado';
   };
 
+  const getActivityStartDate = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.activity_start ? formatDate(project.activity_start) : 'Não definida';
+  };
+
+  const getDependencyInfo = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project?.dependency_id) return 'Nenhuma';
+
+    const dependencyProject = projects.find(p => p.id === project.dependency_id);
+    return dependencyProject?.name || 'Dependência não encontrada';
+  };
+
+  const getLastDeliveryDate = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.last_delivery ? formatDate(project.last_delivery) : 'Ainda não entregue';
+  };
+
   const handleCompleteTask = (taskId: string) => {
     const task = userTasks.find(t => t.id === taskId);
     if (!task) return;
@@ -87,6 +105,28 @@ const MinhasTarefas = () => {
     toast({
       title: "Sucesso!",
       description: `Tarefa concluída! Você ganhou ${task.points} pontos!`,
+    });
+  };
+
+  const handleStartTask = (taskId: string) => {
+    const task = userTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (task.status === 'em_progresso') {
+      toast({
+        title: "Informação",
+        description: "Esta tarefa já está em progresso!",
+        variant: "default",
+      });
+      return;
+    }
+
+    // Update task status
+    updateTaskStatus(taskId, 'em_progresso');
+
+    toast({
+      title: "Sucesso!",
+      description: "Tarefa marcada como em progresso!",
     });
   };
 
@@ -132,18 +172,48 @@ const MinhasTarefas = () => {
                 </Badge>
               </div>
               
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
-                <span>Projeto: {getProjectName(task.project_id)}</span>
-                <span className="hidden sm:inline">•</span>
-                <span className={isOverdue(task.due_date) ? 'text-destructive font-medium' : ''}>
-                  Prazo: {formatDate(task.due_date)}
-                  {isOverdue(task.due_date) && ' (Atrasado)'}
-                </span>
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                  <span>Projeto: {getProjectName(task.project_id)}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className={isOverdue(task.due_date) ? 'text-destructive font-medium' : ''}>
+                    Prazo: {formatDate(task.due_date)}
+                    {isOverdue(task.due_date) && ' (Atrasado)'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <div>
+                    <span className="font-medium">Início da atividade:</span> {getActivityStartDate(task.project_id)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Dependência:</span> {getDependencyInfo(task.project_id)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Última entrega:</span> {getLastDeliveryDate(task.project_id)}
+                  </div>
+                  {task.completed_at && (
+                    <div>
+                      <span className="font-medium">Concluída em:</span> {formatDate(task.completed_at)}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
             <div className="flex flex-col space-y-2">
-              {task.status !== 'concluida' && (
+              {task.status === 'pendente' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleStartTask(task.id)}
+                  className="whitespace-nowrap"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Iniciar Tarefa
+                </Button>
+              )}
+              {(task.status === 'em_progresso' || task.status === 'pendente') && (
                 <Button
                   size="sm"
                   onClick={() => handleCompleteTask(task.id)}

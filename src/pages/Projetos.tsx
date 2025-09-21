@@ -9,14 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { ProjectModal } from '@/components/ProjectModal';
 import { Project } from '@/types';
 
 const Projetos = () => {
   const { user } = useAuth();
-  const { projects, getProjectsByUser } = useAppData();
+  const { projects, getProjectsByUser, deleteProject } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [typeFilter, setTypeFilter] = useState<string>('todos');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
 
   if (!user) return null;
 
@@ -51,8 +56,9 @@ const Projetos = () => {
                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || project.status === statusFilter;
     const matchesType = typeFilter === 'todos' || project.type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
+    const isNotHidden = !hiddenProjects.has(project.id);
+
+    return matchesSearch && matchesStatus && matchesType && isNotHidden;
   });
 
   const formatCurrency = (value: number) => {
@@ -64,6 +70,63 @@ const Projetos = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getResponsibleName = (responsibleId: string) => {
+    const teamMembers = [
+      { id: '1', name: 'Igor' },
+      { id: '2', name: 'Gustavo' },
+      { id: '3', name: 'Bessa' },
+      { id: '4', name: 'Leonardo' },
+      { id: '5', name: 'Pedro' },
+      { id: '6', name: 'Thiago' },
+      { id: '7', name: 'Nicolas' },
+      { id: '8', name: 'Eloisy' },
+      { id: '9', name: 'Rondinelly' },
+      { id: '10', name: 'Edilson' },
+      { id: '11', name: 'Stael' },
+      { id: '12', name: 'Philip' },
+      { id: '13', name: 'Nara' },
+      { id: '14', name: 'Projetista Externo' }
+    ];
+
+    const member = teamMembers.find(m => m.id === responsibleId);
+    return member?.name || 'Não definido';
+  };
+
+  const handleNewProject = () => {
+    setSelectedProject(null);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleToggleVisibility = (projectId: string) => {
+    setHiddenProjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este projeto?')) {
+      deleteProject(projectId);
+    }
   };
 
   return (
@@ -83,7 +146,7 @@ const Projetos = () => {
         </div>
         
         {isAdmin && (
-          <Button className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto" onClick={handleNewProject}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Projeto
           </Button>
@@ -163,8 +226,9 @@ const Projetos = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Fase</TableHead>
-                    <TableHead>Prazo</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Contrato</TableHead>
+                    {isAdmin && <TableHead>Valor</TableHead>}
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -182,19 +246,45 @@ const Projetos = () => {
                       </TableCell>
                       <TableCell>{getStatusBadge(project.status)}</TableCell>
                       <TableCell>{getPhaseBadge(project.phase)}</TableCell>
-                      <TableCell>{formatDate(project.delivery_deadline)}</TableCell>
-                      <TableCell>{formatCurrency(project.project_value)}</TableCell>
+                      <TableCell>
+                        {getResponsibleName(project.responsible_id)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{formatDate(project.contract_start)} até</div>
+                          <div>{formatDate(project.contract_end)}</div>
+                        </div>
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>{formatCurrency(project.project_value)}</TableCell>
+                      )}
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button size="sm" variant="ghost">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleToggleVisibility(project.id)}
+                            title="Ocultar/Mostrar projeto"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           {isAdmin && (
                             <>
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditProject(project)}
+                                title="Editar projeto"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                title="Excluir projeto"
+                                onClick={() => handleDeleteProject(project.id)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
@@ -215,6 +305,14 @@ const Projetos = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Project Modal */}
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        project={selectedProject}
+        mode={modalMode}
+      />
     </div>
   );
 };
