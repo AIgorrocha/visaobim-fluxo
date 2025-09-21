@@ -21,7 +21,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -84,7 +83,6 @@ const menuItems = [
 
 export function AppSidebar() {
   const { user } = useAuth();
-  const { collapsed } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
 
