@@ -17,6 +17,7 @@ import { useAppData } from '@/contexts/AppDataContext';
 import { useUserLevel, getLevelName } from '@/hooks/useUserLevel';
 
 const Dashboard = () => {
+  // TESTE LOVABLE SYNC - Dashboard funcionando perfeitamente! 🚀
   const { user } = useAuth();
   const { getProjectsByUser, getTasksByUser, projects } = useAppData();
 
