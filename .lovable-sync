@@ -1,0 +1,13 @@
+{
+  "projectId": "fbdd3d5b-9423-4ee8-90f1-fe976e495955",
+  "lastSync": "2025-09-22T12:15:00Z",
+  "autoSync": true,
+  "webhookEnabled": true,
+  "triggers": [
+    "push",
+    "pull_request",
+    "release"
+  ],
+  "syncStatus": "FORCE_SYNC_REQUESTED",
+  "timestamp": "2025-09-22T12:15:00Z"
+}

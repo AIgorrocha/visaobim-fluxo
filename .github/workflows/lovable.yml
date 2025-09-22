@@ -19,4 +19,10 @@ jobs:
     - name: Build project
       run: npm run build
     - name: Trigger Lovable Sync
-      run: echo "LOVABLE_SYNC=true" >> $GITHUB_ENV
+      run: |
+        echo "LOVABLE_SYNC=true" >> $GITHUB_ENV
+        echo "PROJECT_ID=fbdd3d5b-9423-4ee8-90f1-fe976e495955" >> $GITHUB_ENV
+        echo "SYNC_TIMESTAMP=$(date)" >> $GITHUB_ENV
+        curl -X POST "https://api.lovable.dev/webhooks/github" \
+          -H "Content-Type: application/json" \
+          -d '{"project_id":"fbdd3d5b-9423-4ee8-90f1-fe976e495955","action":"sync","timestamp":"'$(date -Iseconds)'"}'
