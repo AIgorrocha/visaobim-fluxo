@@ -49,8 +49,5 @@ async function triggerSync() {
   }
 }
 
-if (require.main === module) {
-  triggerSync();
-}
-
-module.exports = { triggerSync, PROJECT_ID };
+// Execute if this is the main module
+triggerSync();

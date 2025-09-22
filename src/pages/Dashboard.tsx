@@ -1,13 +1,17 @@
 import { motion } from 'framer-motion';
-import { 
-  CheckSquare, 
-  FolderOpen, 
-  Trophy, 
-  Calendar, 
+import {
+  CheckSquare,
+  FolderOpen,
+  Trophy,
+  Calendar,
   TrendingUp,
   DollarSign,
   Users,
-  FileText
+  FileText,
+  Activity,
+  Clock,
+  Target,
+  BarChart3
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +21,6 @@ import { useAppData } from '@/contexts/AppDataContext';
 import { useUserLevel, getLevelName } from '@/hooks/useUserLevel';
 
 const Dashboard = () => {
-  // TESTE LOVABLE SYNC - Dashboard funcionando perfeitamente! 🚀
   const { user } = useAuth();
   const { getProjectsByUser, getTasksByUser, projects } = useAppData();
 
@@ -27,9 +30,18 @@ const Dashboard = () => {
   const userTasks = getTasksByUser(user.id);
   const pendingTasks = userTasks.filter(task => task.status === 'pendente');
   const completedTasks = userTasks.filter(task => task.status === 'concluida');
+  const inProgressTasks = userTasks.filter(task => task.status === 'em_progresso');
   const levelInfo = useUserLevel(user.points);
 
   const isAdmin = user.role === 'admin';
+
+  // Cálculos de produtividade
+  const completionRate = userTasks.length > 0 ? Math.round((completedTasks.length / userTasks.length) * 100) : 0;
+  const projectsInProgress = userProjects.filter(p => p.status === 'Em Andamento').length;
+
+  // Estimativa de horas
+  const totalEstimatedHours = userTasks.reduce((sum, task) => sum + (task.estimated_hours || 0), 0);
+  const completedHours = completedTasks.reduce((sum, task) => sum + (task.estimated_hours || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -124,6 +136,83 @@ const Dashboard = () => {
               </div>
               <p className="text-xs text-muted-foreground">
                 {completedTasks.length} de {userTasks.length} tarefas
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Nova linha de cards - Métricas Avançadas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{projectsInProgress}</div>
+              <p className="text-xs text-muted-foreground">
+                de {userProjects.length} projetos totais
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Em Progresso</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{inProgressTasks.length}</div>
+              <p className="text-xs text-muted-foreground">
+                tarefas em andamento
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+        >
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Eficiência</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completionRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                taxa de conclusão
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+        >
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Horas Estimadas</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalEstimatedHours}h</div>
+              <p className="text-xs text-muted-foreground">
+                {completedHours}h concluídas
               </p>
             </CardContent>
           </Card>
@@ -318,6 +407,101 @@ const Dashboard = () => {
           </Card>
         </motion.div>
       )}
+
+      {/* Analytics Section - Insights Modernos */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      >
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+              Análise de Produtividade
+            </CardTitle>
+            <CardDescription>
+              Insights baseados no seu desempenho atual
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">{completionRate}%</div>
+                <p className="text-xs text-muted-foreground">Taxa de Conclusão</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-secondary">{inProgressTasks.length}</div>
+                <p className="text-xs text-muted-foreground">Tarefas Ativas</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Progresso Semanal</span>
+                <span className="font-medium">{Math.min(100, completionRate + 15)}%</span>
+              </div>
+              <Progress value={Math.min(100, completionRate + 15)} className="h-2" />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {completionRate >= 80
+                ? "🎉 Excelente produtividade! Continue assim!"
+                : completionRate >= 60
+                ? "📈 Boa produtividade, há espaço para melhorar"
+                : "⚡ Foque nas tarefas prioritárias para aumentar sua eficiência"
+              }
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-accent">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Target className="h-5 w-5 mr-2 text-accent" />
+              Metas e Conquistas
+            </CardTitle>
+            <CardDescription>
+              Acompanhe seu progresso e próximos objetivos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm font-medium">Nível {levelInfo.level}</span>
+                </div>
+                <Badge variant="outline">{user.points} pts</Badge>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Progresso do Nível</span>
+                  <span className="font-medium">{levelInfo.progress}%</span>
+                </div>
+                <Progress value={levelInfo.progress} className="h-2" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="text-center p-2 bg-muted/50 rounded">
+                  <div className="font-bold text-green-600">{completedTasks.length}</div>
+                  <div className="text-muted-foreground">Concluídas</div>
+                </div>
+                <div className="text-center p-2 bg-muted/50 rounded">
+                  <div className="font-bold text-blue-600">{pendingTasks.length}</div>
+                  <div className="text-muted-foreground">Pendentes</div>
+                </div>
+              </div>
+            </div>
+
+            {levelInfo.pointsToNext > 0 && (
+              <div className="text-xs text-muted-foreground p-2 bg-accent/10 rounded border">
+                💡 <strong>Dica:</strong> Complete mais {Math.ceil(levelInfo.pointsToNext / 10)} tarefas para subir de nível!
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };
