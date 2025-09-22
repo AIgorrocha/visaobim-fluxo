@@ -15,19 +15,13 @@ export interface Project {
   name: string;
   client: string;
   type: 'privado' | 'publico';
-  status: 'EM_ANDAMENTO' | 'FINALIZADO' | 'EM_ESPERA' | 'PARALISADO' | 'AGUARDANDO_PAGAMENTO';
-  phase: 'ESTUDO_PRELIMINAR' | 'PROJETO_BASICO' | 'PROJETO_EXECUTIVO';
+  status: 'EM_ANDAMENTO' | 'FINALIZADO' | 'EM_ESPERA' | 'PARALISADO' | 'CONCLUIDO';
   description?: string;
-  responsible_id: string;
+  responsible_ids: string[];
   dependency_id?: string;
   contract_start: string;
   contract_end: string;
-  activity_start: string;
-  delivery_deadline: string;
-  last_delivery?: string;
-  project_value: number;
-  amount_paid: number;
-  payment_date?: string;
+  vigencia_contrato?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -39,10 +33,15 @@ export interface Task {
   title: string;
   description?: string;
   assigned_to: string;
-  status: 'pendente' | 'em_progresso' | 'concluida';
+  status: 'pendente' | 'em_andamento' | 'concluida' | 'paralisada' | 'em_espera';
+  phase: 'ESTUDO_PRELIMINAR' | 'PROJETO_BASICO' | 'EXECUTIVO';
   priority: 'baixa' | 'media' | 'alta';
   points: number;
-  due_date: string;
+  activity_start?: string;
+  due_date?: string;
+  last_delivery?: string;
+  comment?: string;
+  dependencies?: string[]; // Disciplinas necessárias para iniciar
   completed_at?: string;
   created_at: string;
 }

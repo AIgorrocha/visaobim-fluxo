@@ -8,19 +8,26 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockProjects, getProjectsByUser } from '@/data/mockData';
+import { useAppData } from '@/contexts/AppDataContext';
+import ProjectModal from '@/components/ProjectModal';
 import { Project } from '@/types';
 
 const Projetos = () => {
   const { user } = useAuth();
+  const { projects, getProjectsByUser, deleteProject } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [typeFilter, setTypeFilter] = useState<string>('todos');
+  const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
+  const [vigenciaFilter, setVigenciaFilter] = useState<string>('todos');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
 
   if (!user) return null;
 
   const isAdmin = user.role === 'admin';
-  const allProjects = isAdmin ? mockProjects : getProjectsByUser(user.id);
+  const allProjects = isAdmin ? projects : getProjectsByUser(user.id);
 
   const getStatusBadge = (status: Project['status']) => {
     const statusConfig = {
@@ -35,34 +42,95 @@ const Projetos = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const getPhaseBadge = (phase: Project['phase']) => {
-    const phaseConfig = {
-      'ESTUDO_PRELIMINAR': 'Estudo Preliminar',
-      'PROJETO_BASICO': 'Projeto Básico',
-      'PROJETO_EXECUTIVO': 'Projeto Executivo'
-    };
-    
-    return <Badge variant="outline">{phaseConfig[phase]}</Badge>;
-  };
 
   const filteredProjects = allProjects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || project.status === statusFilter;
     const matchesType = typeFilter === 'todos' || project.type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
+    const matchesResponsible = responsibleFilter === 'todos' || project.responsible_ids.includes(responsibleFilter);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+    // Filtro de vigência
+    let matchesVigencia = true;
+    if (vigenciaFilter !== 'todos' && project.vigencia_contrato) {
+      const vigenciaDate = new Date(project.vigencia_contrato);
+      const today = new Date();
+
+      switch (vigenciaFilter) {
+        case 'vencidos':
+          matchesVigencia = vigenciaDate < today;
+          break;
+        case 'proximos_30':
+          const em30Dias = new Date();
+          em30Dias.setDate(today.getDate() + 30);
+          matchesVigencia = vigenciaDate >= today && vigenciaDate <= em30Dias;
+          break;
+        case 'vigentes':
+          matchesVigencia = vigenciaDate >= today;
+          break;
+      }
+    } else if (vigenciaFilter !== 'todos' && !project.vigencia_contrato) {
+      matchesVigencia = vigenciaFilter === 'sem_vigencia';
+    }
+
+    return matchesSearch && matchesStatus && matchesType && matchesResponsible && matchesVigencia;
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getResponsibleNames = (responsibleIds: string[]) => {
+    const teamMembers = [
+      { id: '1', name: 'Igor' },
+      { id: '2', name: 'Gustavo' },
+      { id: '3', name: 'Bessa' },
+      { id: '4', name: 'Leonardo' },
+      { id: '5', name: 'Pedro' },
+      { id: '6', name: 'Thiago' },
+      { id: '7', name: 'Nicolas' },
+      { id: '8', name: 'Eloisy' },
+      { id: '9', name: 'Rondinelly' },
+      { id: '10', name: 'Edilson' },
+      { id: '11', name: 'Stael' },
+      { id: '12', name: 'Philip' },
+      { id: '13', name: 'Nara' },
+      { id: '14', name: 'Projetista Externo' }
+    ];
+
+    return responsibleIds
+      .map(id => teamMembers.find(member => member.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const handleNewProject = () => {
+    setSelectedProject(null);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  const handleViewProject = (project: Project) => {
+    setSelectedProject(project);
+    setModalMode('view');
+    setIsModalOpen(true);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteProject = (project: Project) => {
+    if (window.confirm(`Tem certeza que deseja excluir o projeto "${project.name}"?`)) {
+      deleteProject(project.id);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedProject(null);
   };
 
   return (
@@ -82,7 +150,7 @@ const Projetos = () => {
         </div>
         
         {isAdmin && (
-          <Button className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto" onClick={handleNewProject}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Projeto
           </Button>
@@ -97,43 +165,83 @@ const Projetos = () => {
       >
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar projetos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Buscar projetos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Tipos</SelectItem>
-                  <SelectItem value="privado">Privado</SelectItem>
-                  <SelectItem value="publico">Público</SelectItem>
-                </SelectContent>
-              </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Status</SelectItem>
-                  <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
-                  <SelectItem value="FINALIZADO">Finalizado</SelectItem>
-                  <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
-                  <SelectItem value="PARALISADO">Paralisado</SelectItem>
-                  <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Tipos</SelectItem>
+                    <SelectItem value="privado">Privado</SelectItem>
+                    <SelectItem value="publico">Público</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Status</SelectItem>
+                    <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
+                    <SelectItem value="FINALIZADO">Finalizado</SelectItem>
+                    <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
+                    <SelectItem value="PARALISADO">Paralisado</SelectItem>
+                    <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos Responsáveis</SelectItem>
+                    <SelectItem value="1">Igor</SelectItem>
+                    <SelectItem value="2">Gustavo</SelectItem>
+                    <SelectItem value="3">Bessa</SelectItem>
+                    <SelectItem value="4">Leonardo</SelectItem>
+                    <SelectItem value="5">Pedro</SelectItem>
+                    <SelectItem value="6">Thiago</SelectItem>
+                    <SelectItem value="7">Nicolas</SelectItem>
+                    <SelectItem value="8">Eloisy</SelectItem>
+                    <SelectItem value="9">Rondinelly</SelectItem>
+                    <SelectItem value="10">Edilson</SelectItem>
+                    <SelectItem value="11">Stael</SelectItem>
+                    <SelectItem value="12">Philip</SelectItem>
+                    <SelectItem value="13">Nara</SelectItem>
+                    <SelectItem value="14">Projetista Externo</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={vigenciaFilter} onValueChange={setVigenciaFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Vigência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas Vigências</SelectItem>
+                    <SelectItem value="vencidos">Vencidos</SelectItem>
+                    <SelectItem value="proximos_30">Próximos 30 dias</SelectItem>
+                    <SelectItem value="vigentes">Vigentes</SelectItem>
+                    <SelectItem value="sem_vigencia">Sem vigência</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -161,9 +269,9 @@ const Projetos = () => {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Fase</TableHead>
-                    <TableHead>Prazo</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Prazo de Vigência</TableHead>
+                    <TableHead>Responsáveis</TableHead>
+                    <TableHead>Contrato</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -180,20 +288,30 @@ const Projetos = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(project.status)}</TableCell>
-                      <TableCell>{getPhaseBadge(project.phase)}</TableCell>
-                      <TableCell>{formatDate(project.delivery_deadline)}</TableCell>
-                      <TableCell>{formatCurrency(project.project_value)}</TableCell>
+                      <TableCell>
+                        {project.vigencia_contrato ? formatDate(project.vigencia_contrato) : 'Não definido'}
+                      </TableCell>
+                      <TableCell className="max-w-48">
+                        <div className="truncate" title={getResponsibleNames(project.responsible_ids)}>
+                          {getResponsibleNames(project.responsible_ids) || 'Não atribuído'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{formatDate(project.contract_start)} - {formatDate(project.contract_end)}</div>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewProject(project)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           {isAdmin && (
                             <>
-                              <Button size="sm" variant="ghost">
+                              <Button size="sm" variant="ghost" onClick={() => handleEditProject(project)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteProject(project)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
@@ -214,6 +332,13 @@ const Projetos = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        project={selectedProject}
+        mode={modalMode}
+      />
     </div>
   );
 };

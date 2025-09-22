@@ -128,11 +128,21 @@ const mockUsers: AuthUser[] = [
     points: 730,
     level: 3,
     avatar_url: ''
+  },
+  {
+    id: '14',
+    email: 'externo@visaoprojetosbim.com',
+    full_name: 'Projetista Externo',
+    role: 'user',
+    points: 0,
+    level: 1,
+    avatar_url: ''
   }
 ];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // For debugging: Start with Pedro logged in (ID: '5')
+  const [user, setUser] = useState<AuthUser | null>(mockUsers.find(u => u.id === '5') || null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -140,6 +150,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('crm_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    } else {
+      // For debugging: default to Pedro if no stored user
+      setUser(mockUsers.find(u => u.id === '5') || null);
     }
     setIsLoading(false);
   }, []);
