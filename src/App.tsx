@@ -106,3 +106,4 @@ const App = () => (
 );
 
 export default App;
+// Lovable force sync - 2025-09-22 09:08
