@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Edit, Plus, Search } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -128,9 +128,10 @@ const MinhasTarefas = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const getProjectName = (projectId: string) => {
+  const getProjectNameWithClient = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
-    return project?.name || 'Projeto não encontrado';
+    if (!project) return 'Projeto não encontrado';
+    return `${project.name} - ${project.client}`;
   };
 
   const getAssignedUserName = (assignedTo: string | string[]) => {
@@ -200,7 +201,13 @@ const MinhasTarefas = () => {
       transition={{ duration: 0.3 }}
       className="mb-4"
     >
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className={`hover:shadow-md transition-shadow border-l-4 ${
+        task.status === 'PENDENTE' ? 'border-l-muted' :
+        task.status === 'EM_ANDAMENTO' ? 'border-l-primary' :
+        task.status === 'CONCLUIDA' ? 'border-l-success' :
+        task.status === 'PARALISADA' ? 'border-l-destructive' :
+        task.status === 'EM_ESPERA' ? 'border-l-warning' : 'border-l-muted'
+      }`}>
         <CardContent className="pt-6">
           <div className="flex items-start justify-between space-x-4">
             <div className="flex-1 space-y-3">
@@ -224,7 +231,7 @@ const MinhasTarefas = () => {
               
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span>Projeto: {getProjectName(task.project_id)}</span>
+                  <span>Projeto: {getProjectNameWithClient(task.project_id)}</span>
                   {isAdmin && (
                     <>
                       <span className="hidden sm:inline">•</span>
@@ -232,9 +239,9 @@ const MinhasTarefas = () => {
                     </>
                   )}
                   <span className="hidden sm:inline">•</span>
-                  <span className={isOverdue(task.due_date) ? 'text-destructive font-medium' : ''}>
+                  <span className={isOverdue(task.due_date) ? 'text-destructive font-semibold bg-destructive/10 px-2 py-1 rounded-md' : ''}>
                     Prazo: {formatDate(task.due_date)}
-                    {isOverdue(task.due_date) && ' (Atrasado)'}
+                    {isOverdue(task.due_date) && ' ⚠️ ATRASADO'}
                   </span>
                 </div>
 
@@ -352,7 +359,7 @@ const MinhasTarefas = () => {
                   <SelectContent>
                     <SelectItem value="todos">Todos os Projetos</SelectItem>
                     {projects.map(project => (
-                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                      <SelectItem key={project.id} value={project.id}>{project.name} - {project.client}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -427,7 +434,7 @@ const MinhasTarefas = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -436,9 +443,9 @@ const MinhasTarefas = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-muted rounded-full"></div>
+                <Clock className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'pendente').length}</p>
+                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'PENDENTE').length}</p>
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
@@ -454,9 +461,9 @@ const MinhasTarefas = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <PlayCircle className="h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'em_andamento').length}</p>
+                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'EM_ANDAMENTO').length}</p>
                   <p className="text-xs text-muted-foreground">Em Andamento</p>
                 </div>
               </div>
@@ -472,9 +479,9 @@ const MinhasTarefas = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
+                <CircleCheckBig className="h-4 w-4 text-success" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'concluida').length}</p>
+                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'CONCLUIDA').length}</p>
                   <p className="text-xs text-muted-foreground">Concluídas</p>
                 </div>
               </div>
@@ -490,10 +497,10 @@ const MinhasTarefas = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-destructive rounded-full"></div>
+                <PauseCircle className="h-4 w-4 text-warning" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'paralisada').length}</p>
-                  <p className="text-xs text-muted-foreground">Paralisadas</p>
+                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'EM_ESPERA').length}</p>
+                  <p className="text-xs text-muted-foreground">Em Espera</p>
                 </div>
               </div>
             </CardContent>
@@ -504,6 +511,24 @@ const MinhasTarefas = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-4 w-4 text-destructive" />
+                <div>
+                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'PARALISADA').length}</p>
+                  <p className="text-xs text-muted-foreground">Paralisadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.45 }}
         >
           <Card>
             <CardContent className="pt-6">
@@ -530,11 +555,11 @@ const MinhasTarefas = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="todas">Todas</TabsTrigger>
-            <TabsTrigger value="pendente">Pendentes</TabsTrigger>
-            <TabsTrigger value="em_andamento">Em Andamento</TabsTrigger>
-            <TabsTrigger value="em_espera">Em Espera</TabsTrigger>
-            <TabsTrigger value="paralisada">Paralisadas</TabsTrigger>
-            <TabsTrigger value="concluida">Concluídas</TabsTrigger>
+            <TabsTrigger value="PENDENTE">Pendentes</TabsTrigger>
+            <TabsTrigger value="EM_ANDAMENTO">Em Andamento</TabsTrigger>
+            <TabsTrigger value="EM_ESPERA">Em Espera</TabsTrigger>
+            <TabsTrigger value="PARALISADA">Paralisadas</TabsTrigger>
+            <TabsTrigger value="CONCLUIDA">Concluídas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="todas" className="mt-6">
@@ -551,10 +576,10 @@ const MinhasTarefas = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="pendente" className="mt-6">
+          <TabsContent value="PENDENTE" className="mt-6">
             <div className="space-y-4">
-              {getTasksByStatus('pendente').length > 0 ? (
-                getTasksByStatus('pendente').map(renderTaskCard)
+              {getTasksByStatus('PENDENTE').length > 0 ? (
+                getTasksByStatus('PENDENTE').map(renderTaskCard)
               ) : (
                 <Card>
                   <CardContent className="pt-6 text-center">
@@ -565,10 +590,10 @@ const MinhasTarefas = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="em_andamento" className="mt-6">
+          <TabsContent value="EM_ANDAMENTO" className="mt-6">
             <div className="space-y-4">
-              {getTasksByStatus('em_andamento').length > 0 ? (
-                getTasksByStatus('em_andamento').map(renderTaskCard)
+              {getTasksByStatus('EM_ANDAMENTO').length > 0 ? (
+                getTasksByStatus('EM_ANDAMENTO').map(renderTaskCard)
               ) : (
                 <Card>
                   <CardContent className="pt-6 text-center">
@@ -579,10 +604,10 @@ const MinhasTarefas = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="em_espera" className="mt-6">
+          <TabsContent value="EM_ESPERA" className="mt-6">
             <div className="space-y-4">
-              {getTasksByStatus('em_espera').length > 0 ? (
-                getTasksByStatus('em_espera').map(renderTaskCard)
+              {getTasksByStatus('EM_ESPERA').length > 0 ? (
+                getTasksByStatus('EM_ESPERA').map(renderTaskCard)
               ) : (
                 <Card>
                   <CardContent className="pt-6 text-center">
@@ -593,10 +618,10 @@ const MinhasTarefas = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="paralisada" className="mt-6">
+          <TabsContent value="PARALISADA" className="mt-6">
             <div className="space-y-4">
-              {getTasksByStatus('paralisada').length > 0 ? (
-                getTasksByStatus('paralisada').map(renderTaskCard)
+              {getTasksByStatus('PARALISADA').length > 0 ? (
+                getTasksByStatus('PARALISADA').map(renderTaskCard)
               ) : (
                 <Card>
                   <CardContent className="pt-6 text-center">
@@ -607,10 +632,10 @@ const MinhasTarefas = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="concluida" className="mt-6">
+          <TabsContent value="CONCLUIDA" className="mt-6">
             <div className="space-y-4">
-              {getTasksByStatus('concluida').length > 0 ? (
-                getTasksByStatus('concluida').map(renderTaskCard)
+              {getTasksByStatus('CONCLUIDA').length > 0 ? (
+                getTasksByStatus('CONCLUIDA').map(renderTaskCard)
               ) : (
                 <Card>
                   <CardContent className="pt-6 text-center">
