@@ -298,7 +298,7 @@ export const mockTasks: Task[] = [
     description: 'Layout arquitetônico das salas comerciais',
     assigned_to: '3', // BESSA
     status: 'PENDENTE',
-    phase: 'ESTUDO PRELIMINAR',
+    phase: 'ESTUDO_PRELIMINAR',
     priority: 'alta',
     points: 0,
     start_date: '2025-09-15', // CORRIGIDO - ADICIONADA DATA INÍCIO
@@ -317,7 +317,7 @@ export const mockTasks: Task[] = [
     description: 'Etapa 01 - As built e demanda arquitetura e gases',
     assigned_to: '14', // PROJETISTA EXTERNO
     status: 'CONCLUIDA',
-    phase: 'PROJETO BASICO',
+    phase: 'PROJETO_BASICO',
     priority: 'alta',
     points: 10,
     start_date: '2025-05-30',

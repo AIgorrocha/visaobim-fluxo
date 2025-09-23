@@ -1400,7 +1400,7 @@ export const mockAchievements: Achievement[] = [
     title: 'Primeira Tarefa',
     description: 'Complete sua primeira tarefa',
     icon: 'CheckSquare',
-    points: 10,
+    points_earned: 10,
     unlocked: true,
     unlockedAt: '2025-01-15T10:30:00Z'
   },
@@ -1409,7 +1409,7 @@ export const mockAchievements: Achievement[] = [
     title: 'Produtivo',
     description: 'Complete 10 tarefas',
     icon: 'Target',
-    points: 50,
+    points_earned: 50,
     unlocked: true,
     unlockedAt: '2025-01-20T16:45:00Z'
   },
@@ -1418,7 +1418,7 @@ export const mockAchievements: Achievement[] = [
     title: 'Dedicado',
     description: 'Complete 25 tarefas',
     icon: 'Award',
-    points: 100,
+    points_earned: 100,
     unlocked: false
   },
   {
@@ -1426,7 +1426,7 @@ export const mockAchievements: Achievement[] = [
     title: 'Expert',
     description: 'Complete 50 tarefas',
     icon: 'Star',
-    points: 200,
+    points_earned: 200,
     unlocked: false
   },
   {
@@ -1434,7 +1434,7 @@ export const mockAchievements: Achievement[] = [
     title: 'Mestre',
     description: 'Complete 100 tarefas',
     icon: 'Crown',
-    points: 500,
+    points_earned: 500,
     unlocked: false
   }
 ];

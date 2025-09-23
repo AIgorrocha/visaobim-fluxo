@@ -96,8 +96,10 @@ export interface Achievement {
   achievement_type: string;
   title: string;
   description: string;
+  icon?: string;
   points_earned: number;
   earned_at: string;
+  unlocked?: boolean;
 }
 
 export interface ActivityLog {
