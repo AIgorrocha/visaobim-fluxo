@@ -7,23 +7,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
 
-// Dados reais da equipe com base no AuthContext
-const teamMembersData = [
-  { id: '1', name: 'Igor', role: 'admin' },
-  { id: '2', name: 'Gustavo' },
-  { id: '3', name: 'Bessa' },
-  { id: '4', name: 'Leonardo' },
-  { id: '5', name: 'Pedro' },
-  { id: '6', name: 'Thiago' },
-  { id: '7', name: 'Nicolas' },
-  { id: '8', name: 'Eloisy' },
-  { id: '9', name: 'Rondinelly' },
-  { id: '10', name: 'Edilson' },
-  { id: '11', name: 'Philip' },
-  { id: '12', name: 'Nara' },
-  { id: '13', name: 'Stael', role: 'admin' },
-  { id: '14', name: 'Projetista Externo' }
-];
+// Team data is now loaded dynamically from profiles
 
 const Equipe = () => {
   const { user } = useAuth();

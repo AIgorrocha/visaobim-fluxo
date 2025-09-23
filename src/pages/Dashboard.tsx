@@ -29,7 +29,7 @@ const Dashboard = () => {
 
   if (!user) return null;
 
-  const isAdmin = user.role === 'admin';
+  const isAdmin = profile?.role === 'admin';
   const userProjects = isAdmin ? projects : getProjectsByUser(user.id);
   // Sempre pegar apenas as tarefas do usuário logado para pontuação individual
   const userTasks = getTasksByUser(user.id);

@@ -13,8 +13,8 @@ import ProjectModal from '@/components/ProjectModal';
 import { Project } from '@/types';
 
 const Projetos = () => {
-  const { user } = useAuth();
-  const { projects, deleteProject } = useSupabaseData();
+  const { user, profile } = useAuth();
+  const { projects, deleteProject, profiles } = useSupabaseData();
 
   // Função para obter projetos do usuário
   const getProjectsByUser = (userId: string) => {
@@ -33,7 +33,7 @@ const Projetos = () => {
 
   if (!user) return null;
 
-  const isAdmin = user.role === 'admin';
+  const isAdmin = profile?.role === 'admin';
   const allProjects = isAdmin ? projects : getProjectsByUser(user.id);
 
   const getStatusBadge = (status: Project['status']) => {
@@ -89,25 +89,8 @@ const Projetos = () => {
   };
 
   const getResponsibleNames = (responsibleIds: string[]) => {
-    const teamMembers = [
-      { id: '1', name: 'Igor' },
-      { id: '2', name: 'Gustavo' },
-      { id: '3', name: 'Bessa' },
-      { id: '4', name: 'Leonardo' },
-      { id: '5', name: 'Pedro' },
-      { id: '6', name: 'Thiago' },
-      { id: '7', name: 'Nicolas' },
-      { id: '8', name: 'Eloisy' },
-      { id: '9', name: 'Rondinelly' },
-      { id: '10', name: 'Edilson' },
-      { id: '11', name: 'Philip' },
-      { id: '12', name: 'Nara' },
-      { id: '13', name: 'Stael' },
-      { id: '14', name: 'Projetista Externo' }
-    ];
-
     return responsibleIds
-      .map(id => teamMembers.find(member => member.id === id)?.name)
+      .map(id => profiles.find(profile => profile.id === id)?.full_name || profiles.find(profile => profile.id === id)?.email)
       .filter(Boolean)
       .join(', ');
   };
@@ -221,20 +204,11 @@ const Projetos = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos Responsáveis</SelectItem>
-                    <SelectItem value="1">Igor</SelectItem>
-                    <SelectItem value="2">Gustavo</SelectItem>
-                    <SelectItem value="3">Bessa</SelectItem>
-                    <SelectItem value="4">Leonardo</SelectItem>
-                    <SelectItem value="5">Pedro</SelectItem>
-                    <SelectItem value="6">Thiago</SelectItem>
-                    <SelectItem value="7">Nicolas</SelectItem>
-                    <SelectItem value="8">Eloisy</SelectItem>
-                    <SelectItem value="9">Rondinelly</SelectItem>
-                    <SelectItem value="10">Edilson</SelectItem>
-                    <SelectItem value="11">Stael</SelectItem>
-                    <SelectItem value="12">Philip</SelectItem>
-                    <SelectItem value="13">Nara</SelectItem>
-                    <SelectItem value="14">Projetista Externo</SelectItem>
+                    {profiles.map(profile => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.full_name || profile.email}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
