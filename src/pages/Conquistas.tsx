@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 
 const Conquistas = () => {
   const { user } = useAuth();
-  const { tasks } = useAppData();
+  const { tasks, profiles } = useSupabaseData();
 
   if (!user) return null;
 
@@ -24,16 +24,8 @@ const Conquistas = () => {
   const userPoints = calculateUserPoints(userCompletedTasks);
   const userLevel = getUserLevel(userPoints);
 
-  // Calcular ranking baseado em todos os membros da equipe
-  const teamMembers = [
-    { id: '1', name: 'Igor' }, { id: '2', name: 'Gustavo' }, { id: '3', name: 'Bessa' },
-    { id: '4', name: 'Leonardo' }, { id: '5', name: 'Pedro' }, { id: '6', name: 'Thiago' },
-    { id: '7', name: 'Nicolas' }, { id: '8', name: 'Eloisy' }, { id: '9', name: 'Rondinelly' },
-    { id: '10', name: 'Edilson' }, { id: '11', name: 'Philip' }, { id: '12', name: 'Nara' },
-    { id: '13', name: 'Stael' }, { id: '14', name: 'Projetista Externo' }
-  ];
-
-  const teamRanking = teamMembers.map(member => {
+  // Calcular ranking baseado em todos os profiles reais
+  const teamRanking = profiles.map(member => {
     const memberTasks = tasks.filter(task =>
       Array.isArray(task.assigned_to)
         ? task.assigned_to.includes(member.id)
@@ -130,7 +122,7 @@ const Conquistas = () => {
                   </div>
                   <div>
                     <p className={`font-medium ${member.id === user.id ? 'text-primary' : ''}`}>
-                      {member.name}
+                      {member.full_name || member.email}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Nível {member.level}

@@ -8,13 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import ProjectModal from '@/components/ProjectModal';
 import { Project } from '@/types';
 
 const Projetos = () => {
   const { user } = useAuth();
-  const { projects, getProjectsByUser, deleteProject } = useAppData();
+  const { projects, deleteProject } = useSupabaseData();
+
+  // Função para obter projetos do usuário
+  const getProjectsByUser = (userId: string) => {
+    return projects.filter(project => 
+      project.responsible_ids && project.responsible_ids.includes(userId)
+    );
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [typeFilter, setTypeFilter] = useState<string>('todos');

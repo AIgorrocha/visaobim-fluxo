@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
 
 // Dados reais da equipe com base no AuthContext
@@ -27,10 +27,10 @@ const teamMembersData = [
 
 const Equipe = () => {
   const { user } = useAuth();
-  const { projects, tasks } = useAppData();
+  const { projects, tasks, profiles } = useSupabaseData();
 
-  // Calcular estatísticas reais para cada membro
-  const teamWithStats = teamMembersData.map(member => {
+  // Usar dados reais dos profiles em vez de dados mockados
+  const teamWithStats = profiles.filter(profile => profile.id !== user?.id).map(member => {
     const memberTasks = tasks.filter(task =>
       Array.isArray(task.assigned_to)
         ? task.assigned_to.includes(member.id)
@@ -132,10 +132,10 @@ const Equipe = () => {
                   {index + 1}
                 </div>
                 <Avatar>
-                  <AvatarFallback>{member.name[0]}</AvatarFallback>
+                  <AvatarFallback>{(member.full_name || member.email)[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-medium">{member.name}</p>
+                  <p className="font-medium">{member.full_name || member.email}</p>
                   <p className="text-sm text-muted-foreground">
                     {member.tasks} tarefas ({member.completedTasks} concluídas) • {member.projects} projetos
                   </p>

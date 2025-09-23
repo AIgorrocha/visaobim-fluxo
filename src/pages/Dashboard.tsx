@@ -13,12 +13,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { projects, tasks, getProjectsByUser, getTasksByUser } = useAppData();
+  const { projects, tasks, getTasksByUser } = useSupabaseData();
+
+  // Função para obter projetos do usuário
+  const getProjectsByUser = (userId: string) => {
+    return projects.filter(project => 
+      project.responsible_ids && project.responsible_ids.includes(userId)
+    );
+  };
 
   if (!user) return null;
 

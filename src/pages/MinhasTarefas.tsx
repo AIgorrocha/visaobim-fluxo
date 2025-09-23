@@ -8,14 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { Task } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import TaskModal from '@/components/TaskModal';
 
 const MinhasTarefas = () => {
   const { user } = useAuth();
-  const { projects, getTasksByUser, tasks } = useAppData();
+  const { projects, getTasksByUser, tasks } = useSupabaseData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
