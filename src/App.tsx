@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AppDataProvider } from "@/contexts/AppDataContext";
+import { SupabaseDataProvider } from "@/contexts/SupabaseDataContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
 
@@ -26,7 +26,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <AppDataProvider>
+      <SupabaseDataProvider>
         <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -83,7 +83,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/relatorios" element={
-              <ProtectedRoute adminOnly>
+              <ProtectedRoute>
                 <Layout>
                   <Relatorios />
                 </Layout>
@@ -100,7 +100,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
         </TooltipProvider>
-      </AppDataProvider>
+      </SupabaseDataProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

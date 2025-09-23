@@ -6,37 +6,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAppData } from '@/contexts/AppDataContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useState } from 'react';
 
 const Relatorios = () => {
   const { user } = useAuth();
-  const { projects, tasks, getProjectsByUser, getTasksByUser } = useAppData();
+  const { projects, tasks, getTasksByUser, profiles } = useSupabaseData();
   const [showReport, setShowReport] = useState(false);
   const [generatedReport, setGeneratedReport] = useState('');
   const [showTimeline, setShowTimeline] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+
+  // Estado para controlar qual usuário está sendo visualizado
+  const currentUserId = selectedUserId || user?.id || '';
+  const currentUser = profiles.find(p => p.id === currentUserId) || user;
 
   if (!user) return null;
 
-  const isAdmin = user.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
-  // Estatísticas básicas para relatórios
-  const totalProjects = projects.length;
-  const activeProjects = projects.filter(p => p.status === 'EM_ANDAMENTO').length;
-  const completedProjects = projects.filter(p => p.status === 'CONCLUIDO' || p.status === 'FINALIZADO').length;
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA').length;
-  const activeTasks = tasks.filter(t => t.status === 'EM_ANDAMENTO').length;
+  // Função para obter projetos do usuário
+  const getProjectsByUser = (userId: string) => {
+    return projects.filter(project => 
+      project.responsible_ids && project.responsible_ids.includes(userId)
+    );
+  };
+
+  // Estatísticas básicas para relatórios (baseadas no usuário selecionado)
+  const userProjects = isAdmin && selectedUserId ? getProjectsByUser(currentUserId) : getProjectsByUser(user?.id || '');
+  const userTasks = isAdmin && selectedUserId ? getTasksByUser(currentUserId) : getTasksByUser(user?.id || '');
+  
+  const totalProjects = userProjects.length;
+  const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
+  const completedProjects = userProjects.filter(p => p.status === 'CONCLUIDO' || p.status === 'FINALIZADO').length;
+  const totalTasks = userTasks.length;
+  const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA').length;
+  const activeTasks = userTasks.filter(t => t.status === 'EM_ANDAMENTO').length;
 
   // Função para obter o nome dos responsáveis por ID
   const getResponsibleNames = (responsibleIds: string[]) => {
-    const names: { [key: string]: string } = {
-      '1': 'Igor', '2': 'Gustavo', '3': 'Bessa', '4': 'Leonardo', '5': 'Pedro',
-      '6': 'Thiago', '7': 'Nicolas', '8': 'Eloisy', '9': 'Rondinelly', '10': 'Edilson',
-      '11': 'Philip', '12': 'Nara', '13': 'Stael', '14': 'Projetista Externo'
-    };
-    return responsibleIds.map(id => names[id] || 'Desconhecido').join(', ');
+    if (!responsibleIds || responsibleIds.length === 0) return 'Não atribuído';
+    
+    return responsibleIds.map(id => {
+      const profile = profiles.find(p => p.id === id);
+      return profile?.full_name || 'Usuário não encontrado';
+    }).join(', ');
   };
 
   // Função para formatar data
@@ -52,8 +67,10 @@ const Relatorios = () => {
 
   // Função para gerar o relatório padronizado
   const generateTaskReport = () => {
-    const userTasks = getTasksByUser(user.id);
-    const userProjects = getProjectsByUser(user.id);
+    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
+    const reportUser = isAdmin && selectedUserId ? currentUser : user;
+    const userTasks = getTasksByUser(reportUserId);
+    const userProjects = getProjectsByUser(reportUserId);
     const activeUserProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO');
 
     const completedUserTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
@@ -70,7 +87,7 @@ const Relatorios = () => {
       return dueDate >= today && dueDate <= nextWeek;
     });
 
-    let report = `📊 RELATÓRIO DE TAREFAS - ${user.full_name?.toUpperCase()}
+    let report = `📊 RELATÓRIO DE TAREFAS - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -120,7 +137,7 @@ const Relatorios = () => {
       // Obter co-responsáveis (excluindo o usuário atual)
       let coResponsible = '';
       if (Array.isArray(task.assigned_to)) {
-        const otherResponsibles = task.assigned_to.filter(id => id !== user.id);
+        const otherResponsibles = task.assigned_to.filter(id => id !== reportUserId);
         if (otherResponsibles.length > 0) {
           coResponsible = `👥 Co-responsável: ${getResponsibleNames(otherResponsibles)}`;
         }
@@ -190,7 +207,9 @@ Qualquer dúvida, estou à disposição!`;
 
   // Função para gerar cronograma de projetos
   const generateProjectTimeline = () => {
-    const userTasks = getTasksByUser(user.id);
+    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
+    const reportUser = isAdmin && selectedUserId ? currentUser : user;
+    const userTasks = getTasksByUser(reportUserId);
 
     // Agrupar tarefas por mês
     const tasksByMonth = userTasks.reduce((acc, task) => {
@@ -205,7 +224,7 @@ Qualquer dúvida, estou à disposição!`;
       return acc;
     }, {} as { [key: string]: any[] });
 
-    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${user.full_name?.toUpperCase()}
+    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -240,10 +259,12 @@ Qualquer dúvida, estou à disposição!`;
 
   // Função para gerar relatório de desempenho do projetista
   const generatePerformanceReport = () => {
-    const userTasks = getTasksByUser(user.id);
+    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
+    const reportUser = isAdmin && selectedUserId ? currentUser : user;
+    const userTasks = getTasksByUser(reportUserId);
     const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
 
-    let performance = `📊 DESEMPENHO DO PROJETISTA - ${user.full_name?.toUpperCase()}
+    let performance = `📊 DESEMPENHO DO PROJETISTA - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -337,8 +358,32 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-        <p className="text-muted-foreground">Análise e relatórios do sistema de gestão</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+            <p className="text-muted-foreground">Análise e relatórios do sistema de gestão</p>
+          </div>
+          
+          {/* Filtro para Administradores */}
+          {isAdmin && (
+            <div className="flex items-center space-x-4">
+              <Label htmlFor="user-select">Filtrar por usuário:</Label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-[200px]" id="user-select">
+                  <SelectValue placeholder="Seus próprios dados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Seus próprios dados</SelectItem>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      {profile.full_name || profile.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Estatísticas Resumo */}
