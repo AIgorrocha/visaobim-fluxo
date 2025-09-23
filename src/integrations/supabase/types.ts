@@ -516,6 +516,10 @@ export type Database = {
         Args: { payload: Json }
         Returns: Json
       }
+      calculate_points_for_user: {
+        Args: { target_user_id: string }
+        Returns: number
+      }
       contact_lead_handler: {
         Args: { payload: Json }
         Returns: Json

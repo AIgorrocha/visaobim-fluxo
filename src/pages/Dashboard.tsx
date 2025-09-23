@@ -16,10 +16,12 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 import { useUserData } from '@/hooks/useUserData';
+import { useProfileSync } from '@/hooks/useProfileSync';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { tasks, proposals, profiles, projects } = useSupabaseData();
+  const { profile } = useProfileSync(); // Usar dados sincronizados
   const {
     isAdmin,
     userProjects,
@@ -48,7 +50,7 @@ const Dashboard = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-3xl font-bold text-foreground">
-          Bem-vindo(a), {user?.email?.split('@')[0] || 'Usuário'}!
+          Bem-vindo(a), {profile?.full_name || user?.email?.split('@')[0] || 'Usuário'}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Aqui está um resumo das suas atividades hoje.
@@ -106,9 +108,9 @@ const Dashboard = () => {
               <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{userPoints}</div>
+              <div className="text-2xl font-bold">{profile?.points || userPoints}</div>
               <p className="text-xs text-muted-foreground">
-                Nível {userLevel}
+                Nível {profile?.level || userLevel}
               </p>
             </CardContent>
           </Card>
@@ -153,10 +155,10 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Nível {userLevel}</span>
-                <Badge variant="secondary">{userPoints} pontos</Badge>
+                <span className="text-sm font-medium">Nível {profile?.level || userLevel}</span>
+                <Badge variant="secondary">{profile?.points || userPoints} pontos</Badge>
               </div>
-              <Progress value={getLevelProgress(userPoints, userLevel)} className="w-full" />
+              <Progress value={getLevelProgress(profile?.points || userPoints, profile?.level || userLevel)} className="w-full" />
               <p className="text-xs text-muted-foreground">
                 Continue completando tarefas para subir de nível!
               </p>
