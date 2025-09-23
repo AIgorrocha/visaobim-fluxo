@@ -10,7 +10,7 @@ import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useState } from 'react';
 
 const Relatorios = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { projects, tasks, getTasksByUser, profiles } = useSupabaseData();
   const [showReport, setShowReport] = useState(false);
   const [generatedReport, setGeneratedReport] = useState('');
@@ -24,7 +24,7 @@ const Relatorios = () => {
 
   if (!user) return null;
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = profile?.role === 'admin';
 
   // Função para obter projetos do usuário
   const getProjectsByUser = (userId: string) => {

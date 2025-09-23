@@ -6,36 +6,23 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
+import { useUserData } from '@/hooks/useUserData';
 
 const Conquistas = () => {
-  const { user } = useAuth();
-  const { tasks, profiles } = useSupabaseData();
+  const { user, profile } = useAuth();
+  const { profiles } = useSupabaseData();
+  const { userTasks, completedTasks, userPoints, userLevel } = useUserData();
 
   if (!user) return null;
 
-  // Calcular pontos reais do usuário
-  const userTasks = tasks.filter(task =>
-    Array.isArray(task.assigned_to)
-      ? task.assigned_to.includes(user.id)
-      : task.assigned_to === user.id
-  );
-
-  const userCompletedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
-  const userPoints = calculateUserPoints(userCompletedTasks);
-  const userLevel = getUserLevel(userPoints);
-
-  // Calcular ranking baseado em todos os profiles reais
-  const teamRanking = profiles.map(member => {
-    const memberTasks = tasks.filter(task =>
-      Array.isArray(task.assigned_to)
-        ? task.assigned_to.includes(member.id)
-        : task.assigned_to === member.id
-    );
-    const memberCompletedTasks = memberTasks.filter(t => t.status === 'CONCLUIDA');
-    const memberPoints = calculateUserPoints(memberCompletedTasks);
-    const memberLevel = getUserLevel(memberPoints);
-    return { ...member, points: memberPoints, level: memberLevel };
-  }).sort((a, b) => b.points - a.points);
+  // Usar dados reais do banco para ranking (pontos já calculados pela migração)
+  const teamRanking = profiles
+    .map(member => ({
+      ...member,
+      points: member.points || 0,
+      level: member.level || 1
+    }))
+    .sort((a, b) => b.points - a.points);
 
   const userRankPosition = teamRanking.findIndex(member => member.id === user.id) + 1;
 
@@ -83,7 +70,7 @@ const Conquistas = () => {
               </div>
               <div className="flex justify-between">
                 <span>Tarefas concluídas:</span>
-                <span className="font-medium">{userCompletedTasks.length}</span>
+                <span className="font-medium">{completedTasks.length}</span>
               </div>
             </div>
           </CardContent>

@@ -18,7 +18,7 @@ const Propostas = () => {
   if (!user) return null;
 
   // Verificar se é admin (apenas Igor e Stael)
-  const isAdmin = user.role === 'admin' && (user.id === '1' || user.id === '13');
+  const isAdmin = profile?.role === 'admin';
 
   if (!isAdmin) {
     return (

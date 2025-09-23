@@ -6,38 +6,34 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
+import { useUserData } from '@/hooks/useUserData';
 
 // Team data is now loaded dynamically from profiles
 
 const Equipe = () => {
   const { user } = useAuth();
-  const { projects, tasks, profiles } = useSupabaseData();
+  const { profiles, tasks } = useSupabaseData();
+  const { getUserProjects, getUserTasks } = useUserData();
 
-  // Usar dados reais dos profiles em vez de dados mockados
-  const teamWithStats = profiles.filter(profile => profile.id !== user?.id).map(member => {
-    const memberTasks = tasks.filter(task =>
-      Array.isArray(task.assigned_to)
-        ? task.assigned_to.includes(member.id)
-        : task.assigned_to === member.id
-    );
-    const memberProjects = projects.filter(project =>
-      project.responsible_ids.includes(member.id)
-    );
+  // Incluir dados de pontuação real dos profiles (usar dados do banco)
+  const teamWithStats = profiles
+    .filter(profile => profile.id !== user?.id)
+    .map(member => {
+      const memberTasks = getUserTasks(member.id);
+      const memberProjects = getUserProjects(member.id);
+      const completedTasks = memberTasks.filter(t => t.status === 'CONCLUIDA');
 
-    // Calcular pontos baseados nas tarefas concluídas com sistema real de pontuação
-    const completedTasks = memberTasks.filter(t => t.status === 'CONCLUIDA');
-    const totalPoints = calculateUserPoints(completedTasks);
-
-    return {
-      ...member,
-      tasks: memberTasks.length,
-      projects: memberProjects.length,
-      completedTasks: completedTasks.length,
-      activeTasks: memberTasks.filter(t => t.status === 'EM_ANDAMENTO').length,
-      points: totalPoints,
-      level: getUserLevel(totalPoints)
-    };
-  });
+      return {
+        ...member,
+        tasks: memberTasks.length,
+        projects: memberProjects.length,
+        completedTasks: completedTasks.length,
+        activeTasks: memberTasks.filter(t => t.status === 'EM_ANDAMENTO').length,
+        // Usar pontos reais do banco de dados atualizados pela migração
+        points: member.points || 0,
+        level: member.level || 1
+      };
+    });
 
   const sortedTeam = teamWithStats.sort((a, b) => b.points - a.points);
 

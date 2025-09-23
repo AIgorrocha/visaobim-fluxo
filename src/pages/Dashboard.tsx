@@ -15,40 +15,29 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
+import { useUserData } from '@/hooks/useUserData';
 
 const Dashboard = () => {
-  const { user, profile } = useAuth();
-  const { projects, tasks, getTasksByUser, profiles, proposals } = useSupabaseData();
-
-  // Função para obter projetos do usuário
-  const getProjectsByUser = (userId: string) => {
-    return projects.filter(project => 
-      project.responsible_ids && project.responsible_ids.includes(userId)
-    );
-  };
+  const { user } = useAuth();
+  const { tasks, proposals, profiles, projects } = useSupabaseData();
+  const {
+    isAdmin,
+    userProjects,
+    userTasks,
+    totalProjects,
+    activeProjects,
+    completedProjects,
+    pendingTasks,
+    completedTasks,
+    inProgressTasks,
+    userPoints,
+    userLevel
+  } = useUserData();
 
   if (!user) return null;
 
-  const isAdmin = profile?.role === 'admin';
-  const userProjects = isAdmin ? projects : getProjectsByUser(user.id);
-  // Sempre pegar apenas as tarefas do usuário logado para pontuação individual
-  const userTasks = getTasksByUser(user.id);
   // Para estatísticas gerais de admin, usar todas as tarefas
-  const allTasks = isAdmin ? tasks : getTasksByUser(user.id);
-  const pendingTasks = userTasks.filter(task => task.status === 'PENDENTE');
-  const completedTasks = userTasks.filter(task => task.status === 'CONCLUIDA');
-  const inProgressTasks = userTasks.filter(task => task.status === 'EM_ANDAMENTO');
-  const pausedTasks = userTasks.filter(task => task.status === 'PARALISADA');
-
-  // Estatísticas gerais
-  const totalProjects = isAdmin ? projects.length : userProjects.length;
-  const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
-  const completedProjects = userProjects.filter(p => p.status === 'CONCLUIDO' || p.status === 'FINALIZADO').length;
-
-  // Calcular pontos e nível usando funções utilitárias compartilhadas
-  const userCompletedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
-  const userPoints = calculateUserPoints(userCompletedTasks);
-  const userLevel = getUserLevel(userPoints);
+  const allTasks = isAdmin ? tasks : userTasks;
 
   return (
     <div className="space-y-6">
@@ -59,7 +48,7 @@ const Dashboard = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-3xl font-bold text-foreground">
-          Bem-vindo(a), {profile?.full_name}!
+          Bem-vindo(a), {user?.email?.split('@')[0] || 'Usuário'}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Aqui está um resumo das suas atividades hoje.

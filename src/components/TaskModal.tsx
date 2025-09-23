@@ -221,13 +221,24 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     onClose();
   };
 
-  const isAdmin = user?.role === 'admin';
-  const isOwnTask = task?.assigned_to === user?.id;
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+  
+  // Verificar se o usuário está entre os responsáveis da tarefa
+  const isAssignedToTask = task ? (
+    Array.isArray(task.assigned_to) 
+      ? task.assigned_to.includes(user?.id || '') 
+      : task.assigned_to === user?.id
+  ) : false;
 
-  // Usuários só podem editar entrega realizada e comentário de suas próprias tarefas
+  // Usuários podem editar todos os campos de suas próprias tarefas, admins podem editar tudo
   const canEditField = (fieldName: string) => {
     if (isAdmin) return true;
-    if (isOwnTask && (fieldName === 'last_delivery' || fieldName === 'comment')) return true;
+    if (isAssignedToTask) {
+      // Usuários podem editar todos os campos de suas tarefas exceto alguns específicos
+      if (['project_id', 'assigned_to'].includes(fieldName)) return false;
+      return true;
+    }
     return false;
   };
 
@@ -247,7 +258,8 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
           <DialogDescription>
             {mode === 'create' && 'Preencha as informações para criar uma nova tarefa.'}
             {mode === 'edit' && isAdmin && 'Edite as informações da tarefa.'}
-            {mode === 'edit' && !isAdmin && 'Você pode editar apenas a entrega realizada e comentários.'}
+            {mode === 'edit' && !isAdmin && isAssignedToTask && 'Você pode editar os campos desta tarefa atribuída a você.'}
+            {mode === 'edit' && !isAdmin && !isAssignedToTask && 'Você só pode visualizar esta tarefa.'}
           </DialogDescription>
         </DialogHeader>
 

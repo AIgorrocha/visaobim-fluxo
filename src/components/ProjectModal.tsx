@@ -288,6 +288,66 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
             />
           </div>
 
+          {/* Informações Financeiras - Apenas em Visualização */}
+          {mode === 'view' && project && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label>Valor do Projeto</Label>
+                <div className="text-lg font-semibold text-primary">
+                  {project.project_value 
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.project_value)
+                    : 'Não informado'
+                  }
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Valor Pago</Label>
+                <div className="text-lg font-semibold text-success">
+                  {project.amount_paid 
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.amount_paid)
+                    : 'R$ 0,00'
+                  }
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Valor Pendente</Label>
+                <div className="text-lg font-semibold text-warning">
+                  {project.amount_pending 
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.amount_pending)
+                    : 'R$ 0,00'
+                  }
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Gastos/Despesas</Label>
+                <div className="text-lg font-semibold text-destructive">
+                  {project.expenses 
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.expenses)
+                    : 'R$ 0,00'
+                  }
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Margem de Lucro</Label>
+                <div className="text-lg font-semibold">
+                  {project.profit_margin ? `${project.profit_margin}%` : 'Não calculada'}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Criado por</Label>
+                <div className="text-sm text-muted-foreground">
+                  {/* Buscar nome do criador */}
+                  Administrador
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {mode === 'view' ? 'Fechar' : 'Cancelar'}
