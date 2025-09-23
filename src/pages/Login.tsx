@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import CreateUsersButton from '@/components/CreateUsersButton';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -64,23 +63,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-4xl space-y-8">
-        {/* Botão para criar usuários - TEMPORÁRIO */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <CreateUsersButton />
-        </motion.div>
-
-        {/* Login Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="w-full max-w-md mx-auto"
-        >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
         <Card className="border-0 shadow-2xl">
           <CardHeader className="space-y-4 text-center pb-8">
             <motion.div
@@ -181,8 +169,7 @@ const Login = () => {
 
           </CardContent>
         </Card>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };
