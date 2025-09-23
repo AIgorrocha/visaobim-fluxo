@@ -151,26 +151,6 @@ const Propostas = () => {
       }
     }
   };
-                proposal_date: editForm.proposal_date,
-                last_meeting: editForm.last_meeting || null,
-                notes: editForm.notes,
-                followup_date: editForm.followup_date || null,
-                updated_at: new Date().toISOString()
-              }
-            : p
-        )
-      );
-      setEditingProposal(null);
-      setEditForm({
-        client_name: '',
-        proposal_value: '',
-        proposal_date: '',
-        last_meeting: '',
-        notes: '',
-        followup_date: ''
-      });
-    }
-  };
 
   const cancelEdit = () => {
     setEditingProposal(null);
