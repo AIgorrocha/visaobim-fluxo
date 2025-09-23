@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Buscar perfil quando usuário faz login
         if (session?.user) {
           const userProfile = await fetchProfile(session.user.id);
-          setProfile(userProfile);
+          setProfile(userProfile as Profile);
         } else {
           setProfile(null);
         }
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
+        fetchProfile(session.user.id).then((profile) => setProfile(profile as Profile));
       }
       
       setLoading(false);

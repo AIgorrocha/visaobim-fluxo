@@ -16,7 +16,7 @@ export function useProfiles() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProfiles(data || []);
+      setProfiles((data || []) as Profile[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -34,7 +34,7 @@ export function useProfiles() {
 
       if (error) throw error;
       
-      setProfiles(prev => [data, ...prev]);
+      setProfiles(prev => [data as Profile, ...prev]);
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -53,7 +53,7 @@ export function useProfiles() {
 
       if (error) throw error;
 
-      setProfiles(prev => prev.map(p => p.id === id ? data : p));
+      setProfiles(prev => prev.map(p => p.id === id ? data as Profile : p));
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -83,7 +83,7 @@ export function useProjects() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+      setProjects((data || []) as Project[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -101,7 +101,7 @@ export function useProjects() {
 
       if (error) throw error;
       
-      setProjects(prev => [data, ...prev]);
+      setProjects(prev => [data as Project, ...prev]);
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -120,7 +120,7 @@ export function useProjects() {
 
       if (error) throw error;
 
-      setProjects(prev => prev.map(p => p.id === id ? data : p));
+      setProjects(prev => prev.map(p => p.id === id ? data as Project : p));
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -167,7 +167,7 @@ export function useTasks() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTasks(data || []);
+      setTasks((data || []) as Task[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -177,15 +177,22 @@ export function useTasks() {
 
   const createTask = async (task: Omit<Task, 'id' | 'created_at'>) => {
     try {
+      // Garantir que assigned_to seja sempre um array para o Supabase
+      const taskData = {
+        ...task,
+        assigned_to: Array.isArray(task.assigned_to) ? task.assigned_to : [task.assigned_to],
+        is_archived: false
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ ...task, is_archived: false }])
+        .insert([taskData])
         .select()
         .single();
 
       if (error) throw error;
       
-      setTasks(prev => [data, ...prev]);
+      setTasks(prev => [data as Task, ...prev]);
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -195,16 +202,24 @@ export function useTasks() {
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
+      // Garantir que assigned_to seja sempre um array se estiver presente
+      const updateData = {
+        ...updates,
+        ...(updates.assigned_to && {
+          assigned_to: Array.isArray(updates.assigned_to) ? updates.assigned_to : [updates.assigned_to]
+        })
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      setTasks(prev => prev.map(t => t.id === id ? data : t));
+      setTasks(prev => prev.map(t => t.id === id ? data as Task : t));
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -259,7 +274,7 @@ export function useProposals() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProposals(data || []);
+      setProposals((data || []) as Proposal[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -277,7 +292,7 @@ export function useProposals() {
 
       if (error) throw error;
       
-      setProposals(prev => [data, ...prev]);
+      setProposals(prev => [data as Proposal, ...prev]);
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -296,7 +311,7 @@ export function useProposals() {
 
       if (error) throw error;
 
-      setProposals(prev => prev.map(p => p.id === id ? data : p));
+      setProposals(prev => prev.map(p => p.id === id ? data as Proposal : p));
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -342,7 +357,7 @@ export function useAchievements() {
         .order('earned_at', { ascending: false });
 
       if (error) throw error;
-      setAchievements(data || []);
+      setAchievements((data || []) as Achievement[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -360,7 +375,7 @@ export function useAchievements() {
 
       if (error) throw error;
       
-      setAchievements(prev => [data, ...prev]);
+      setAchievements(prev => [data as Achievement, ...prev]);
       return data;
     } catch (err: any) {
       setError(err.message);
