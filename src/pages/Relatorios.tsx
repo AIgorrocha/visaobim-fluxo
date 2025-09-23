@@ -16,10 +16,10 @@ const Relatorios = () => {
   const [generatedReport, setGeneratedReport] = useState('');
   const [showTimeline, setShowTimeline] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('own_data');
 
   // Estado para controlar qual usuário está sendo visualizado
-  const currentUserId = selectedUserId || user?.id || '';
+  const currentUserId = (selectedUserId === 'own_data' || !selectedUserId) ? user?.id || '' : selectedUserId;
   const currentUser = profiles.find(p => p.id === currentUserId) || user;
 
   if (!user) return null;
@@ -34,8 +34,8 @@ const Relatorios = () => {
   };
 
   // Estatísticas básicas para relatórios (baseadas no usuário selecionado)
-  const userProjects = isAdmin && selectedUserId ? getProjectsByUser(currentUserId) : getProjectsByUser(user?.id || '');
-  const userTasks = isAdmin && selectedUserId ? getTasksByUser(currentUserId) : getTasksByUser(user?.id || '');
+  const userProjects = isAdmin && selectedUserId !== 'own_data' ? getProjectsByUser(currentUserId) : getProjectsByUser(user?.id || '');
+  const userTasks = isAdmin && selectedUserId !== 'own_data' ? getTasksByUser(currentUserId) : getTasksByUser(user?.id || '');
   
   const totalProjects = userProjects.length;
   const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
@@ -67,8 +67,8 @@ const Relatorios = () => {
 
   // Função para gerar o relatório padronizado
   const generateTaskReport = () => {
-    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
-    const reportUser = isAdmin && selectedUserId ? currentUser : user;
+    const reportUserId = isAdmin && selectedUserId !== 'own_data' ? selectedUserId : user?.id || '';
+    const reportUser = isAdmin && selectedUserId !== 'own_data' ? currentUser : user;
     const userTasks = getTasksByUser(reportUserId);
     const userProjects = getProjectsByUser(reportUserId);
     const activeUserProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO');
@@ -259,8 +259,8 @@ Qualquer dúvida, estou à disposição!`;
 
   // Função para gerar relatório de desempenho do projetista
   const generatePerformanceReport = () => {
-    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
-    const reportUser = isAdmin && selectedUserId ? currentUser : user;
+    const reportUserId = isAdmin && selectedUserId !== 'own_data' ? selectedUserId : user?.id || '';
+    const reportUser = isAdmin && selectedUserId !== 'own_data' ? currentUser : user;
     const userTasks = getTasksByUser(reportUserId);
     const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
 
@@ -373,7 +373,7 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
                   <SelectValue placeholder="Seus próprios dados" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Seus próprios dados</SelectItem>
+                  <SelectItem value="own_data">Seus próprios dados</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={profile.id} value={profile.id}>
                       {profile.full_name || profile.email}
