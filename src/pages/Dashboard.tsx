@@ -12,12 +12,12 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { projects, tasks, getTasksByUser } = useSupabaseData();
 
   // Função para obter projetos do usuário
@@ -59,7 +59,7 @@ const Dashboard = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-3xl font-bold text-foreground">
-          Bem-vindo(a), {user.full_name}!
+          Bem-vindo(a), {profile?.full_name}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Aqui está um resumo das suas atividades hoje.

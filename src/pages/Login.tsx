@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
@@ -15,7 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { user, login, isLoading } = useAuth();
+  const { user, profile, signIn, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,9 +37,9 @@ const Login = () => {
     }
 
     try {
-      const success = await login(email, password);
+      const { error } = await signIn(email, password);
       
-      if (success) {
+      if (!error) {
         toast({
           title: "Sucesso",
           description: "Login realizado com sucesso!",
@@ -100,7 +100,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu.email@visaoprojetosbim.com"
                   className="h-11"
-                  disabled={isLoading}
+                disabled={loading}
                 />
               </div>
 
@@ -114,7 +114,7 @@ const Login = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="h-11 pr-10"
-                    disabled={isLoading}
+                    disabled={loading}
                   />
                   <Button
                     type="button"
@@ -122,7 +122,7 @@ const Login = () => {
                     size="icon"
                     className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
+                    disabled={loading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -139,7 +139,7 @@ const Login = () => {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked === true)}
-                    disabled={isLoading}
+                    disabled={loading}
                   />
                   <Label 
                     htmlFor="remember" 
@@ -152,7 +152,7 @@ const Login = () => {
                   type="button"
                   variant="link"
                   className="px-0 text-sm text-primary h-auto"
-                  disabled={isLoading}
+                  disabled={loading}
                 >
                   Esqueci minha senha
                 </Button>
@@ -161,9 +161,9 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full h-11 font-medium"
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? "Entrando..." : "Entrar"}
+                {loading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 

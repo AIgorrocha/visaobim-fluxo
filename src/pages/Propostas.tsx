@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/contexts/AuthContext';
-import { mockProposals } from '@/data/mockData';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useState } from 'react';
 
 const Propostas = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { proposals, updateProposal, deleteProposal } = useSupabaseData();
 
   if (!user) return null;
 
@@ -48,7 +49,7 @@ const Propostas = () => {
       </div>
     );
   }
-  const [proposals, setProposals] = useState(mockProposals);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingProposal, setEditingProposal] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -98,39 +99,25 @@ const Propostas = () => {
     return statusConfig[status as keyof typeof statusConfig];
   };
 
-  const updateProposalStatus = (proposalId: string, newStatus: string) => {
-    setProposals(prev =>
-      prev.map(proposal =>
-        proposal.id === proposalId
-          ? { ...proposal, status: newStatus as 'pendente' | 'aprovada' | 'rejeitada' | 'negociando' }
-          : proposal
-      )
-    );
+  const updateProposalStatus = async (proposalId: string, newStatus: string) => {
+    try {
+      await updateProposal(proposalId, { status: newStatus });
+    } catch (error) {
+      console.error('Error updating proposal status:', error);
+    }
   };
 
-  const archiveProposal = (proposalId: string) => {
-    setProposals(prev => prev.filter(proposal => proposal.id !== proposalId));
+  const archiveProposal = async (proposalId: string) => {
+    try {
+      await deleteProposal(proposalId);
+    } catch (error) {
+      console.error('Error archiving proposal:', error);
+    }
   };
 
-  const addNewProposal = (columnStatus: string) => {
-    const newProposal = {
-      id: String(Date.now()),
-      client_name: 'Novo Cliente',
-      proposal_date: new Date().toISOString().split('T')[0],
-      proposal_value: 0,
-      status: columnStatus as 'pendente' | 'aprovada' | 'rejeitada' | 'negociando',
-      notes: 'Nova proposta - clique em editar para preencher os detalhes',
-      last_meeting: null,
-      followup_date: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setProposals(prev => [...prev, newProposal]);
-
-    // Abrir automaticamente o modal de edição para a nova proposta
-    setTimeout(() => {
-      editProposal(newProposal.id);
-    }, 100);
+  const addNewProposal = async (columnStatus: string) => {
+    // This would be implemented with proper form handling
+    console.log('Add new proposal with status:', columnStatus);
   };
 
   const editProposal = (proposalId: string) => {
@@ -148,15 +135,22 @@ const Propostas = () => {
     }
   };
 
-  const saveProposal = () => {
+  const saveProposal = async () => {
     if (editingProposal) {
-      setProposals(prev =>
-        prev.map(p =>
-          p.id === editingProposal
-            ? {
-                ...p,
-                client_name: editForm.client_name,
-                proposal_value: parseFloat(editForm.proposal_value) || 0,
+      try {
+        await updateProposal(editingProposal, {
+          client_name: editForm.client_name,
+          proposal_value: parseFloat(editForm.proposal_value) || 0,
+          notes: editForm.notes,
+          last_meeting: editForm.last_meeting || null,
+          followup_date: editForm.followup_date || null
+        });
+        setEditingProposal(null);
+      } catch (error) {
+        console.error('Error saving proposal:', error);
+      }
+    }
+  };
                 proposal_date: editForm.proposal_date,
                 last_meeting: editForm.last_meeting || null,
                 notes: editForm.notes,

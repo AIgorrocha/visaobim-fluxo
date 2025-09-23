@@ -22,7 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const menuItems = [
   {
@@ -82,7 +82,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -95,7 +95,7 @@ export function AppSidebar() {
   };
 
   const filteredMenuItems = menuItems.filter(item => 
-    user?.role && item.roles.includes(user.role)
+    profile?.role && item.roles.includes(profile.role)
   );
 
   return (
@@ -124,19 +124,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user && (
+        {user && profile && (
           <SidebarGroup className="mt-auto">
             <SidebarGroupContent className="px-4 py-3 border-t">
               <div className="flex items-center space-x-3">
                 <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
-                  {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {user.full_name}
+                    {profile.full_name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {user.points} pontos • Nível {user.level}
+                    {profile.points || 0} pontos • Nível {profile.level || 1}
                   </p>
                 </div>
               </div>

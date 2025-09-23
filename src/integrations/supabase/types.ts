@@ -520,6 +520,10 @@ export type Database = {
         Args: { payload: Json }
         Returns: Json
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       newsletter_signup_handler: {
         Args: { payload: Json }
         Returns: Json

@@ -3,7 +3,7 @@ import { Trophy, Users, Target, TrendingUp, Award, Clock, CheckCircle } from 'lu
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
 

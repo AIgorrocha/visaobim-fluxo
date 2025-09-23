@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAppData } from '@/contexts/AppDataContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Project } from '@/types';
 
 interface ProjectModalProps {
@@ -18,7 +18,7 @@ interface ProjectModalProps {
 }
 
 const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => {
-  const { createProject, updateProject } = useAppData();
+  const { createProject, updateProject } = useSupabaseData();
   const { user } = useAuth();
 
   // Lista de responsáveis (sem Admin)

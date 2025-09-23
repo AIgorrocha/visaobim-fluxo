@@ -10,15 +10,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 
@@ -59,9 +59,9 @@ export const Header = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar_url} alt={user.full_name} />
+                  <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {getInitials(user.full_name)}
+                    {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -70,7 +70,7 @@ export const Header = () => {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-2">
                   <p className="text-sm font-medium leading-none">
-                    {user.full_name}
+                    {profile?.full_name}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
@@ -78,14 +78,14 @@ export const Header = () => {
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center space-x-2">
                       <Badge variant="secondary">
-                        Nível {user.level}
+                        Nível {profile?.level || 1}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {getLevelName(user.level)}
+                        {getLevelName(profile?.level || 1)}
                       </span>
                     </div>
                     <Badge className="bg-accent text-accent-foreground">
-                      {user.points} pontos
+                      {profile?.points || 0} pontos
                     </Badge>
                   </div>
                 </div>

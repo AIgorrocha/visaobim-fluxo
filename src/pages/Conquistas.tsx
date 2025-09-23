@@ -3,7 +3,7 @@ import { Trophy, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 

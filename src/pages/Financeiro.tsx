@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const Financeiro = () => {
   const { user } = useAuth();

@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAppData } from '@/contexts/AppDataContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Task } from '@/types';
 
 interface TaskModalProps {
@@ -18,7 +18,7 @@ interface TaskModalProps {
 }
 
 const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
-  const { projects, updateTask, createTask } = useAppData();
+  const { projects, updateTask, createTask } = useSupabaseData();
   const { user } = useAuth();
 
   // Lista de responsáveis

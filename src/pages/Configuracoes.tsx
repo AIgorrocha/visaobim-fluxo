@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const Configuracoes = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   if (!user) return null;
 
@@ -47,7 +47,7 @@ const Configuracoes = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input id="name" defaultValue={user.full_name} />
+                <Input id="name" defaultValue={profile?.full_name} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>

@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,9 +10,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   adminOnly = false 
 }) => {
-  const { user, isLoading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Carregando...</div>
@@ -24,7 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && user.role !== 'admin') {
+  if (adminOnly && profile?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 
