@@ -33,9 +33,9 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
     { id: '8', name: 'Eloisy' },
     { id: '9', name: 'Rondinelly' },
     { id: '10', name: 'Edilson' },
-    { id: '11', name: 'Stael' },
-    { id: '12', name: 'Philip' },
-    { id: '13', name: 'Nara' },
+    { id: '11', name: 'Philip' },
+    { id: '12', name: 'Nara' },
+    { id: '13', name: 'Stael' },
     { id: '14', name: 'Projetista Externo' }
   ];
 
@@ -61,7 +61,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
     responsible_ids: [] as string[],
     contract_start: '',
     contract_end: '',
-    vigencia_contrato: '',
+    prazo_vigencia: '',
     created_by: user?.id || ''
   });
 
@@ -76,7 +76,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
         responsible_ids: project.responsible_ids || [],
         contract_start: formatDateForInput(project.contract_start),
         contract_end: formatDateForInput(project.contract_end),
-        vigencia_contrato: formatDateForInput(project.vigencia_contrato || ''),
+        prazo_vigencia: formatDateForInput(project.prazo_vigencia || ''),
         created_by: project.created_by
       });
     } else if (mode === 'create') {
@@ -89,7 +89,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
         responsible_ids: [],
         contract_start: '',
         contract_end: '',
-        vigencia_contrato: '',
+        prazo_vigencia: '',
         created_by: user?.id || ''
       });
     }
@@ -103,7 +103,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
       ...formData,
       contract_start: formatDateForStorage(formData.contract_start),
       contract_end: formatDateForStorage(formData.contract_end),
-      vigencia_contrato: formData.vigencia_contrato ? formatDateForStorage(formData.vigencia_contrato) : undefined
+      prazo_vigencia: formData.prazo_vigencia ? formatDateForStorage(formData.prazo_vigencia) : undefined
     };
 
     if (mode === 'create') {
@@ -207,12 +207,12 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="vigencia_contrato">Prazo de Vigência</Label>
+              <Label htmlFor="prazo_vigencia">Prazo de Vigência</Label>
               <Input
-                id="vigencia_contrato"
+                id="prazo_vigencia"
                 type="date"
-                value={formData.vigencia_contrato}
-                onChange={(e) => setFormData(prev => ({ ...prev, vigencia_contrato: e.target.value }))}
+                value={formData.prazo_vigencia}
+                onChange={(e) => setFormData(prev => ({ ...prev, prazo_vigencia: e.target.value }))}
                 readOnly={isReadOnly}
               />
             </div>

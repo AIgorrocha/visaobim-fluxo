@@ -33,9 +33,10 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     { id: '8', name: 'Eloisy' },
     { id: '9', name: 'Rondinelly' },
     { id: '10', name: 'Edilson' },
-    { id: '11', name: 'Stael' },
-    { id: '12', name: 'Philip' },
-    { id: '13', name: 'Nara' }
+    { id: '11', name: 'Philip' },
+    { id: '12', name: 'Nara' },
+    { id: '13', name: 'Stael' },
+    { id: '14', name: 'Projetista Externo' }
   ];
 
   // Lista de disciplinas para dependências
@@ -110,8 +111,8 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     project_id: '',
     title: '',
     description: '',
-    assigned_to: '',
-    status: 'pendente' as Task['status'],
+    assigned_to: '' as string | string[],
+    status: 'PENDENTE' as Task['status'],
     phase: 'EXECUTIVO' as Task['phase'],
     priority: 'media' as Task['priority'],
     points: 0,
@@ -119,6 +120,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     due_date: '',
     last_delivery: '',
     comment: '',
+    restricoes: '',
     dependencies: [] as string[],
     completed_at: undefined as string | undefined
   });
@@ -138,6 +140,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         due_date: formatDateForInput(task.due_date || ''),
         last_delivery: formatDateForInput(task.last_delivery || ''),
         comment: task.comment || '',
+        restricoes: task.restricoes || '',
         dependencies: task.dependencies || [],
         completed_at: task.completed_at
       });
@@ -146,8 +149,8 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         project_id: '',
         title: '',
         description: '',
-        assigned_to: user?.id || '',
-        status: 'pendente',
+        assigned_to: user?.id || '' as string | string[],
+        status: 'PENDENTE',
         phase: 'EXECUTIVO',
         priority: 'media',
         points: 0,
@@ -155,6 +158,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         due_date: '',
         last_delivery: '',
         comment: '',
+        restricoes: '',
         dependencies: [],
         completed_at: undefined
       });
@@ -179,17 +183,17 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
 
   // Automaticamente marcar como concluída quando data de entrega é preenchida
   useEffect(() => {
-    if (formData.last_delivery && formData.status !== 'paralisada') {
+    if (formData.last_delivery && formData.status !== 'PARALISADA') {
       setFormData(prev => ({
         ...prev,
-        status: 'concluida',
+        status: 'CONCLUIDA',
         completed_at: formData.last_delivery + 'T18:00:00Z'
       }));
-    } else if (!formData.last_delivery && formData.status === 'concluida') {
+    } else if (!formData.last_delivery && formData.status === 'CONCLUIDA') {
       // Se remover a data de entrega e estava concluída, volta para pendente
       setFormData(prev => ({
         ...prev,
-        status: 'pendente',
+        status: 'PENDENTE',
         completed_at: undefined
       }));
     }
@@ -283,25 +287,57 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               />
             </div>
 
-            {/* Responsável */}
-            <div className="space-y-2">
-              <Label htmlFor="assigned_to">Responsável</Label>
-              <Select
-                value={formData.assigned_to}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_to: value }))}
-                disabled={!canEditField('assigned_to')}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {teamMembers.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
+            {/* Responsáveis */}
+            <div className="space-y-2 col-span-full">
+              <Label>Responsáveis</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border rounded-lg">
+                {teamMembers.map((member) => (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`assigned-${member.id}`}
+                      checked={Array.isArray(formData.assigned_to) ?
+                        formData.assigned_to.includes(member.id) :
+                        formData.assigned_to === member.id
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          if (Array.isArray(formData.assigned_to)) {
+                            setFormData(prev => ({
+                              ...prev,
+                              assigned_to: [...prev.assigned_to as string[], member.id]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              assigned_to: formData.assigned_to ? [formData.assigned_to as string, member.id] : [member.id]
+                            }));
+                          }
+                        } else {
+                          if (Array.isArray(formData.assigned_to)) {
+                            const newAssigned = formData.assigned_to.filter(id => id !== member.id);
+                            setFormData(prev => ({
+                              ...prev,
+                              assigned_to: newAssigned.length === 1 ? newAssigned[0] : newAssigned
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              assigned_to: ''
+                            }));
+                          }
+                        }
+                      }}
+                      disabled={!canEditField('assigned_to')}
+                    />
+                    <Label
+                      htmlFor={`assigned-${member.id}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
                       {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Status */}
@@ -316,11 +352,11 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="concluida">Concluída</SelectItem>
-                  <SelectItem value="paralisada">Paralisada</SelectItem>
-                  <SelectItem value="em_espera">Em Espera</SelectItem>
+                  <SelectItem value="PENDENTE">Pendente</SelectItem>
+                  <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
+                  <SelectItem value="CONCLUIDA">Concluída</SelectItem>
+                  <SelectItem value="PARALISADA">Paralisada</SelectItem>
+                  <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -435,43 +471,22 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             />
           </div>
 
-          {/* Restrições/Dependências */}
+          {/* Restrições */}
           <div className="space-y-2">
-            <Label>Restrições (Disciplinas necessárias para iniciar)</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border rounded-lg">
-              {disciplines.map((discipline) => (
-                <div key={discipline} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`dependency-${discipline}`}
-                    checked={formData.dependencies.includes(discipline)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setFormData(prev => ({
-                          ...prev,
-                          dependencies: [...prev.dependencies, discipline]
-                        }));
-                      } else {
-                        setFormData(prev => ({
-                          ...prev,
-                          dependencies: prev.dependencies.filter(dep => dep !== discipline)
-                        }));
-                      }
-                    }}
-                    disabled={!canEditField('dependencies')}
-                  />
-                  <Label
-                    htmlFor={`dependency-${discipline}`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    {discipline}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            <Label htmlFor="restricoes">Restrições</Label>
+            <Textarea
+              id="restricoes"
+              value={formData.restricoes}
+              onChange={(e) => setFormData(prev => ({ ...prev, restricoes: e.target.value }))}
+              placeholder="Ex: ARQUITETURA, ESTRUTURA, CONSTRUÇÃO VIRTUAL..."
+              rows={2}
+              readOnly={!canEditField('restricoes')}
+            />
             <p className="text-xs text-muted-foreground">
-              Selecione as disciplinas que devem estar concluídas antes de iniciar esta atividade
+              Informe as dependências necessárias para iniciar a tarefa
             </p>
           </div>
+
 
           {/* Comentário - USUÁRIOS PODEM EDITAR */}
           <div className="space-y-2">

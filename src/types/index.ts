@@ -22,6 +22,7 @@ export interface Project {
   contract_start: string;
   contract_end: string;
   vigencia_contrato?: string;
+  prazo_vigencia?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -32,8 +33,8 @@ export interface Task {
   project_id: string;
   title: string;
   description?: string;
-  assigned_to: string;
-  status: 'pendente' | 'em_andamento' | 'concluida' | 'paralisada' | 'em_espera';
+  assigned_to: string | string[]; // Permite múltiplos responsáveis
+  status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'PARALISADA' | 'EM_ESPERA';
   phase: 'ESTUDO_PRELIMINAR' | 'PROJETO_BASICO' | 'EXECUTIVO';
   priority: 'baixa' | 'media' | 'alta';
   points: number;
@@ -41,6 +42,7 @@ export interface Task {
   due_date?: string;
   last_delivery?: string;
   comment?: string;
+  restricoes?: string; // Restrições/dependências
   dependencies?: string[]; // Disciplinas necessárias para iniciar
   completed_at?: string;
   created_at: string;

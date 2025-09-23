@@ -53,7 +53,8 @@ const MinhasTarefas = () => {
 
     const matchesPriority = priorityFilter === 'todos' || task.priority === priorityFilter;
 
-    const matchesResponsible = responsibleFilter === 'todos' || task.assigned_to === responsibleFilter;
+    const matchesResponsible = responsibleFilter === 'todos' ||
+      (Array.isArray(task.assigned_to) ? task.assigned_to.includes(responsibleFilter) : task.assigned_to === responsibleFilter);
 
     // Filtro de prazo
     let matchesDeadline = true;
@@ -116,11 +117,11 @@ const MinhasTarefas = () => {
 
   const getStatusBadge = (status: Task['status']) => {
     const statusConfig = {
-      'pendente': { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
-      'em_andamento': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
-      'concluida': { label: 'Concluída', className: 'bg-success text-success-foreground' },
-      'paralisada': { label: 'Paralisada', className: 'bg-destructive text-destructive-foreground' },
-      'em_espera': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' }
+      'PENDENTE': { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
+      'EM_ANDAMENTO': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
+      'CONCLUIDA': { label: 'Concluída', className: 'bg-success text-success-foreground' },
+      'PARALISADA': { label: 'Paralisada', className: 'bg-destructive text-destructive-foreground' },
+      'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' }
     };
 
     const config = statusConfig[status];
@@ -132,7 +133,7 @@ const MinhasTarefas = () => {
     return project?.name || 'Projeto não encontrado';
   };
 
-  const getAssignedUserName = (userId: string) => {
+  const getAssignedUserName = (assignedTo: string | string[]) => {
     const teamMembers = [
       { id: '1', name: 'Igor' },
       { id: '2', name: 'Gustavo' },
@@ -144,13 +145,22 @@ const MinhasTarefas = () => {
       { id: '8', name: 'Eloisy' },
       { id: '9', name: 'Rondinelly' },
       { id: '10', name: 'Edilson' },
-      { id: '11', name: 'Stael' },
-      { id: '12', name: 'Philip' },
-      { id: '13', name: 'Nara' },
+      { id: '11', name: 'Philip' },
+      { id: '12', name: 'Nara' },
+      { id: '13', name: 'Stael' },
       { id: '14', name: 'Projetista Externo' }
     ];
-    const member = teamMembers.find(member => member.id === userId);
-    return member?.name || 'Não atribuído';
+
+    if (Array.isArray(assignedTo)) {
+      const names = assignedTo.map(userId => {
+        const member = teamMembers.find(member => member.id === userId);
+        return member?.name || 'Não encontrado';
+      });
+      return names.length > 0 ? names.join(', ') : 'Não atribuído';
+    } else {
+      const member = teamMembers.find(member => member.id === assignedTo);
+      return member?.name || 'Não atribuído';
+    }
   };
 
   const handleEditTask = (task: Task) => {
@@ -240,7 +250,7 @@ const MinhasTarefas = () => {
                       Entrega realizada: {formatDate(task.last_delivery)}
                     </span>
                   )}
-                  {!task.activity_start && task.status === 'pendente' && (
+                  {!task.activity_start && task.status === 'PENDENTE' && (
                     <span className="text-warning">Não iniciada</span>
                   )}
                 </div>

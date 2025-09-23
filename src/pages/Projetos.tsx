@@ -52,8 +52,8 @@ const Projetos = () => {
 
     // Filtro de vigência
     let matchesVigencia = true;
-    if (vigenciaFilter !== 'todos' && project.vigencia_contrato) {
-      const vigenciaDate = new Date(project.vigencia_contrato);
+    if (vigenciaFilter !== 'todos' && project.prazo_vigencia) {
+      const vigenciaDate = new Date(project.prazo_vigencia);
       const today = new Date();
 
       switch (vigenciaFilter) {
@@ -69,7 +69,7 @@ const Projetos = () => {
           matchesVigencia = vigenciaDate >= today;
           break;
       }
-    } else if (vigenciaFilter !== 'todos' && !project.vigencia_contrato) {
+    } else if (vigenciaFilter !== 'todos' && !project.prazo_vigencia) {
       matchesVigencia = vigenciaFilter === 'sem_vigencia';
     }
 
@@ -92,9 +92,9 @@ const Projetos = () => {
       { id: '8', name: 'Eloisy' },
       { id: '9', name: 'Rondinelly' },
       { id: '10', name: 'Edilson' },
-      { id: '11', name: 'Stael' },
-      { id: '12', name: 'Philip' },
-      { id: '13', name: 'Nara' },
+      { id: '11', name: 'Philip' },
+      { id: '12', name: 'Nara' },
+      { id: '13', name: 'Stael' },
       { id: '14', name: 'Projetista Externo' }
     ];
 
@@ -289,7 +289,7 @@ const Projetos = () => {
                       </TableCell>
                       <TableCell>{getStatusBadge(project.status)}</TableCell>
                       <TableCell>
-                        {project.vigencia_contrato ? formatDate(project.vigencia_contrato) : 'Não definido'}
+                        {project.prazo_vigencia ? formatDate(project.prazo_vigencia) : 'Não definido'}
                       </TableCell>
                       <TableCell className="max-w-48">
                         <div className="truncate" title={getResponsibleNames(project.responsible_ids)}>

@@ -104,15 +104,6 @@ const mockUsers: AuthUser[] = [
   },
   {
     id: '11',
-    email: 'stael@visaoprojetosbim.com',
-    full_name: 'Stael',
-    role: 'user',
-    points: 410,
-    level: 2,
-    avatar_url: ''
-  },
-  {
-    id: '12',
     email: 'philip@visaoprojetosbim.com',
     full_name: 'Philip',
     role: 'user',
@@ -121,12 +112,21 @@ const mockUsers: AuthUser[] = [
     avatar_url: ''
   },
   {
-    id: '13',
+    id: '12',
     email: 'nara@visaoprojetosbim.com',
     full_name: 'Nara',
     role: 'user',
     points: 730,
     level: 3,
+    avatar_url: ''
+  },
+  {
+    id: '13',
+    email: 'stael@visaoprojetosbim.com',
+    full_name: 'Stael',
+    role: 'user',
+    points: 410,
+    level: 2,
     avatar_url: ''
   },
   {
