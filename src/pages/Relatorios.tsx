@@ -70,7 +70,7 @@ const Relatorios = () => {
       return dueDate >= today && dueDate <= nextWeek;
     });
 
-    let report = `📊 RELATÓRIO DE TAREFAS - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+    let report = `📊 RELATÓRIO DE TAREFAS - ${user.full_name?.toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -205,7 +205,7 @@ Qualquer dúvida, estou à disposição!`;
       return acc;
     }, {} as { [key: string]: any[] });
 
-    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${user.full_name?.toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -243,7 +243,7 @@ Qualquer dúvida, estou à disposição!`;
     const userTasks = getTasksByUser(user.id);
     const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
 
-    let performance = `📊 DESEMPENHO DO PROJETISTA - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+    let performance = `📊 DESEMPENHO DO PROJETISTA - ${user.full_name?.toUpperCase()}
 📅 Data: ${getCurrentDate()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 

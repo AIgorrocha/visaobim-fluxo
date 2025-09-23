@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Project, Task, Achievement } from '@/types';
-import { mockProjects, mockTasks, mockAchievements } from '@/data/mockData';
+import { mockProjects, mockAchievements } from '@/data/mockData';
+import { mockTasks } from '@/data/mockTasks';
 
 interface AppDataContextType {
   // Projects

@@ -14,6 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: string
+          description: string
+          earned_at: string | null
+          icon: string | null
+          id: string
+          points_earned: number | null
+          title: string
+          unlocked: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          achievement_type: string
+          description: string
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          points_earned?: number | null
+          title: string
+          unlocked?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          achievement_type?: string
+          description?: string
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          points_earned?: number | null
+          title?: string
+          unlocked?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_requests: {
         Row: {
           area_construida: string | null
@@ -128,6 +216,175 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          level: number | null
+          points: number | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          level?: number | null
+          points?: number | null
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          level?: number | null
+          points?: number | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          amount_paid: number | null
+          amount_pending: number | null
+          client: string
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string | null
+          created_by: string | null
+          dependency_id: string | null
+          description: string | null
+          expenses: number | null
+          id: string
+          is_archived: boolean | null
+          name: string
+          prazo_vigencia: string | null
+          profit_margin: number | null
+          project_value: number | null
+          responsible_ids: string[] | null
+          status: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          amount_pending?: number | null
+          client: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          dependency_id?: string | null
+          description?: string | null
+          expenses?: number | null
+          id?: string
+          is_archived?: boolean | null
+          name: string
+          prazo_vigencia?: string | null
+          profit_margin?: number | null
+          project_value?: number | null
+          responsible_ids?: string[] | null
+          status?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          amount_pending?: number | null
+          client?: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          dependency_id?: string | null
+          description?: string | null
+          expenses?: number | null
+          id?: string
+          is_archived?: boolean | null
+          name?: string
+          prazo_vigencia?: string | null
+          profit_margin?: number | null
+          project_value?: number | null
+          responsible_ids?: string[] | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          client_name: string
+          created_at: string | null
+          created_by: string | null
+          followup_date: string | null
+          id: string
+          is_archived: boolean | null
+          last_meeting: string | null
+          notes: string | null
+          proposal_date: string
+          proposal_link: string | null
+          proposal_value: number
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_name: string
+          created_at?: string | null
+          created_by?: string | null
+          followup_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_meeting?: string | null
+          notes?: string | null
+          proposal_date: string
+          proposal_link?: string | null
+          proposal_value: number
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          followup_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_meeting?: string | null
+          notes?: string | null
+          proposal_date?: string
+          proposal_link?: string | null
+          proposal_value?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roi_calculations: {
         Row: {
           area_terreo: number
@@ -178,6 +435,77 @@ export type Database = {
           tipo_projeto?: string
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          activity_start: string | null
+          assigned_to: string[] | null
+          comment: string | null
+          completed_at: string | null
+          created_at: string | null
+          dependencies: string[] | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_archived: boolean | null
+          last_delivery: string | null
+          phase: string | null
+          points: number | null
+          priority: string | null
+          project_id: string | null
+          restricoes: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          activity_start?: string | null
+          assigned_to?: string[] | null
+          comment?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_delivery?: string | null
+          phase?: string | null
+          points?: number | null
+          priority?: string | null
+          project_id?: string | null
+          restricoes?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          activity_start?: string | null
+          assigned_to?: string[] | null
+          comment?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_delivery?: string | null
+          phase?: string | null
+          points?: number | null
+          priority?: string | null
+          project_id?: string | null
+          restricoes?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
