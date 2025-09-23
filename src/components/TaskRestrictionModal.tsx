@@ -26,8 +26,10 @@ const TaskRestrictionModal = ({ isOpen, onClose, task }: TaskRestrictionModalPro
 
   useEffect(() => {
     if (task && task.restricoes) {
-      // Se restricoes é uma string, tentar parsear como array
-      if (typeof task.restricoes === 'string') {
+      // Agora restricoes é jsonb, pode ser array direto ou string JSON
+      if (Array.isArray(task.restricoes)) {
+        setSelectedRestrictions(task.restricoes);
+      } else if (typeof task.restricoes === 'string') {
         try {
           const parsed = JSON.parse(task.restricoes);
           if (Array.isArray(parsed)) {
@@ -38,9 +40,11 @@ const TaskRestrictionModal = ({ isOpen, onClose, task }: TaskRestrictionModalPro
         } catch {
           setSelectedRestrictions([]);
         }
-      } else if (Array.isArray(task.restricoes)) {
-        setSelectedRestrictions(task.restricoes);
+      } else {
+        setSelectedRestrictions([]);
       }
+    } else {
+      setSelectedRestrictions([]);
     }
   }, [task]);
 
@@ -50,7 +54,7 @@ const TaskRestrictionModal = ({ isOpen, onClose, task }: TaskRestrictionModalPro
     setLoading(true);
     try {
       await updateTask(task.id, {
-        restricoes: JSON.stringify(selectedRestrictions)
+        restricoes: selectedRestrictions // Agora é jsonb, não precisa stringify
       });
 
       toast({

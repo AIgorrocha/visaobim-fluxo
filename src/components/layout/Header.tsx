@@ -1,6 +1,7 @@
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import React from 'react';
+import { Bell, Settings, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -12,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
+import { NotificationSystem } from '@/components/NotificationSystem';
 
 export const Header = () => {
   const { user, profile, signOut } = useAuth();
@@ -47,12 +49,7 @@ export const Header = () => {
 
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-destructive">
-              3
-            </Badge>
-          </Button>
+          <NotificationSystem />
 
           {/* User Menu */}
           <DropdownMenu>

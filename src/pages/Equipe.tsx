@@ -43,17 +43,22 @@ const Equipe = () => {
   const totalPoints = teamWithStats.reduce((sum, member) => sum + member.points, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
       >
-        <h1 className="text-3xl font-bold text-foreground">Equipe</h1>
-        <p className="text-muted-foreground">Acompanhe o desempenho da equipe</p>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Equipe</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Acompanhe o desempenho da equipe
+          </p>
+        </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -106,22 +111,22 @@ const Equipe = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50"
+                className="flex items-center space-x-2 md:space-x-4 p-3 rounded-lg hover:bg-muted/50"
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
+                <div className="flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary text-primary-foreground font-bold text-xs md:text-sm">
                   {index + 1}
                 </div>
                 <Avatar>
                   <AvatarFallback>{(member.full_name || member.email)[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium">{member.full_name || member.email}</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm md:text-base truncate">{member.full_name || member.email}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     {member.tasks} tarefas ({member.completedTasks} concluídas) • {member.projects} projetos
                   </p>
                 </div>
                 <div className="text-right">
-                  <Badge variant="secondary">{member.points} pontos</Badge>
+                  <Badge variant="secondary" className="text-xs">{member.points} pontos</Badge>
                   <p className="text-xs text-muted-foreground mt-1">Nível {member.level}</p>
                 </div>
               </motion.div>

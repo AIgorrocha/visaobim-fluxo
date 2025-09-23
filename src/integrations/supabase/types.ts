@@ -453,7 +453,7 @@ export type Database = {
           points: number | null
           priority: string | null
           project_id: string | null
-          restricoes: string | null
+          restricoes: Json | null
           status: string
           title: string
         }
@@ -473,7 +473,7 @@ export type Database = {
           points?: number | null
           priority?: string | null
           project_id?: string | null
-          restricoes?: string | null
+          restricoes?: Json | null
           status?: string
           title: string
         }
@@ -493,7 +493,7 @@ export type Database = {
           points?: number | null
           priority?: string | null
           project_id?: string | null
-          restricoes?: string | null
+          restricoes?: Json | null
           status?: string
           title?: string
         }
@@ -506,6 +506,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tasks_restricoes_backup: {
+        Row: {
+          id: string | null
+          restricoes: string | null
+        }
+        Insert: {
+          id?: string | null
+          restricoes?: string | null
+        }
+        Update: {
+          id?: string | null
+          restricoes?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
