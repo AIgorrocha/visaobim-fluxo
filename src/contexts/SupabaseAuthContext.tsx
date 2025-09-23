@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Erro ao buscar perfil:', error);
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!isMounted) return;
 
         console.log('Auth state changed:', event, session?.user?.id);
@@ -204,25 +204,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Buscar perfil quando usuário faz login
+        // Buscar perfil quando usuário faz login (adiado para evitar deadlocks)
         if (session?.user) {
-          try {
-            const userProfile = await fetchProfile(session.user.id);
-            if (isMounted) {
-              setProfile(userProfile as Profile);
-            }
-          } catch (error) {
-            console.error('Erro ao buscar perfil no listener:', error);
-            if (isMounted) {
-              setProfile(null);
-            }
-          }
+          setTimeout(() => {
+            fetchProfile(session.user!.id)
+              .then((userProfile) => {
+                if (isMounted) {
+                  setProfile(userProfile as Profile);
+                }
+              })
+              .catch((error) => {
+                console.error('Erro ao buscar perfil no listener:', error);
+                if (isMounted) {
+                  setProfile(null);
+                }
+              })
+              .finally(() => {
+                if (isMounted) {
+                  setLoading(false);
+                }
+              });
+          }, 0);
         } else {
           setProfile(null);
-        }
-
-        if (isMounted) {
-          setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+          }
         }
       }
     );
@@ -230,8 +237,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Inicializar
     initializeAuth();
 
+    // Fallback para evitar travamento no loading
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 3000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);
