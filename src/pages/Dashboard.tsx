@@ -18,7 +18,7 @@ import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/sco
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
-  const { projects, tasks, getTasksByUser } = useSupabaseData();
+  const { projects, tasks, getTasksByUser, profiles, proposals } = useSupabaseData();
 
   // Função para obter projetos do usuário
   const getProjectsByUser = (userId: string) => {
@@ -263,11 +263,11 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Membros Ativos</span>
-                  <span className="text-sm font-medium">14</span>
-                </div>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm">Membros Ativos</span>
+            <span className="text-sm font-medium">{profiles.length}</span>
+          </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Tarefas em Andamento</span>
                   <span className="text-sm font-medium">{allTasks.filter(t => t.status === 'EM_ANDAMENTO').length}</span>
@@ -315,16 +315,16 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm">Novas</span>
-                  <span className="text-sm font-medium">2</span>
+                  <span className="text-sm">Pendentes</span>
+                  <span className="text-sm font-medium">{proposals.filter(p => p.status === 'pendente').length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Em Negociação</span>
-                  <span className="text-sm font-medium">1</span>
+                  <span className="text-sm font-medium">{proposals.filter(p => p.status === 'negociando').length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm">Aprovadas (Mês)</span>
-                  <span className="text-sm font-medium">1</span>
+                  <span className="text-sm">Aprovadas</span>
+                  <span className="text-sm font-medium">{proposals.filter(p => p.status === 'aprovada').length}</span>
                 </div>
               </div>
             </CardContent>

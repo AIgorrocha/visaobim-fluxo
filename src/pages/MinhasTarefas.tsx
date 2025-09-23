@@ -14,8 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import TaskModal from '@/components/TaskModal';
 
 const MinhasTarefas = () => {
-  const { user } = useAuth();
-  const { projects, getTasksByUser, tasks } = useSupabaseData();
+  const { user, profile } = useAuth();
+  const { projects, getTasksByUser, tasks, profiles } = useSupabaseData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -33,7 +33,7 @@ const MinhasTarefas = () => {
   if (!user) return null;
 
   // Admin vê todas as tarefas, usuários comuns veem apenas as suas
-  const isAdmin = user.role === 'admin';
+  const isAdmin = profile?.role === 'admin';
   const userTasks = isAdmin ? tasks : getTasksByUser(user.id);
 
   // Debug logs
@@ -135,32 +135,15 @@ const MinhasTarefas = () => {
   };
 
   const getAssignedUserName = (assignedTo: string | string[]) => {
-    const teamMembers = [
-      { id: '1', name: 'Igor' },
-      { id: '2', name: 'Gustavo' },
-      { id: '3', name: 'Bessa' },
-      { id: '4', name: 'Leonardo' },
-      { id: '5', name: 'Pedro' },
-      { id: '6', name: 'Thiago' },
-      { id: '7', name: 'Nicolas' },
-      { id: '8', name: 'Eloisy' },
-      { id: '9', name: 'Rondinelly' },
-      { id: '10', name: 'Edilson' },
-      { id: '11', name: 'Philip' },
-      { id: '12', name: 'Nara' },
-      { id: '13', name: 'Stael' },
-      { id: '14', name: 'Projetista Externo' }
-    ];
-
     if (Array.isArray(assignedTo)) {
       const names = assignedTo.map(userId => {
-        const member = teamMembers.find(member => member.id === userId);
-        return member?.name || 'Não encontrado';
+        const profile = profiles.find(p => p.id === userId);
+        return profile?.full_name || profile?.email || 'Não encontrado';
       });
       return names.length > 0 ? names.join(', ') : 'Não atribuído';
     } else {
-      const member = teamMembers.find(member => member.id === assignedTo);
-      return member?.name || 'Não atribuído';
+      const profile = profiles.find(p => p.id === assignedTo);
+      return profile?.full_name || profile?.email || 'Não atribuído';
     }
   };
 
@@ -397,20 +380,11 @@ const MinhasTarefas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos Responsáveis</SelectItem>
-                      <SelectItem value="1">Igor</SelectItem>
-                      <SelectItem value="2">Gustavo</SelectItem>
-                      <SelectItem value="3">Bessa</SelectItem>
-                      <SelectItem value="4">Leonardo</SelectItem>
-                      <SelectItem value="5">Pedro</SelectItem>
-                      <SelectItem value="6">Thiago</SelectItem>
-                      <SelectItem value="7">Nicolas</SelectItem>
-                      <SelectItem value="8">Eloisy</SelectItem>
-                      <SelectItem value="9">Rondinelly</SelectItem>
-                      <SelectItem value="10">Edilson</SelectItem>
-                      <SelectItem value="11">Stael</SelectItem>
-                      <SelectItem value="12">Philip</SelectItem>
-                      <SelectItem value="13">Nara</SelectItem>
-                      <SelectItem value="14">Projetista Externo</SelectItem>
+                      {profiles.map(profile => (
+                        <SelectItem key={profile.id} value={profile.id}>
+                          {profile.full_name || profile.email}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
