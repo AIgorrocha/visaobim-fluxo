@@ -203,7 +203,7 @@ export const mockProjects: Project[] = [
     type: 'publico',
     status: 'EM_ANDAMENTO',
     description: 'PROJETO DE REFORMA DA NOVA SEDE DE ATENDIMENTO AO ELEITOR',
-    responsible_ids: ['4', '2', '10'], // LEONARDO, GUSTAVO, EDILSON
+    responsible_ids: ['4', '10'], // LEONARDO, EDILSON
     contract_start: '2025-06-23',
     contract_end: '2025-09-23',
     prazo_vigencia: '',
@@ -371,7 +371,7 @@ export const mockTasks: Task[] = [
     title: 'PROJETO ELÉTRICO BAIXA TENSÃO',
     description: 'Projeto elétrico de baixa tensão',
     assigned_to: '6', // THIAGO
-    status: 'PENDENTE',
+    status: 'PARALISADA',
     phase: 'EXECUTIVO',
     priority: 'media',
     points: 0,
@@ -612,8 +612,8 @@ export const mockTasks: Task[] = [
     phase: 'ESTUDO_PRELIMINAR',
     priority: 'media',
     points: 0,
-    activity_start: '2025-07-15',
-    due_date: '2025-09-15',
+    activity_start: '2025-09-15',
+    due_date: '2025-11-15',
     last_delivery: '',
     restricoes: '',
     comment: '',
@@ -675,6 +675,63 @@ export const mockTasks: Task[] = [
     restricoes: '',
     comment: '',
     created_at: '2025-09-15T08:00:00Z'
+  },
+
+  // PROJETO 16: DRV/PV - NICOLAS PHOTOVOLTAIC PROJECTS
+  {
+    id: '21',
+    project_id: '16',
+    title: 'PROJETOS FOTOVOLTAICOS, GERADOR E SUBESTACAO',
+    description: 'Desenvolvimento de projetos fotovoltaicos, gerador e subestação',
+    assigned_to: '7', // NICOLAS
+    status: 'PENDENTE',
+    phase: 'PROJETO_BASICO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '',
+    due_date: '',
+    last_delivery: '',
+    restricoes: '',
+    comment: 'AJUSTAR URGENTE COM THIAGO PRA INICIAR PROJETOS FOTOVOLTAICOS, GERADOR E SUBESTACAO, ALINHAR PRA INICIO',
+    created_at: '2025-09-23T08:00:00Z'
+  },
+
+  // PROJETO 13: TRE/AC - EDILSON COORDINATION
+  {
+    id: '22',
+    project_id: '13',
+    title: 'COORDENACAO E ESTRUTURACAO PROJETO',
+    description: 'Coordenação e estruturação do projeto TRE/AC',
+    assigned_to: '10', // EDILSON
+    status: 'EM_ANDAMENTO',
+    phase: 'PROJETO_BASICO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-23',
+    due_date: '',
+    last_delivery: '',
+    restricoes: '',
+    comment: 'AGUARDANDO PROJETOS, RECOMENDAVEL MONTAR EAP E IR ALINHANDO COM ARQUITETURA OQ JA TEM',
+    created_at: '2025-09-23T08:30:00Z'
+  },
+
+  // PROJETO 16: DRV/PV - EDILSON EAP PLANNING
+  {
+    id: '23',
+    project_id: '16',
+    title: 'ESTRUTURA ANALITICA PROJETO E PLANEJAMENTO',
+    description: 'Montagem da EAP e planejamento para apresentação ao órgão',
+    assigned_to: '10', // EDILSON
+    status: 'EM_ANDAMENTO',
+    phase: 'PROJETO_BASICO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-23',
+    due_date: '',
+    last_delivery: '',
+    restricoes: '',
+    comment: 'NECESSARIO IR MONTANDO EAP PRA APRESENTAR PRO ORGAO, E COMO VAMOS FAZER A ASSOCIACAO, JA POSSO ADQURIR O ORCABIM (QND INICIAR)',
+    created_at: '2025-09-23T09:00:00Z'
   }
 ];
 

@@ -15,7 +15,7 @@ export interface Project {
   name: string;
   client: string;
   type: 'privado' | 'publico';
-  status: 'EM_ANDAMENTO' | 'FINALIZADO' | 'EM_ESPERA' | 'PARALISADO' | 'CONCLUIDO';
+  status: 'EM_ANDAMENTO' | 'FINALIZADO' | 'EM_ESPERA' | 'PARALISADO' | 'CONCLUIDO' | 'AGUARDANDO_PAGAMENTO';
   description?: string;
   responsible_ids: string[];
   dependency_id?: string;

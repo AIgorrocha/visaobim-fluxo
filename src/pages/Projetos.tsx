@@ -33,6 +33,7 @@ const Projetos = () => {
     const statusConfig = {
       'EM_ANDAMENTO': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
       'FINALIZADO': { label: 'Finalizado', className: 'bg-success text-success-foreground' },
+      'CONCLUIDO': { label: 'Concluído', className: 'bg-success text-success-foreground' },
       'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' },
       'PARALISADO': { label: 'Paralisado', className: 'bg-destructive text-destructive-foreground' },
       'AGUARDANDO_PAGAMENTO': { label: 'Aguardando Pagamento', className: 'bg-secondary text-secondary-foreground' }
@@ -198,6 +199,7 @@ const Projetos = () => {
                     <SelectItem value="todos">Todos os Status</SelectItem>
                     <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
                     <SelectItem value="FINALIZADO">Finalizado</SelectItem>
+                    <SelectItem value="CONCLUIDO">Concluído</SelectItem>
                     <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                     <SelectItem value="PARALISADO">Paralisado</SelectItem>
                     <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
