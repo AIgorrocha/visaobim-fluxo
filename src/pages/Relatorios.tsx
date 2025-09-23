@@ -212,7 +212,7 @@ Qualquer dúvida, estou à disposição!`;
     const userTasks = getTasksByUser(reportUserId);
 
     // Agrupar tarefas por mês
-    const tasksByMonth = userTasks.reduce((acc, task) => {
+    const tasksByMonth = userTasks.reduce((acc: { [key: string]: any[] }, task: any) => {
       if (!task.due_date) return acc;
 
       const date = new Date(task.due_date);
@@ -232,12 +232,12 @@ Qualquer dúvida, estou à disposição!`;
 
 `;
 
-    Object.entries(tasksByMonth).forEach(([month, monthTasks]) => {
+    Object.entries(tasksByMonth).forEach(([month, monthTasks]: [string, any[]]) => {
       timeline += `📅 ${month.toUpperCase()}
 `;
 
       monthTasks
-        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+        .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
         .forEach((task, index) => {
           const project = projects.find(p => p.id === task.project_id);
           const statusIcon = task.status === 'CONCLUIDA' ? '✅' : task.status === 'EM_ANDAMENTO' ? '🔄' : '⏳';
