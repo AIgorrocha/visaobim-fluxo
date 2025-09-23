@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -23,7 +24,10 @@ const Dashboard = () => {
 
   const isAdmin = user.role === 'admin';
   const userProjects = isAdmin ? projects : getProjectsByUser(user.id);
-  const userTasks = isAdmin ? tasks : getTasksByUser(user.id);
+  // Sempre pegar apenas as tarefas do usuário logado para pontuação individual
+  const userTasks = getTasksByUser(user.id);
+  // Para estatísticas gerais de admin, usar todas as tarefas
+  const allTasks = isAdmin ? tasks : getTasksByUser(user.id);
   const pendingTasks = userTasks.filter(task => task.status === 'PENDENTE');
   const completedTasks = userTasks.filter(task => task.status === 'CONCLUIDA');
   const inProgressTasks = userTasks.filter(task => task.status === 'EM_ANDAMENTO');
@@ -34,50 +38,10 @@ const Dashboard = () => {
   const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
   const completedProjects = userProjects.filter(p => p.status === 'CONCLUIDO' || p.status === 'FINALIZADO').length;
 
-  // Calcular pontos reais do usuário baseado nas tarefas concluídas com sistema real de pontuação
+  // Calcular pontos e nível usando funções utilitárias compartilhadas
   const userCompletedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
-  const userPoints = userCompletedTasks.reduce((sum, task) => {
-    if (!task.due_date || !task.completed_at) return sum;
-
-    const dueDate = new Date(task.due_date);
-    const completedDate = new Date(task.completed_at);
-    const daysDiff = Math.floor((dueDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (daysDiff > 0) {
-      // Entregue antes do prazo: +2 pontos por dia
-      return sum + (daysDiff * 2);
-    } else if (daysDiff < 0) {
-      // Entregue com atraso: -4 pontos por dia
-      return sum + (daysDiff * 4); // daysDiff já é negativo
-    } else {
-      // Entregue no prazo: 0 pontos
-      return sum;
-    }
-  }, 0);
-
-  // Calcular nível baseado nos pontos (sistema realista: 2 pontos por dia antecipado, -4 por atraso)
-  const getUserLevel = (points: number) => {
-    if (points < 0) return 0; // Nível 0 para pontuação negativa
-    if (points < 10) return 1;
-    if (points < 30) return 2;
-    if (points < 60) return 3;
-    if (points < 100) return 4;
-    if (points < 150) return 5;
-    if (points < 200) return 6;
-    if (points < 300) return 7;
-    if (points < 400) return 8;
-    return 9;
-  };
-
+  const userPoints = calculateUserPoints(userCompletedTasks);
   const userLevel = getUserLevel(userPoints);
-
-  const getLevelProgress = (points: number, level: number) => {
-    const levelRanges = [10, 30, 60, 100, 150, 200, 300, 400, 500];
-    const currentLevelMin = level === 0 ? -Infinity : level === 1 ? 0 : levelRanges[level - 2];
-    const nextLevelMin = level === 0 ? 0 : levelRanges[level - 1] || 500;
-    const progress = ((points - currentLevelMin) / (nextLevelMin - currentLevelMin)) * 100;
-    return Math.max(0, Math.min(progress, 100));
-  };
 
   return (
     <div className="space-y-6">
@@ -299,7 +263,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Tarefas em Andamento</span>
-                  <span className="text-sm font-medium">{tasks.filter(t => t.status === 'EM_ANDAMENTO').length}</span>
+                  <span className="text-sm font-medium">{allTasks.filter(t => t.status === 'EM_ANDAMENTO').length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Projetos Ativos</span>
@@ -320,15 +284,15 @@ const Dashboard = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm">Total Contratado</span>
-                  <span className="text-sm font-medium">R$ 1.847.000</span>
+                  <span className="text-sm font-medium">Em desenvolvimento</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Total Recebido</span>
-                  <span className="text-sm font-medium">R$ 692.000</span>
+                  <span className="text-sm font-medium">Em desenvolvimento</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Pendente</span>
-                  <span className="text-sm font-medium">R$ 1.155.000</span>
+                  <span className="text-sm font-medium">Em desenvolvimento</span>
                 </div>
               </div>
             </CardContent>

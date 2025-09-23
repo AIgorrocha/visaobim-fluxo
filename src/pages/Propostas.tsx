@@ -1,8 +1,12 @@
 import { motion } from 'framer-motion';
-import { Plus, FileText, Calendar, DollarSign, Lock, Edit, ExternalLink, User, MapPin } from 'lucide-react';
+import { Plus, FileText, Calendar, DollarSign, Lock, Edit, User, Archive, Filter, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockProposals } from '@/data/mockData';
 import { useState } from 'react';
@@ -45,6 +49,16 @@ const Propostas = () => {
     );
   }
   const [proposals, setProposals] = useState(mockProposals);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [editingProposal, setEditingProposal] = useState(null);
+  const [editForm, setEditForm] = useState({
+    client_name: '',
+    proposal_value: '',
+    proposal_date: '',
+    last_meeting: '',
+    notes: '',
+    followup_date: ''
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -94,12 +108,99 @@ const Propostas = () => {
     );
   };
 
+  const archiveProposal = (proposalId: string) => {
+    setProposals(prev => prev.filter(proposal => proposal.id !== proposalId));
+  };
+
+  const addNewProposal = (columnStatus: string) => {
+    const newProposal = {
+      id: String(Date.now()),
+      client_name: 'Novo Cliente',
+      proposal_date: new Date().toISOString().split('T')[0],
+      proposal_value: 0,
+      status: columnStatus as 'pendente' | 'aprovada' | 'rejeitada' | 'negociando',
+      notes: 'Nova proposta - clique em editar para preencher os detalhes',
+      last_meeting: null,
+      followup_date: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setProposals(prev => [...prev, newProposal]);
+
+    // Abrir automaticamente o modal de edição para a nova proposta
+    setTimeout(() => {
+      editProposal(newProposal.id);
+    }, 100);
+  };
+
+  const editProposal = (proposalId: string) => {
+    const proposal = proposals.find(p => p.id === proposalId);
+    if (proposal) {
+      setEditingProposal(proposal.id);
+      setEditForm({
+        client_name: proposal.client_name,
+        proposal_value: proposal.proposal_value.toString(),
+        proposal_date: proposal.proposal_date,
+        last_meeting: proposal.last_meeting || '',
+        notes: proposal.notes || '',
+        followup_date: proposal.followup_date || ''
+      });
+    }
+  };
+
+  const saveProposal = () => {
+    if (editingProposal) {
+      setProposals(prev =>
+        prev.map(p =>
+          p.id === editingProposal
+            ? {
+                ...p,
+                client_name: editForm.client_name,
+                proposal_value: parseFloat(editForm.proposal_value) || 0,
+                proposal_date: editForm.proposal_date,
+                last_meeting: editForm.last_meeting || null,
+                notes: editForm.notes,
+                followup_date: editForm.followup_date || null,
+                updated_at: new Date().toISOString()
+              }
+            : p
+        )
+      );
+      setEditingProposal(null);
+      setEditForm({
+        client_name: '',
+        proposal_value: '',
+        proposal_date: '',
+        last_meeting: '',
+        notes: '',
+        followup_date: ''
+      });
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingProposal(null);
+    setEditForm({
+      client_name: '',
+      proposal_value: '',
+      proposal_date: '',
+      last_meeting: '',
+      notes: '',
+      followup_date: ''
+    });
+  };
+
   const columns = [
     { key: 'pendente', label: 'Novas', color: 'slate' },
     { key: 'negociando', label: 'Em Negociação', color: 'yellow' },
     { key: 'aprovada', label: 'Aprovadas', color: 'green' },
     { key: 'rejeitada', label: 'Rejeitadas', color: 'red' }
   ];
+
+  // Filtrar propostas baseado no filtro selecionado
+  const filteredProposals = filterStatus === 'all'
+    ? proposals
+    : proposals.filter(p => p.status === filterStatus);
 
   const ProposalCard = ({ proposal }: { proposal: any }) => (
     <motion.div
@@ -115,14 +216,32 @@ const Propostas = () => {
           <h4 className="font-semibold text-gray-900 text-sm leading-tight">
             {proposal.client_name}
           </h4>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-gray-100"
-            onClick={() => alert('Editar proposta (funcionalidade em desenvolvimento)')}
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                editProposal(proposal.id);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm('Deseja arquivar esta proposta?')) {
+                  archiveProposal(proposal.id);
+                }
+              }}
+            >
+              <Archive className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2 text-xs text-gray-600">
@@ -142,21 +261,6 @@ const Propostas = () => {
             <div className="flex items-center">
               <User className="h-3 w-3 mr-1" />
               <span>Reunião: {new Date(proposal.last_meeting).toLocaleDateString('pt-BR')}</span>
-            </div>
-          )}
-
-          {proposal.proposal_link && (
-            <div className="flex items-center">
-              <ExternalLink className="h-3 w-3 mr-1" />
-              <a
-                href={proposal.proposal_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Ver proposta
-              </a>
             </div>
           )}
         </div>
@@ -202,15 +306,32 @@ const Propostas = () => {
           <h1 className="text-3xl font-bold text-foreground">Pipeline de Propostas</h1>
           <p className="text-muted-foreground">Sistema Kanban estilo Trello para gestão de vendas</p>
         </div>
-        <Button onClick={() => alert('Nova proposta (funcionalidade em desenvolvimento)')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Proposta
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="pendente">Novas</SelectItem>
+                <SelectItem value="negociando">Em Negociação</SelectItem>
+                <SelectItem value="aprovada">Aprovadas</SelectItem>
+                <SelectItem value="rejeitada">Rejeitadas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => addNewProposal('pendente')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Proposta
+          </Button>
+        </div>
       </motion.div>
 
       {/* Kanban Board estilo Trello */}
       <div className="flex gap-6 overflow-x-auto pb-4">
-        {columns.map((column, index) => {
+        {columns.filter(column => filterStatus === 'all' || column.key === filterStatus).map((column, index) => {
           const columnProposals = proposals.filter(p => p.status === column.key);
           const statusInfo = getStatusInfo(column.key);
 
@@ -225,7 +346,7 @@ const Propostas = () => {
               <div className={`rounded-lg border-2 ${statusInfo.color} min-h-[600px]`}>
                 {/* Header da coluna */}
                 <div className={`${statusInfo.headerColor} p-4 rounded-t-lg border-b`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-gray-700">
                       {column.label}
                     </h3>
@@ -233,6 +354,15 @@ const Propostas = () => {
                       {columnProposals.length}
                     </Badge>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full text-xs"
+                    onClick={() => addNewProposal(column.key)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Adicionar Proposta
+                  </Button>
                 </div>
 
                 {/* Cards da coluna */}
@@ -253,6 +383,97 @@ const Propostas = () => {
           );
         })}
       </div>
+
+      {/* Modal de Edição */}
+      {editingProposal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Editar Proposta</h3>
+              <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="client_name">Nome do Cliente</Label>
+                <Input
+                  id="client_name"
+                  value={editForm.client_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, client_name: e.target.value }))}
+                  placeholder="Nome do cliente"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="proposal_value">Valor da Proposta</Label>
+                <Input
+                  id="proposal_value"
+                  type="number"
+                  value={editForm.proposal_value}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, proposal_value: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="proposal_date">Enviada em</Label>
+                <Input
+                  id="proposal_date"
+                  type="date"
+                  value={editForm.proposal_date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, proposal_date: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="last_meeting">Última Reunião Realizada</Label>
+                <Input
+                  id="last_meeting"
+                  type="date"
+                  value={editForm.last_meeting}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, last_meeting: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Descrição da Proposta</Label>
+                <Textarea
+                  id="notes"
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Descrição detalhada da proposta..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="followup_date">Follow-up</Label>
+                <Input
+                  id="followup_date"
+                  type="date"
+                  value={editForm.followup_date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, followup_date: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button onClick={saveProposal} className="flex-1">
+                  Salvar
+                </Button>
+                <Button variant="outline" onClick={cancelEdit} className="flex-1">
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

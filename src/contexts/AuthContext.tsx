@@ -17,8 +17,8 @@ const mockUsers: AuthUser[] = [
     email: 'igor@visaoprojetosbim.com',
     full_name: 'Igor',
     role: 'admin',
-    points: 2500,
-    level: 6,
+    points: 25,
+    level: 1,
     avatar_url: ''
   },
   {

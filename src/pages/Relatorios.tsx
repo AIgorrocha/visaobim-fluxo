@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock } from 'lucide-react';
+import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock, Copy, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,10 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { useState } from 'react';
 
 const Relatorios = () => {
   const { user } = useAuth();
-  const { projects, tasks } = useAppData();
+  const { projects, tasks, getProjectsByUser, getTasksByUser } = useAppData();
+  const [showReport, setShowReport] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState('');
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showPerformance, setShowPerformance] = useState(false);
 
   if (!user) return null;
 
@@ -23,6 +28,279 @@ const Relatorios = () => {
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA').length;
   const activeTasks = tasks.filter(t => t.status === 'EM_ANDAMENTO').length;
+
+  // Função para obter o nome dos responsáveis por ID
+  const getResponsibleNames = (responsibleIds: string[]) => {
+    const names: { [key: string]: string } = {
+      '1': 'Igor', '2': 'Gustavo', '3': 'Bessa', '4': 'Leonardo', '5': 'Pedro',
+      '6': 'Thiago', '7': 'Nicolas', '8': 'Eloisy', '9': 'Rondinelly', '10': 'Edilson',
+      '11': 'Philip', '12': 'Nara', '13': 'Stael', '14': 'Projetista Externo'
+    };
+    return responsibleIds.map(id => names[id] || 'Desconhecido').join(', ');
+  };
+
+  // Função para formatar data
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  // Função para obter data atual do sistema
+  const getCurrentDate = () => {
+    return new Date().toLocaleDateString('pt-BR');
+  };
+
+  // Função para gerar o relatório padronizado
+  const generateTaskReport = () => {
+    const userTasks = getTasksByUser(user.id);
+    const userProjects = getProjectsByUser(user.id);
+    const activeUserProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO');
+
+    const completedUserTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
+    const pendingUserTasks = userTasks.filter(t => t.status === 'PENDENTE');
+
+    // Verificar tarefas próximas do prazo (próximos 7 dias)
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+
+    const upcomingTasks = pendingUserTasks.filter(task => {
+      if (!task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      return dueDate >= today && dueDate <= nextWeek;
+    });
+
+    let report = `📊 RELATÓRIO DE TAREFAS - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+📅 Data: ${getCurrentDate()}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📂 SEUS PROJETOS ATIVOS:
+
+`;
+
+    // Lista de projetos ativos
+    activeUserProjects.forEach((project, index) => {
+      const projectNumber = index + 1;
+      const emoji = projectNumber === 1 ? '1️⃣' : projectNumber === 2 ? '2️⃣' : projectNumber === 3 ? '3️⃣' : projectNumber === 4 ? '4️⃣' : projectNumber === 5 ? '5️⃣' : `${projectNumber}️⃣`;
+
+      report += `${emoji} ${project.name}
+- Status do Projeto: ${project.status}
+- Seus responsáveis no projeto: ${getResponsibleNames(project.responsible_ids)}
+
+`;
+    });
+
+    report += `━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 SUAS TAREFAS:
+
+`;
+
+    // Lista de todas as tarefas do usuário
+    userTasks.forEach((task, index) => {
+      const project = projects.find(p => p.id === task.project_id);
+      const isUpcoming = upcomingTasks.some(t => t.id === task.id);
+      const statusEmoji = task.status === 'CONCLUIDA' ? '✓' : task.status === 'EM_ANDAMENTO' ? '🔄' : '⏳';
+
+      // Obter co-responsáveis (excluindo o usuário atual)
+      let coResponsible = '';
+      if (Array.isArray(task.assigned_to)) {
+        const otherResponsibles = task.assigned_to.filter(id => id !== user.id);
+        if (otherResponsibles.length > 0) {
+          coResponsible = `👥 Co-responsável: ${getResponsibleNames(otherResponsibles)}`;
+        }
+      }
+
+      report += `✅ TAREFA ${index + 1}
+📌 Título: ${task.title}
+🏗️ Projeto: ${project?.name || 'Projeto não encontrado'}${coResponsible ? '\n' + coResponsible : ''}
+📊 Fase: ${task.phase || '-'}
+🔄 Status: ${task.status}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
+📅 Início: ${formatDate(task.start_date)}
+⏰ Prazo: ${formatDate(task.due_date)}${isUpcoming ? ' ⚠️ PRÓXIMO' : ''}
+📝 Entrega Realizada: ${formatDate(task.completed_at)}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
+🔒 Restrições: ${task.restrictions || '-'}
+💬 Comentário: ${task.comments || '-'}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+`;
+    });
+
+    // Resumo final
+    const upcomingTaskName = upcomingTasks.length > 0 ? upcomingTasks[0].title : '';
+    const upcomingTaskDate = upcomingTasks.length > 0 ? formatDate(upcomingTasks[0].due_date) : '';
+
+    report += `📊 RESUMO:
+- Total de Tarefas: ${userTasks.length}
+- Concluídas: ${completedUserTasks.length} ✓
+- Pendentes: ${pendingUserTasks.length}${upcomingTasks.length > 0 ? `
+- ${upcomingTaskName} para ${upcomingTaskDate}` : ''}
+
+Qualquer dúvida, estou à disposição!`;
+
+    return report;
+  };
+
+  // Função para copiar relatório
+  const copyReport = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedReport);
+      alert('Relatório copiado para a área de transferência!');
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+      alert('Erro ao copiar o relatório');
+    }
+  };
+
+  // Função para gerar e mostrar relatório
+  const handleGenerateReport = () => {
+    const report = generateTaskReport();
+    setGeneratedReport(report);
+    setShowReport(true);
+  };
+
+  // Função para gerar cronograma de projetos
+  const generateProjectTimeline = () => {
+    const userTasks = getTasksByUser(user.id);
+
+    // Agrupar tarefas por mês
+    const tasksByMonth = userTasks.reduce((acc, task) => {
+      if (!task.due_date) return acc;
+
+      const date = new Date(task.due_date);
+      const monthKey = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+      if (!acc[monthKey]) acc[monthKey] = [];
+      acc[monthKey].push(task);
+
+      return acc;
+    }, {} as { [key: string]: any[] });
+
+    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+📅 Data: ${getCurrentDate()}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 CRONOGRAMA DE PRAZOS:
+
+`;
+
+    Object.entries(tasksByMonth).forEach(([month, monthTasks]) => {
+      timeline += `📅 ${month.toUpperCase()}
+`;
+
+      monthTasks
+        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+        .forEach((task, index) => {
+          const project = projects.find(p => p.id === task.project_id);
+          const statusIcon = task.status === 'CONCLUIDA' ? '✅' : task.status === 'EM_ANDAMENTO' ? '🔄' : '⏳';
+
+          timeline += `  ${statusIcon} ${formatDate(task.due_date)} - ${task.title}
+      🏗️ ${project?.name || 'Projeto não encontrado'}
+      📊 ${task.phase || '-'} | Status: ${task.status}
+
+`;
+        });
+
+      timeline += `━━━━━━━━━━━━━━━━━━━━━
+
+`;
+    });
+
+    return timeline;
+  };
+
+  // Função para gerar relatório de desempenho do projetista
+  const generatePerformanceReport = () => {
+    const userTasks = getTasksByUser(user.id);
+    const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
+
+    let performance = `📊 DESEMPENHO DO PROJETISTA - ${user.full_name?.toUpperCase() || user.username?.toUpperCase()}
+📅 Data: ${getCurrentDate()}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 HISTÓRICO DE ENTREGAS:
+
+`;
+
+    completedTasks.forEach((task, index) => {
+      if (!task.due_date || !task.completed_at) return;
+
+      const project = projects.find(p => p.id === task.project_id);
+      const dueDate = new Date(task.due_date);
+      const completedDate = new Date(task.completed_at);
+      const daysDiff = Math.floor((dueDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      let points = 0;
+      let status = '';
+      if (daysDiff > 0) {
+        points = daysDiff * 2;
+        status = `📈 ANTECIPADO (+${daysDiff} dias) = +${points} pontos`;
+      } else if (daysDiff < 0) {
+        points = daysDiff * 4; // será negativo
+        status = `📉 ATRASADO (${Math.abs(daysDiff)} dias) = ${points} pontos`;
+      } else {
+        points = 0;
+        status = `🎯 NO PRAZO = 0 pontos`;
+      }
+
+      performance += `✅ ENTREGA ${index + 1}
+📌 ${task.title}
+🏗️ Projeto: ${project?.name || 'Projeto não encontrado'}
+📊 Fase: ${task.phase || '-'}
+⏰ Prazo: ${formatDate(task.due_date)}
+📝 Entregue: ${formatDate(task.completed_at)}
+${status}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+`;
+    });
+
+    // Calcular pontuação total
+    const totalPoints = completedTasks.reduce((sum, task) => {
+      if (!task.due_date || !task.completed_at) return sum;
+      const daysDiff = Math.floor((new Date(task.due_date).getTime() - new Date(task.completed_at).getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff > 0) return sum + (daysDiff * 2);
+      else if (daysDiff < 0) return sum + (daysDiff * 4);
+      else return sum;
+    }, 0);
+
+    performance += `📊 RESUMO DO DESEMPENHO:
+- Total de Entregas: ${completedTasks.length}
+- Pontuação Total: ${totalPoints} pontos
+- Média por Entrega: ${completedTasks.length > 0 ? Math.round(totalPoints / completedTasks.length) : 0} pontos
+- Entregas Antecipadas: ${completedTasks.filter(t => {
+  if (!t.due_date || !t.completed_at) return false;
+  return new Date(t.due_date) > new Date(t.completed_at);
+}).length}
+- Entregas no Prazo: ${completedTasks.filter(t => {
+  if (!t.due_date || !t.completed_at) return false;
+  const diff = Math.floor((new Date(t.due_date).getTime() - new Date(t.completed_at).getTime()) / (1000 * 60 * 60 * 24));
+  return diff === 0;
+}).length}
+- Entregas Atrasadas: ${completedTasks.filter(t => {
+  if (!t.due_date || !t.completed_at) return false;
+  return new Date(t.due_date) < new Date(t.completed_at);
+}).length}
+
+Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
+
+    return performance;
+  };
+
+  // Funções para mostrar relatórios
+  const handleShowTimeline = () => {
+    const timeline = generateProjectTimeline();
+    setGeneratedReport(timeline);
+    setShowTimeline(true);
+  };
+
+  const handleShowPerformance = () => {
+    const performance = generatePerformanceReport();
+    setGeneratedReport(performance);
+    setShowPerformance(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -85,19 +363,18 @@ const Relatorios = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="h-5 w-5 mr-2 text-primary" />
-              Desempenho da Equipe
+              Desempenho do Projetista
             </CardTitle>
-            <CardDescription>Relatório de produtividade e pontuação</CardDescription>
+            <CardDescription>Histórico de entregas, prazos e pontuação</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Período</Label>
-              <div className="flex gap-2">
-                <Input type="date" defaultValue="2025-01-01" />
-                <Input type="date" defaultValue="2025-12-31" />
-              </div>
+              <Label>Análise</Label>
+              <p className="text-sm text-muted-foreground">
+                Relatório completo do seu desempenho individual
+              </p>
             </div>
-            <Button className="w-full" onClick={() => alert('Funcionalidade em desenvolvimento')}>
+            <Button className="w-full" onClick={handleShowPerformance}>
               <BarChart3 className="h-4 w-4 mr-2" />
               Gerar Relatório
             </Button>
@@ -110,26 +387,18 @@ const Relatorios = () => {
               <Calendar className="h-5 w-5 mr-2 text-success" />
               Cronograma de Projetos
             </CardTitle>
-            <CardDescription>Timeline e status dos projetos</CardDescription>
+            <CardDescription>Timeline de prazos no calendário</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Status</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
-                  <SelectItem value="CONCLUIDO">Concluído</SelectItem>
-                  <SelectItem value="PARALISADO">Paralisado</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Timeline</Label>
+              <p className="text-sm text-muted-foreground">
+                Visualize todos os seus prazos organizados por mês
+              </p>
             </div>
-            <Button className="w-full" onClick={() => alert('Funcionalidade em desenvolvimento')}>
+            <Button className="w-full" onClick={handleShowTimeline}>
               <Calendar className="h-4 w-4 mr-2" />
-              Gerar Relatório
+              Gerar Cronograma
             </Button>
           </CardContent>
         </Card>
@@ -156,13 +425,72 @@ const Relatorios = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full" onClick={() => alert('Funcionalidade em desenvolvimento')}>
+            <Button className="w-full" onClick={handleGenerateReport}>
               <FileDown className="h-4 w-4 mr-2" />
               Gerar Relatório
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal do Relatório */}
+      {(showReport || showTimeline || showPerformance) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          >
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-semibold">
+                {showReport && 'Relatório de Tarefas'}
+                {showTimeline && 'Cronograma de Projetos'}
+                {showPerformance && 'Desempenho do Projetista'}
+              </h3>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={copyReport}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setShowReport(false);
+                  setShowTimeline(false);
+                  setShowPerformance(false);
+                }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg border">
+                {generatedReport}
+              </pre>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Relatório gerado em {new Date().toLocaleString('pt-BR')}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={copyReport}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar Texto
+                  </Button>
+                  <Button onClick={() => {
+                    setShowReport(false);
+                    setShowTimeline(false);
+                    setShowPerformance(false);
+                  }}>
+                    Fechar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

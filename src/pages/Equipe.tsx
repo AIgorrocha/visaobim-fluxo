@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
 
 // Dados reais da equipe com base no AuthContext
 const teamMembersData = [
@@ -41,38 +42,7 @@ const Equipe = () => {
 
     // Calcular pontos baseados nas tarefas concluídas com sistema real de pontuação
     const completedTasks = memberTasks.filter(t => t.status === 'CONCLUIDA');
-    const totalPoints = completedTasks.reduce((sum, task) => {
-      if (!task.due_date || !task.completed_at) return sum;
-
-      const dueDate = new Date(task.due_date);
-      const completedDate = new Date(task.completed_at);
-      const daysDiff = Math.floor((dueDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (daysDiff > 0) {
-        // Entregue antes do prazo: +2 pontos por dia
-        return sum + (daysDiff * 2);
-      } else if (daysDiff < 0) {
-        // Entregue com atraso: -4 pontos por dia
-        return sum + (daysDiff * 4); // daysDiff já é negativo
-      } else {
-        // Entregue no prazo: 0 pontos
-        return sum;
-      }
-    }, 0);
-
-    // Calcular nível baseado nos pontos (sistema realista: 2 pontos por dia antecipado, -4 por atraso)
-    const getLevelFromPoints = (points: number) => {
-      if (points < 0) return 0; // Nível 0 para pontuação negativa
-      if (points < 10) return 1;
-      if (points < 30) return 2;
-      if (points < 60) return 3;
-      if (points < 100) return 4;
-      if (points < 150) return 5;
-      if (points < 200) return 6;
-      if (points < 300) return 7;
-      if (points < 400) return 8;
-      return 9;
-    };
+    const totalPoints = calculateUserPoints(completedTasks);
 
     return {
       ...member,
@@ -81,7 +51,7 @@ const Equipe = () => {
       completedTasks: completedTasks.length,
       activeTasks: memberTasks.filter(t => t.status === 'EM_ANDAMENTO').length,
       points: totalPoints,
-      level: getLevelFromPoints(totalPoints)
+      level: getUserLevel(totalPoints)
     };
   });
 

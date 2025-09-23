@@ -1,7 +1,6 @@
 import { Project, Task, Proposal, Achievement } from '@/types';
-import { addDays, subDays, addWeeks } from 'date-fns';
 
-// Mock Projects Data
+// Mock Projects Data - COMPLETO E ATUALIZADO (19 PROJETOS)
 export const mockProjects: Project[] = [
   // PROJETO 1: CASA ALTO PADRÃO - BRENO
   {
@@ -15,6 +14,12 @@ export const mockProjects: Project[] = [
     contract_start: '2025-03-07',
     contract_end: '2025-06-07',
     prazo_vigencia: '',
+    // Campos financeiros
+    project_value: 450000,
+    amount_paid: 180000,
+    amount_pending: 270000,
+    expenses: 95000,
+    profit_margin: 25,
     created_by: '1',
     created_at: '2025-03-01T08:00:00Z',
     updated_at: '2025-03-07T10:30:00Z'
@@ -112,8 +117,8 @@ export const mockProjects: Project[] = [
     contract_end: '',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2024-01-01T09:30:00Z',
-    updated_at: '2024-01-01T15:45:00Z'
+    created_at: '2024-01-01T08:00:00Z',
+    updated_at: '2024-01-01T16:00:00Z'
   },
   // PROJETO 8: PARQUE ABERTO - ZOOBOTANICO
   {
@@ -128,8 +133,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-10-15',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-07-10T11:00:00Z',
-    updated_at: '2025-07-15T13:30:00Z'
+    created_at: '2025-07-10T08:00:00Z',
+    updated_at: '2025-07-15T10:00:00Z'
   },
   // PROJETO 9: SALAS COMERCIAIS - NORBERTO
   {
@@ -144,8 +149,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-11-17',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-09-10T14:00:00Z',
-    updated_at: '2025-09-17T10:15:00Z'
+    created_at: '2025-09-10T08:00:00Z',
+    updated_at: '2025-09-17T10:00:00Z'
   },
   // PROJETO 10: GASES MEDICINAIS - FHEMIG
   {
@@ -160,8 +165,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-11-30',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-05-25T08:30:00Z',
-    updated_at: '2025-05-30T09:15:00Z'
+    created_at: '2025-05-25T08:00:00Z',
+    updated_at: '2025-05-30T10:00:00Z'
   },
   // PROJETO 11: DELEGACIA POLICIA FEDERAL - SPF/RO
   {
@@ -176,8 +181,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-06-30',
     prazo_vigencia: '2025-06-30',
     created_by: '1',
-    created_at: '2025-01-25T10:00:00Z',
-    updated_at: '2025-01-30T11:30:00Z'
+    created_at: '2025-01-25T08:00:00Z',
+    updated_at: '2025-01-30T10:00:00Z'
   },
   // PROJETO 12: DELEGACIA DA POLICIA RODOVIARIA FEDERAL - SPRF/AL
   {
@@ -192,10 +197,10 @@ export const mockProjects: Project[] = [
     contract_end: '2025-08-28',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-08-01T09:00:00Z',
-    updated_at: '2025-08-04T14:30:00Z'
+    created_at: '2025-08-01T08:00:00Z',
+    updated_at: '2025-08-04T10:00:00Z'
   },
-  // PROJETO 13: LOTE 02 CENTRO DE ATENDIMENTO AO ELEITOR - TRE/AC
+  // PROJETO 13: LOTE 02 CENTRO DE ATENDIMENTO AO ELEITOR - TRE/AC (CORRIGIDO - SEM GUSTAVO)
   {
     id: '13',
     name: 'LOTE 02 CENTRO DE ATENDIMENTO AO ELEITOR',
@@ -203,13 +208,13 @@ export const mockProjects: Project[] = [
     type: 'publico',
     status: 'EM_ANDAMENTO',
     description: 'PROJETO DE REFORMA DA NOVA SEDE DE ATENDIMENTO AO ELEITOR',
-    responsible_ids: ['4', '10'], // LEONARDO, EDILSON
+    responsible_ids: ['4', '10'], // LEONARDO, EDILSON (REMOVIDO GUSTAVO)
     contract_start: '2025-06-23',
     contract_end: '2025-09-23',
     prazo_vigencia: '',
     created_by: '1',
     created_at: '2025-06-20T08:00:00Z',
-    updated_at: '2025-06-23T12:00:00Z'
+    updated_at: '2025-06-23T10:00:00Z'
   },
   // PROJETO 14: AGENCIA DE TUBARAO - CELESC/RS
   {
@@ -224,8 +229,8 @@ export const mockProjects: Project[] = [
     contract_end: '2026-01-09',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-07-05T10:30:00Z',
-    updated_at: '2025-07-09T16:20:00Z'
+    created_at: '2025-07-01T08:00:00Z',
+    updated_at: '2025-07-09T10:00:00Z'
   },
   // PROJETO 15: GINASIOS - SOP/RS
   {
@@ -240,8 +245,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-10-24',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-07-20T11:00:00Z',
-    updated_at: '2025-07-24T09:45:00Z'
+    created_at: '2025-07-20T08:00:00Z',
+    updated_at: '2025-07-24T10:00:00Z'
   },
   // PROJETO 16: AGENCIA DA RECEITA FEDERAL - DRV/PV
   {
@@ -256,8 +261,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-08-30',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2025-03-25T13:30:00Z',
-    updated_at: '2025-03-31T15:00:00Z'
+    created_at: '2025-03-25T08:00:00Z',
+    updated_at: '2025-03-31T10:00:00Z'
   },
   // PROJETO 17: SHOPPING INDEPENDENCIA - PREF. SANTA MARIA/RS
   {
@@ -272,8 +277,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-04-30',
     prazo_vigencia: '2025-06-15',
     created_by: '1',
-    created_at: '2025-03-10T08:15:00Z',
-    updated_at: '2025-03-15T12:30:00Z'
+    created_at: '2025-03-10T08:00:00Z',
+    updated_at: '2025-03-15T10:00:00Z'
   },
   // PROJETO 18: CAMPUS CURITIBA - UNESPAR/PR
   {
@@ -288,8 +293,8 @@ export const mockProjects: Project[] = [
     contract_end: '2025-04-06',
     prazo_vigencia: '2025-12-06',
     created_by: '1',
-    created_at: '2025-01-01T09:45:00Z',
-    updated_at: '2025-01-06T14:15:00Z'
+    created_at: '2025-01-02T08:00:00Z',
+    updated_at: '2025-01-06T10:00:00Z'
   },
   // PROJETO 19: REFORMA DAS COBERTURAS PREFEITURA - PREF.LORENA/SP
   {
@@ -304,12 +309,12 @@ export const mockProjects: Project[] = [
     contract_end: '',
     prazo_vigencia: '',
     created_by: '1',
-    created_at: '2024-01-01T10:20:00Z',
-    updated_at: '2024-01-01T16:40:00Z'
+    created_at: '2024-01-01T08:00:00Z',
+    updated_at: '2024-01-01T10:00:00Z'
   }
 ];
 
-// Mock Tasks Data
+// Mock Tasks Data - COMPLETO E ATUALIZADO (52 TAREFAS)
 export const mockTasks: Task[] = [
   // PROJETO 1: CASA ALTO PADRÃO - BRENO
   {
@@ -324,7 +329,7 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-09-15',
     due_date: '2025-09-24',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: '',
     created_at: '2025-09-10T08:00:00Z'
@@ -334,14 +339,14 @@ export const mockTasks: Task[] = [
     project_id: '1',
     title: 'APRESENTACAO PROJETOS VIA DALUX',
     description: 'Apresentação dos projetos via plataforma Dalux',
-    assigned_to: ['1', '10'], // IGOR, EDILSON
-    status: 'PENDENTE',
+    assigned_to: '1', // IGOR
+    status: 'CONCLUIDA',
     phase: 'EXECUTIVO',
     priority: 'media',
-    points: 0,
+    points: 15,
     activity_start: '2025-09-04',
     due_date: '2025-10-03',
-    last_delivery: '',
+    completed_at: '2025-09-28',
     restricoes: '',
     comment: 'VERIFICAR COM EDILSON MODELO FEDERADO ANTES DA APRESENTAÇÃO NO DALUX.',
     created_at: '2025-09-01T09:00:00Z'
@@ -360,7 +365,7 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-07-15',
     due_date: '2025-08-15',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: '',
     created_at: '2025-07-10T08:00:00Z'
@@ -371,16 +376,16 @@ export const mockTasks: Task[] = [
     title: 'PROJETO ELÉTRICO BAIXA TENSÃO',
     description: 'Projeto elétrico de baixa tensão',
     assigned_to: '6', // THIAGO
-    status: 'PARALISADA',
+    status: 'PARALISADA', // CORRIGIDO - ERA PENDENTE, AGORA É PARALISADO
     phase: 'EXECUTIVO',
     priority: 'media',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'ARQUITETURA',
     comment: 'AGUARDANDO LUMINOTÉCNICO',
-    created_at: '2025-07-10T09:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
   {
     id: '5',
@@ -391,49 +396,47 @@ export const mockTasks: Task[] = [
     status: 'CONCLUIDA',
     phase: 'EXECUTIVO',
     priority: 'alta',
-    points: 4,
+    points: 10,
     activity_start: '2025-07-15',
     due_date: '2025-08-15',
-    last_delivery: '2025-07-30',
+    completed_at: '2025-07-30',
     restricoes: 'ARQUITETURA',
     comment: 'AGUARDANDO LUMINOTÉCNICO',
-    completed_at: '2025-07-30T18:00:00Z',
-    created_at: '2025-07-10T10:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
   {
     id: '6',
     project_id: '2',
     title: 'PROJETO CLIMATIZAÇÃO',
-    description: 'Sistema de climatização',
+    description: 'Projeto de climatização',
     assigned_to: '9', // RONDINELLY
     status: 'CONCLUIDA',
     phase: 'EXECUTIVO',
     priority: 'media',
-    points: 3,
+    points: 10,
     activity_start: '2025-07-15',
     due_date: '2025-08-15',
-    last_delivery: '',
+    completed_at: '2025-08-10',
     restricoes: '',
     comment: '',
-    completed_at: '2025-08-10T16:00:00Z',
-    created_at: '2025-07-10T11:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
   {
     id: '7',
     project_id: '2',
     title: 'CONSTRUÇÃO VIRTUAL ARQUITETURA',
-    description: 'Modelagem virtual da arquitetura',
+    description: 'Modelagem BIM da arquitetura',
     assigned_to: '4', // LEONARDO
     status: 'PENDENTE',
     phase: 'EXECUTIVO',
-    priority: 'media',
+    priority: 'alta',
     points: 0,
     activity_start: '2025-07-15',
     due_date: '2025-08-15',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: '',
-    created_at: '2025-07-10T12:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
   {
     id: '8',
@@ -445,29 +448,29 @@ export const mockTasks: Task[] = [
     phase: 'EXECUTIVO',
     priority: 'alta',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'CONSTRUÇÃO VIRTUAL,ARQUITETURA, METALICA, CONCRETO, HIDROSSANITARIO, CLIMATIZACAO',
     comment: '',
-    created_at: '2025-07-10T13:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
   {
     id: '9',
     project_id: '2',
     title: 'ORCAMENTO EXECUTIVO',
-    description: 'Orçamento executivo do projeto',
+    description: 'Orçamento executivo completo',
     assigned_to: '10', // EDILSON
     status: 'PENDENTE',
     phase: 'EXECUTIVO',
     priority: 'alta',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'CONSTRUÇÃO VIRTUAL, ARQUITETURA, METALICA, CONCRETO, HIDROSSANITARIO, CLIMATIZACAO',
     comment: '',
-    created_at: '2025-07-10T14:00:00Z'
+    created_at: '2025-07-10T08:00:00Z'
   },
 
   // PROJETO 3: COWORKING - FENIX MOVEIS
@@ -483,7 +486,7 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-09-04',
     due_date: '2025-10-03',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: 'VERIFICAR COM EDILSON MODELO FEDERADO ANTES DA APRESENTAÇÃO NO DALUX.',
     created_at: '2025-09-01T09:00:00Z'
@@ -500,9 +503,9 @@ export const mockTasks: Task[] = [
     phase: 'EXECUTIVO',
     priority: 'alta',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'ARQUITETURA',
     comment: 'APROVACAO DO LAYOUT ARQUITETONICO PELO DIRETOR DO CARVALHO.',
     created_at: '2025-07-20T08:00:00Z'
@@ -513,18 +516,18 @@ export const mockTasks: Task[] = [
     id: '12',
     project_id: '5',
     title: 'RELATORIO DE QUANTITATIVOS',
-    description: 'Relatório de quantitativos para casa de alto padrão',
+    description: 'Relatório de quantitativos',
     assigned_to: '10', // EDILSON
     status: 'EM_ANDAMENTO',
     phase: 'EXECUTIVO',
-    priority: 'media',
+    priority: 'alta',
     points: 0,
     activity_start: '2025-09-17',
     due_date: '2025-09-29',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: 'USAR ESTRUTURA E INSTRUCOES NO CHAT DO CLAUDE, FORNECIDO O LINK.',
-    created_at: '2025-09-15T10:00:00Z'
+    created_at: '2025-09-15T08:00:00Z'
   },
 
   // PROJETO 6: GILVANDO E ROSANETE - THALES
@@ -538,9 +541,9 @@ export const mockTasks: Task[] = [
     phase: 'EXECUTIVO',
     priority: 'media',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'CONSTRUCAO VIRTUAL',
     comment: 'MESMO RELATORIO LAIS E SAROM',
     created_at: '2024-01-01T08:00:00Z'
@@ -555,12 +558,12 @@ export const mockTasks: Task[] = [
     phase: 'EXECUTIVO',
     priority: 'media',
     points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
     restricoes: 'CONSTRUCAO VIRTUAL',
     comment: 'MESMO RELATORIO LAIS E SAROM',
-    created_at: '2024-01-01T09:00:00Z'
+    created_at: '2024-01-01T08:00:00Z'
   },
 
   // PROJETO 7: CLEBER E IGOR - THALES
@@ -576,7 +579,7 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-07-15',
     due_date: '2025-09-15',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: '',
     created_at: '2025-07-10T08:00:00Z'
@@ -595,13 +598,13 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-07-15',
     due_date: '2025-09-15',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: 'AGUARDANDO RESPOSTA FABIO E CAMPELO NETO SOBRE REUNIAO BOMBEIROS.',
     created_at: '2025-07-10T08:00:00Z'
   },
 
-  // PROJETO 9: SALAS COMERCIAIS - NORBERTO
+  // PROJETO 9: SALAS COMERCIAIS - NORBERTO (CORRIGIDO)
   {
     id: '17',
     project_id: '9',
@@ -610,14 +613,14 @@ export const mockTasks: Task[] = [
     assigned_to: '3', // BESSA
     status: 'PENDENTE',
     phase: 'ESTUDO_PRELIMINAR',
-    priority: 'media',
+    priority: 'alta',
     points: 0,
-    activity_start: '2025-09-15',
-    due_date: '2025-11-15',
-    last_delivery: '',
+    activity_start: '2025-09-15', // CORRIGIDO - ADICIONADA DATA INÍCIO
+    due_date: '2025-11-15', // CORRIGIDO - PRAZO DE 15/09/2025 PARA 15/11/2025
+    completed_at: null,
     restricoes: '',
     comment: '',
-    created_at: '2025-07-10T08:00:00Z'
+    created_at: '2025-09-10T08:00:00Z'
   },
 
   // PROJETO 10: GASES MEDICINAIS - FHEMIG
@@ -625,37 +628,35 @@ export const mockTasks: Task[] = [
     id: '18',
     project_id: '10',
     title: 'ETAPA 01 (AS BUILT E DEMANDA-ARQ E GASES)',
-    description: 'Etapa 1: As built e demanda arquitetônica e gases',
+    description: 'Etapa 01 - As built e demanda arquitetura e gases',
     assigned_to: '14', // PROJETISTA EXTERNO
     status: 'CONCLUIDA',
     phase: 'PROJETO_BASICO',
     priority: 'alta',
-    points: 5,
+    points: 10,
     activity_start: '2025-05-30',
     due_date: '2025-09-30',
-    last_delivery: '2025-09-18',
+    completed_at: '2025-09-18',
     restricoes: '',
     comment: 'AGENDAMENTO DE REUNIAO E PRAZOS PARA PROJETO EXECUTIVO (ETAPA 2)',
-    completed_at: '2025-09-18T17:00:00Z',
     created_at: '2025-05-25T08:00:00Z'
   },
   {
     id: '19',
     project_id: '10',
     title: 'ETAPA 2',
-    description: 'Etapa 2 do projeto',
+    description: 'Etapa 2 - Projeto executivo',
     assigned_to: '14', // PROJETISTA EXTERNO
     status: 'CONCLUIDA',
     phase: 'PROJETO_BASICO',
     priority: 'alta',
-    points: 3,
+    points: 10,
     activity_start: '2025-09-19',
-    due_date: '',
-    last_delivery: '',
+    due_date: null,
+    completed_at: '2025-09-22',
     restricoes: '',
     comment: '',
-    completed_at: '2025-09-20T16:00:00Z',
-    created_at: '2025-09-18T08:00:00Z'
+    created_at: '2025-09-19T08:00:00Z'
   },
 
   // PROJETO 11: DELEGACIA POLICIA FEDERAL - SPF/RO
@@ -671,120 +672,724 @@ export const mockTasks: Task[] = [
     points: 0,
     activity_start: '2025-09-19',
     due_date: '2025-09-26',
-    last_delivery: '',
+    completed_at: null,
     restricoes: '',
     comment: '',
     created_at: '2025-09-15T08:00:00Z'
   },
 
-  // PROJETO 16: DRV/PV - NICOLAS PHOTOVOLTAIC PROJECTS
+  // PROJETO 12: DELEGACIA DA POLICIA RODOVIARIA FEDERAL - SPRF/AL
   {
     id: '21',
-    project_id: '16',
-    title: 'PROJETOS FOTOVOLTAICOS, GERADOR E SUBESTACAO',
-    description: 'Desenvolvimento de projetos fotovoltaicos, gerador e subestação',
-    assigned_to: '7', // NICOLAS
-    status: 'PENDENTE',
-    phase: 'PROJETO_BASICO',
+    project_id: '12',
+    title: 'ORCAMENTO EXECUTIVO',
+    description: 'Orçamento executivo completo',
+    assigned_to: '10', // EDILSON
+    status: 'CONCLUIDA',
+    phase: 'EXECUTIVO',
     priority: 'alta',
-    points: 0,
-    activity_start: '',
-    due_date: '',
-    last_delivery: '',
+    points: 10,
+    activity_start: '2025-09-10',
+    due_date: '2025-09-19',
+    completed_at: '2025-09-22',
     restricoes: '',
-    comment: 'AJUSTAR URGENTE COM THIAGO PRA INICIAR PROJETOS FOTOVOLTAICOS, GERADOR E SUBESTACAO, ALINHAR PRA INICIO',
-    created_at: '2025-09-23T08:00:00Z'
+    comment: 'AGUARDANDO FISCAL APROVAR ORCAMENTO NO ORCAFASCIO PRA EXPORTAR OS ENTREGAVEIS',
+    created_at: '2025-09-05T08:00:00Z'
   },
 
-  // PROJETO 13: TRE/AC - EDILSON COORDINATION
+  // PROJETO 13: LOTE 02 CENTRO DE ATENDIMENTO AO ELEITOR - TRE/AC (CORRIGIDO)
   {
     id: '22',
     project_id: '13',
-    title: 'COORDENACAO E ESTRUTURACAO PROJETO',
-    description: 'Coordenação e estruturação do projeto TRE/AC',
+    title: 'ORCAMENTO EXECUTIVO',
+    description: 'Orçamento executivo',
     assigned_to: '10', // EDILSON
-    status: 'EM_ANDAMENTO',
-    phase: 'PROJETO_BASICO',
+    status: 'CONCLUIDA',
+    phase: 'EXECUTIVO',
     priority: 'alta',
-    points: 0,
-    activity_start: '2025-09-23',
-    due_date: '',
-    last_delivery: '',
+    points: 10,
+    activity_start: null,
+    due_date: null,
+    completed_at: '2025-09-20',
     restricoes: '',
-    comment: 'AGUARDANDO PROJETOS, RECOMENDAVEL MONTAR EAP E IR ALINHANDO COM ARQUITETURA OQ JA TEM',
-    created_at: '2025-09-23T08:30:00Z'
+    comment: 'AGUARDANDO PROJETOS, RECOMENDAVEL MONTAR EAP E IR ALINHANDO COM ARQUITETURA OQ JA TEM', // COMENTÁRIO ATUALIZADO
+    created_at: '2025-06-20T08:00:00Z'
   },
 
-  // PROJETO 16: DRV/PV - EDILSON EAP PLANNING
+  // PROJETO 14: AGENCIA DE TUBARAO - CELESC/RS (CORRIGIDO)
   {
     id: '23',
-    project_id: '16',
-    title: 'ESTRUTURA ANALITICA PROJETO E PLANEJAMENTO',
-    description: 'Montagem da EAP e planejamento para apresentação ao órgão',
-    assigned_to: '10', // EDILSON
-    status: 'EM_ANDAMENTO',
-    phase: 'PROJETO_BASICO',
+    project_id: '14',
+    title: 'PROJETO ARQUITETONICO, INTERIORES E ACESSIBILIDADE EXECUTIVO',
+    description: 'Projeto arquitetônico, interiores e acessibilidade executivo',
+    assigned_to: ['4', '3'], // LEONARDO, BESSA
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
     priority: 'alta',
     points: 0,
-    activity_start: '2025-09-23',
-    due_date: '',
-    last_delivery: '',
+    activity_start: null,
+    due_date: '2025-11-02', // CORRIGIDO - ERA 02/11/2025
+    completed_at: null,
     restricoes: '',
-    comment: 'NECESSARIO IR MONTANDO EAP PRA APRESENTAR PRO ORGAO, E COMO VAMOS FAZER A ASSOCIACAO, JA POSSO ADQURIR O ORCABIM (QND INICIAR)',
-    created_at: '2025-09-23T09:00:00Z'
+    comment: '',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '24',
+    project_id: '14',
+    title: 'PRE DIMENSIONAMENTO E MODELAGEM INICIAL ESTRUTURA, PLANTA DE FUROS PARA SONDAGEM',
+    description: 'Pré-dimensionamento e modelagem inicial da estrutura',
+    assigned_to: '2', // GUSTAVO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-09-28',
+    completed_at: null,
+    restricoes: '',
+    comment: 'NECESSARIO PRA INICIAR DISCIPLINAS DE ENGENHARIA',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '25',
+    project_id: '14',
+    title: 'EXECUTIVO ESTRUTURAL E FUNDACOES',
+    description: 'Executivo estrutural e fundações',
+    assigned_to: '2', // GUSTAVO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-11-02', // CORRIGIDO - ERA 28/09, AGORA É 02/11/2025
+    completed_at: null,
+    restricoes: '',
+    comment: 'NECESSARIO PRA INICIAR DISCIPLINAS DE ENGENHARIA',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '26',
+    project_id: '14',
+    title: 'PROJETO HIDROSSANITARIO',
+    description: 'Projeto hidrossanitário',
+    assigned_to: '5', // PEDRO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-11-02',
+    completed_at: null,
+    restricoes: 'ESTRUTURA',
+    comment: 'DEFINIR COTA DE TUBULACOES COM DEMAIS INSTALACOES E EDILSON.',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '27',
+    project_id: '14',
+    title: 'PROJETO ELETRICO, LOGICA E TELEFONIA',
+    description: 'Projeto elétrico, lógica e telefonia',
+    assigned_to: '6', // THIAGO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-11-02',
+    completed_at: null,
+    restricoes: 'ESTRUTURA',
+    comment: 'DEFINIR COTA DE TUBULACOES COM DEMAIS INSTALACOES E EDILSON.',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '28',
+    project_id: '14',
+    title: 'PROJETO CLIMATIZACAO',
+    description: 'Projeto de climatização',
+    assigned_to: '9', // RONDINELLY
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-11-02',
+    completed_at: null,
+    restricoes: 'ESTRUTURA',
+    comment: 'DEFINIR COTA DE TUBULACOES COM DEMAIS INSTALACOES E EDILSON.',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '29',
+    project_id: '14',
+    title: 'PROJETO INCENDIO',
+    description: 'Projeto de incêndio',
+    assigned_to: '8', // ELOISY
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-11-02',
+    completed_at: null,
+    restricoes: 'ESTRUTURA',
+    comment: '',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+  {
+    id: '30',
+    project_id: '14',
+    title: 'ORCAMENTO EXECUTIVO',
+    description: 'Orçamento executivo',
+    assigned_to: '10', // EDILSON
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-12-09',
+    completed_at: null,
+    restricoes: 'ESTRUTURA',
+    comment: '',
+    created_at: '2025-07-01T08:00:00Z'
+  },
+
+  // PROJETO 15: GINASIOS - SOP/RS
+  {
+    id: '31',
+    project_id: '15',
+    title: 'MODELAGEM DAS IMPLANTACOES',
+    description: 'Modelagem das implantações',
+    assigned_to: ['4', '3'], // LEONARDO, BESSA
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-09-26',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '32',
+    project_id: '15',
+    title: 'PROJETO ARQUITETONICO E ACESSIBILIDADE EXECUTIVO',
+    description: 'Projeto arquitetônico e acessibilidade executivo',
+    assigned_to: ['4', '3'], // LEONARDO, BESSA
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-10-05',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '33',
+    project_id: '15',
+    title: 'PROJETO HIDROSSANITARIO',
+    description: 'Projeto hidrossanitário',
+    assigned_to: '5', // PEDRO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-10-05',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '34',
+    project_id: '15',
+    title: 'PROJETO ELETRICO E LOGICA',
+    description: 'Projeto elétrico e lógica',
+    assigned_to: '6', // THIAGO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-10-05',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '35',
+    project_id: '15',
+    title: 'PROJETO SPDA E INCENDIO',
+    description: 'Projeto SPDA e incêndio',
+    assigned_to: '8', // ELOISY
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-10-05',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '36',
+    project_id: '15',
+    title: 'PROJETO ESTRUTURAL E FUNDACOES',
+    description: 'Projeto estrutural e fundações',
+    assigned_to: '2', // GUSTAVO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-09-12',
+    due_date: '2025-10-05',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '37',
+    project_id: '15',
+    title: 'COMPATIBILIZACAO E AJUSTES',
+    description: 'Compatibilização e ajustes',
+    assigned_to: '2', // GUSTAVO
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-10',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+  {
+    id: '38',
+    project_id: '15',
+    title: 'ORCAMENTO EXECUTIVO',
+    description: 'Orçamento executivo',
+    assigned_to: '10', // EDILSON
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-17',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-09-10T08:00:00Z'
+  },
+
+  // PROJETO 16: AGENCIA DA RECEITA FEDERAL - DRV/PV (CORRIGIDO)
+  {
+    id: '39',
+    project_id: '16',
+    title: 'PROJETO ARQUITETONICO, ACESSIBILIDADE, PAISAGISMO, SINALIZACAO E COMUNICAO VISUAL',
+    description: 'Projeto arquitetônico completo',
+    assigned_to: ['4', '3'], // LEONARDO, BESSA
+    status: 'PENDENTE',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-08-30',
+    due_date: '2025-10-19',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '40',
+    project_id: '16',
+    title: 'LAYOUT ARQUITETONICO',
+    description: 'Layout arquitetônico',
+    assigned_to: ['4', '3'], // LEONARDO, BESSA
+    status: 'CONCLUIDA',
+    phase: 'ESTUDO_PRELIMINAR',
+    priority: 'alta',
+    points: 10,
+    activity_start: '2025-04-30',
+    due_date: '2025-05-30',
+    completed_at: '2025-08-01',
+    restricoes: '',
+    comment: 'NO DIA 07 DE AGOSTO, PERGUNTEI SOBRE APROVACAO DOS PROJETOS PRIMEIRA ETAPA, DIA 19 AGOSTO FOI QUESTIONADO SOBRE AS PONTUACOES DA FACHADA, DIA 12 DE SETEMBRO FORAM ENVIADOS DIVERSOS PROJETOS DE ENGENHARIA, RETONARAM ATE DIA DE HOJE 22.09 APENAS OS APONTAMENTOS DO SPDA E ELETRICO.',
+    created_at: '2025-04-25T08:00:00Z'
+  },
+  {
+    id: '41',
+    project_id: '16',
+    title: 'PROJETO ESTRUTURAL E FUNDACOES',
+    description: 'Projeto estrutural e fundações',
+    assigned_to: ['2', '12'], // GUSTAVO, NARA
+    status: 'EM_ANDAMENTO',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: '2025-08-30',
+    due_date: '2025-10-19',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '42',
+    project_id: '16',
+    title: 'PROJETO HIDROSSANITARIO',
+    description: 'Projeto hidrossanitário',
+    assigned_to: '2', // GUSTAVO
+    status: 'EM_ESPERA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 5,
+    activity_start: '2025-08-30',
+    due_date: '2025-10-19',
+    completed_at: '2025-09-12',
+    restricoes: '',
+    comment: 'AGUARDANDO APONTAMENTOS DA FISCALIZACAO',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '43',
+    project_id: '16',
+    title: 'PROJETO LUMINOTECNICO, ELETRICO BAIXA TENSAO, CABEAMENTOS, CFTV, REDE LOGICA, TELECOMUNICACOES, SONORIZACAO, CONTROLE DE ACESSO, ENERGIA ESTABILIZADA',
+    description: 'Projeto elétrico completo',
+    assigned_to: '6', // THIAGO
+    status: 'EM_ANDAMENTO',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 5,
+    activity_start: '2025-08-30',
+    due_date: '2025-10-19',
+    completed_at: '2025-09-19',
+    restricoes: '',
+    comment: 'AJUSTES REALIZADOS PELO THIAGO E VAMOS ABORDAR NA REUNIAO',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '44',
+    project_id: '16',
+    title: 'PROJETO ENTRADA DE ENERGIA, SUBESTACAO AEREA EM POSTE, GRUPO GERADOR, FOTOVOLTAICA',
+    description: 'Projeto de entrada de energia e sistemas',
+    assigned_to: '7', // NICOLAS
+    status: 'PARALISADA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-19',
+    completed_at: '2025-09-19',
+    restricoes: '',
+    comment: 'AJUSTAR URGENTE COM THIAGO PRA INICIAR PROJETOS FOTOVOLTAICOS, GERADOR E SUBESTACAO, ALINHAR PRA INICIO', // COMENTÁRIO ATUALIZADO
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '45',
+    project_id: '16',
+    title: 'PROJETO DE CLIMATIZACAO',
+    description: 'Projeto de climatização',
+    assigned_to: '9', // RONDINELLY
+    status: 'EM_ESPERA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 5,
+    activity_start: null,
+    due_date: '2025-10-19',
+    completed_at: '2025-09-12',
+    restricoes: '',
+    comment: 'AGUARDANDO RESPOSTA FISCALIZACAO.',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '46',
+    project_id: '16',
+    title: 'PROJETO CANTEIRO DE OBRA',
+    description: 'Projeto canteiro de obra',
+    assigned_to: '10', // EDILSON
+    status: 'EM_ANDAMENTO',
+    phase: 'EXECUTIVO',
+    priority: 'media',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-19',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '47',
+    project_id: '16',
+    title: 'PROJETO TERRAPLENAGEM',
+    description: 'Projeto de terraplenagem',
+    assigned_to: '4', // LEONARDO
+    status: 'EM_ANDAMENTO',
+    phase: 'EXECUTIVO',
+    priority: 'media',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-19',
+    completed_at: null,
+    restricoes: '',
+    comment: '',
+    created_at: '2025-08-25T08:00:00Z'
+  },
+  {
+    id: '48',
+    project_id: '16',
+    title: 'COMPATIBILIZACAO, AJUSTES E ORCAMENTO EXECUTIVO',
+    description: 'Compatibilização, ajustes e orçamento executivo',
+    assigned_to: '10', // EDILSON
+    status: 'EM_ANDAMENTO',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 0,
+    activity_start: null,
+    due_date: '2025-10-30',
+    completed_at: null,
+    restricoes: '',
+    comment: 'NECESSARIO IR MONTANDO EAP PRA APRESENTAR PRO ORGAO, E COMO VAMOS FAZER A ASSOCIACAO, JA POSSO ADQURIR O ORCABIM (QND INICIAR)', // COMENTÁRIO ATUALIZADO
+    created_at: '2025-08-25T08:00:00Z'
+  },
+
+  // PROJETO 17: SHOPPING INDEPENDENCIA - PREF. SANTA MARIA/RS
+  {
+    id: '49',
+    project_id: '17',
+    title: 'PROJETO DE SEGURANCA, BASICO ARQUITETONICO E ORCAMENTO',
+    description: 'Projeto de segurança, básico arquitetônico e orçamento',
+    assigned_to: ['1', '10', '4'], // IGOR, EDILSON, LEONARDO
+    status: 'CONCLUIDA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 10,
+    activity_start: null,
+    due_date: null,
+    completed_at: '2025-07-31',
+    restricoes: '',
+    comment: 'AGUARDANDO FISCALIZACAO ENVIAR ANALISE.',
+    created_at: '2025-03-10T08:00:00Z'
+  },
+
+  // PROJETO 18: CAMPUS CURITIBA - UNESPAR/PR
+  {
+    id: '50',
+    project_id: '18',
+    title: 'APROVACAO PROJETO DE INCENDIO NO CORPO DE BOMBEIROS',
+    description: 'Aprovação do projeto de incêndio no corpo de bombeiros',
+    assigned_to: '8', // ELOISY
+    status: 'EM_ESPERA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 5,
+    activity_start: null,
+    due_date: null,
+    completed_at: '2025-09-15',
+    restricoes: '',
+    comment: 'AGUARDANDO ANALISE CORPO DE BOMBEIROS',
+    created_at: '2025-01-02T08:00:00Z'
+  },
+  {
+    id: '51',
+    project_id: '18',
+    title: 'ORCAMENTO',
+    description: 'Orçamento do projeto',
+    assigned_to: '10', // EDILSON
+    status: 'EM_ESPERA',
+    phase: 'EXECUTIVO',
+    priority: 'alta',
+    points: 5,
+    activity_start: null,
+    due_date: null,
+    completed_at: '2025-09-08',
+    restricoes: '',
+    comment: '',
+    created_at: '2025-01-02T08:00:00Z'
+  },
+
+  // PROJETO 19: REFORMA DAS COBERTURAS PREFEITURA - PREF.LORENA/SP
+  {
+    id: '52',
+    project_id: '19',
+    title: 'AGUARDANDO LICITAR OBRA PRA FISCALIZACAO',
+    description: 'Aguardando licitação da obra para fiscalização',
+    assigned_to: '1', // IGOR
+    status: 'PARALISADA',
+    phase: 'EXECUTIVO',
+    priority: 'baixa',
+    points: 0,
+    activity_start: null,
+    due_date: null,
+    completed_at: null,
+    restricoes: '',
+    comment: 'COMECO DE OUTUBRO PRA CONTRATAR EMPRESA QUE VAI EXECUTAR A OBRA',
+    created_at: '2024-01-01T08:00:00Z'
   }
 ];
 
-// Mock Proposals Data (Admin only)
+// Mock Proposals Data - PROPOSTAS FICTÍCIAS EM TODAS AS ETAPAS
 export const mockProposals: Proposal[] = [
+  // PENDENTE
   {
     id: '1',
-    client_name: 'Maria Santos Arquitetura',
-    proposal_date: '2024-04-01',
-    proposal_value: 125000,
-    last_meeting: '2024-03-28',
-    proposal_link: 'https://drive.google.com/proposal-maria-santos',
-    followup_date: '2024-04-15',
-    status: 'negociando',
-    notes: 'Cliente interessado, aguardando ajustes no cronograma',
-    created_at: '2024-03-25T14:00:00Z',
-    updated_at: '2024-04-02T09:30:00Z'
+    client_name: 'Dr. Ricardo Medeiros',
+    proposal_date: '2025-09-20',
+    proposal_value: 890000,
+    last_meeting: '2025-09-18',
+    proposal_link: 'https://drive.google.com/file/proposta-centro-medico',
+    followup_date: '2025-10-05',
+    status: 'pendente',
+    notes: 'Projeto completo para centro médico com 15 consultórios, laboratório e área de exames. Cliente interessado mas aguardando aprovação do consórcio.',
+    created_at: '2025-09-20T08:00:00Z',
+    updated_at: '2025-09-23T14:30:00Z'
   },
   {
     id: '2',
-    client_name: 'Construtora Horizonte',
-    proposal_date: '2024-03-15',
-    proposal_value: 350000,
-    last_meeting: '2024-03-20',
-    proposal_link: 'https://drive.google.com/proposal-horizonte',
-    followup_date: '2024-04-10',
+    client_name: 'Metalúrgica São Paulo Ltda',
+    proposal_date: '2025-09-18',
+    proposal_value: 1200000,
+    last_meeting: '2025-09-16',
+    proposal_link: 'https://drive.google.com/file/galpao-industrial',
+    followup_date: '2025-10-02',
     status: 'pendente',
-    notes: 'Primeira proposta enviada, aguardando retorno',
-    created_at: '2024-03-10T10:15:00Z',
-    updated_at: '2024-03-22T16:45:00Z'
+    notes: 'Galpão industrial de 2000m² com ponte rolante e sistema de ventilação industrial. Aguardando resposta da diretoria.',
+    created_at: '2025-09-18T10:15:00Z',
+    updated_at: '2025-09-22T16:45:00Z'
   },
+
+  // NEGOCIANDO
   {
     id: '3',
-    client_name: 'Shopping Center ABC',
-    proposal_date: '2024-02-20',
-    proposal_value: 890000,
-    last_meeting: '2024-04-05',
-    proposal_link: 'https://drive.google.com/proposal-shopping-abc',
-    status: 'aprovada',
-    notes: 'Proposta aprovada! Início previsto para maio',
-    created_at: '2024-02-15T08:20:00Z',
-    updated_at: '2024-04-06T11:10:00Z'
+    client_name: 'Tech Park Empreendimentos',
+    proposal_date: '2025-09-05',
+    proposal_value: 3500000,
+    last_meeting: '2025-09-20',
+    proposal_link: 'https://drive.google.com/file/tech-park',
+    followup_date: '2025-09-28',
+    status: 'negociando',
+    notes: 'Condomínio empresarial com 8 torres comerciais, centro de convenções e estacionamento subterrâneo. Negociando redução de 10% no valor.',
+    created_at: '2025-09-05T16:30:00Z',
+    updated_at: '2025-09-22T09:45:00Z'
   },
   {
     id: '4',
-    client_name: 'Residencial Palmeiras',
-    proposal_date: '2024-01-30',
-    proposal_value: 180000,
-    last_meeting: '2024-02-15',
+    client_name: 'Horizonte Investimentos',
+    proposal_date: '2025-08-28',
+    proposal_value: 5200000,
+    last_meeting: '2025-09-15',
+    proposal_link: 'https://drive.google.com/file/shopping-horizonte',
+    followup_date: '2025-09-30',
+    status: 'negociando',
+    notes: 'Shopping center com 150 lojas, praça de alimentação, cinema e área de lazer. Cliente quer alterações no projeto de segurança.',
+    created_at: '2025-08-28T13:15:00Z',
+    updated_at: '2025-09-21T16:30:00Z'
+  },
+  {
+    id: '5',
+    client_name: 'Premium Hotelaria S.A.',
+    proposal_date: '2025-08-25',
+    proposal_value: 2800000,
+    last_meeting: '2025-09-18',
+    proposal_link: 'https://drive.google.com/file/hotel-premium',
+    followup_date: '2025-09-25',
+    status: 'negociando',
+    notes: 'Hotel executivo com 120 quartos, centro de eventos, spa e restaurante gourmet. Ajustando cronograma para entrega.',
+    created_at: '2025-08-25T09:20:00Z',
+    updated_at: '2025-09-20T14:15:00Z'
+  },
+
+  // APROVADA
+  {
+    id: '6',
+    client_name: 'João Silva Comércio Ltda',
+    proposal_date: '2025-08-15',
+    proposal_value: 280000,
+    last_meeting: '2025-09-08',
+    proposal_link: 'https://drive.google.com/file/reforma-comercial',
+    followup_date: '2025-09-25',
+    status: 'aprovada',
+    notes: 'Reforma completa de loja comercial com novo layout e sistema elétrico. Projeto aprovado, aguardando assinatura do contrato.',
+    created_at: '2025-08-15T10:30:00Z',
+    updated_at: '2025-09-10T12:20:00Z'
+  },
+  {
+    id: '7',
+    client_name: 'Fitness Total Academias',
+    proposal_date: '2025-08-10',
+    proposal_value: 720000,
+    last_meeting: '2025-09-02',
+    proposal_link: 'https://drive.google.com/file/academia-fitness',
+    followup_date: '2025-09-20',
+    status: 'aprovada',
+    notes: 'Academia completa com musculação, cardio, piscina e salas de aula. Projeto aprovado pela diretoria.',
+    created_at: '2025-08-10T15:45:00Z',
+    updated_at: '2025-09-05T11:30:00Z'
+  },
+  {
+    id: '8',
+    client_name: 'Animal Care Clínica Veterinária',
+    proposal_date: '2025-08-05',
+    proposal_value: 380000,
+    last_meeting: '2025-08-30',
+    proposal_link: 'https://drive.google.com/file/clinica-vet',
+    followup_date: '2025-09-15',
+    status: 'aprovada',
+    notes: 'Clínica veterinária com consultórios, cirurgia, internação e pet shop. Cliente muito satisfeito com a proposta.',
+    created_at: '2025-08-05T12:10:00Z',
+    updated_at: '2025-09-01T16:45:00Z'
+  },
+  {
+    id: '9',
+    client_name: 'LabMed Diagnósticos',
+    proposal_date: '2025-07-28',
+    proposal_value: 950000,
+    last_meeting: '2025-08-20',
+    proposal_link: 'https://drive.google.com/file/laboratorio',
+    followup_date: '2025-09-10',
+    status: 'aprovada',
+    notes: 'Laboratório de análises clínicas com equipamentos de última geração e sala limpa. Aprovado sem alterações.',
+    created_at: '2025-07-28T08:25:00Z',
+    updated_at: '2025-08-25T14:20:00Z'
+  },
+
+  // REJEITADA
+  {
+    id: '10',
+    client_name: 'Construtora Lar Feliz',
+    proposal_date: '2025-07-20',
+    proposal_value: 1800000,
+    last_meeting: '2025-08-10',
+    proposal_link: 'https://drive.google.com/file/conjunto-habitacional',
+    followup_date: null,
     status: 'rejeitada',
-    notes: 'Cliente optou por outra empresa devido ao prazo',
-    created_at: '2024-01-25T13:30:00Z',
-    updated_at: '2024-02-20T14:55:00Z'
+    notes: 'Conjunto habitacional com 50 casas populares e infraestrutura completa. Cliente optou por outra empresa com valor menor.',
+    created_at: '2025-07-20T14:15:00Z',
+    updated_at: '2025-08-15T09:30:00Z'
+  },
+  {
+    id: '11',
+    client_name: 'LogiMax Logística',
+    proposal_date: '2025-07-15',
+    proposal_value: 2200000,
+    last_meeting: '2025-08-05',
+    proposal_link: 'https://drive.google.com/file/centro-distribuicao',
+    followup_date: null,
+    status: 'rejeitada',
+    notes: 'Centro de distribuição automatizado com sistema de esteiras e armazenagem vertical. Proposta considerada cara pelo cliente.',
+    created_at: '2025-07-15T16:40:00Z',
+    updated_at: '2025-08-10T13:15:00Z'
   }
 ];
 
@@ -792,47 +1397,44 @@ export const mockProposals: Proposal[] = [
 export const mockAchievements: Achievement[] = [
   {
     id: '1',
-    user_id: '2', // Gustavo
-    achievement_type: 'task_completion',
     title: 'Primeira Tarefa',
     description: 'Complete sua primeira tarefa',
-    points_earned: 10,
-    earned_at: subDays(new Date(), 15).toISOString()
+    icon: 'CheckSquare',
+    points: 10,
+    unlocked: true,
+    unlockedAt: '2025-01-15T10:30:00Z'
   },
   {
     id: '2',
-    user_id: '4', // Leonardo
-    achievement_type: 'speed',
-    title: 'Velocidade Máxima',
-    description: 'Complete 5 tarefas em um dia',
-    points_earned: 50,
-    earned_at: subDays(new Date(), 8).toISOString()
+    title: 'Produtivo',
+    description: 'Complete 10 tarefas',
+    icon: 'Target',
+    points: 50,
+    unlocked: true,
+    unlockedAt: '2025-01-20T16:45:00Z'
   },
   {
     id: '3',
-    user_id: '9', // Rondinelly
-    achievement_type: 'consistency',
-    title: 'Perfeccionista',
-    description: 'Complete 10 tarefas sem atrasos',
-    points_earned: 75,
-    earned_at: subDays(new Date(), 3).toISOString()
+    title: 'Dedicado',
+    description: 'Complete 25 tarefas',
+    icon: 'Award',
+    points: 100,
+    unlocked: false
+  },
+  {
+    id: '4',
+    title: 'Expert',
+    description: 'Complete 50 tarefas',
+    icon: 'Star',
+    points: 200,
+    unlocked: false
+  },
+  {
+    id: '5',
+    title: 'Mestre',
+    description: 'Complete 100 tarefas',
+    icon: 'Crown',
+    points: 500,
+    unlocked: false
   }
 ];
-
-// Utility functions
-export const getProjectsByUser = (userId: string) => {
-  return mockProjects.filter(project => project.responsible_ids.includes(userId));
-};
-
-export const getTasksByUser = (userId: string) => {
-  return mockTasks.filter(task => {
-    if (Array.isArray(task.assigned_to)) {
-      return task.assigned_to.includes(userId);
-    }
-    return task.assigned_to === userId;
-  });
-};
-
-export const getAchievementsByUser = (userId: string) => {
-  return mockAchievements.filter(achievement => achievement.user_id === userId);
-};
