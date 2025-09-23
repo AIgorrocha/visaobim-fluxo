@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useState } from 'react';
+import ProposalModal from '@/components/ProposalModal';
 
 const Propostas = () => {
   const { user, profile } = useAuth();
@@ -52,6 +53,8 @@ const Propostas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingProposal, setEditingProposal] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalStatus, setCreateModalStatus] = useState('pendente');
   const [editForm, setEditForm] = useState({
     client_name: '',
     proposal_value: '',
@@ -115,9 +118,9 @@ const Propostas = () => {
     }
   };
 
-  const addNewProposal = async (columnStatus: string) => {
-    // This would be implemented with proper form handling
-    console.log('Add new proposal with status:', columnStatus);
+  const addNewProposal = (columnStatus: string) => {
+    setCreateModalStatus(columnStatus);
+    setShowCreateModal(true);
   };
 
   const editProposal = (proposalId: string) => {
@@ -357,6 +360,13 @@ const Propostas = () => {
           );
         })}
       </div>
+
+      {/* Modal de Criação */}
+      <ProposalModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        initialStatus={createModalStatus}
+      />
 
       {/* Modal de Edição */}
       {editingProposal && (

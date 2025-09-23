@@ -14,7 +14,7 @@ interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   task?: Task | null;
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'view';
 }
 
 const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
@@ -126,7 +126,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
   });
 
   useEffect(() => {
-    if (task && mode === 'edit') {
+    if (task && (mode === 'edit' || mode === 'view')) {
       setFormData({
         project_id: task.project_id,
         title: task.title,
@@ -246,9 +246,12 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     switch (mode) {
       case 'create': return 'Nova Tarefa';
       case 'edit': return 'Editar Tarefa';
+      case 'view': return 'Visualizar Tarefa';
       default: return 'Tarefa';
     }
   };
+
+  const isTaskReadOnly = mode === 'view' || (!isAdmin && !isAssignedToTask);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -260,6 +263,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             {mode === 'edit' && isAdmin && 'Edite as informações da tarefa.'}
             {mode === 'edit' && !isAdmin && isAssignedToTask && 'Você pode editar os campos desta tarefa atribuída a você.'}
             {mode === 'edit' && !isAdmin && !isAssignedToTask && 'Você só pode visualizar esta tarefa.'}
+            {mode === 'view' && 'Visualize as informações da tarefa.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -271,7 +275,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               <Select
                 value={formData.project_id}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value }))}
-                disabled={!canEditField('project_id')}
+                disabled={isTaskReadOnly || !canEditField('project_id')}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um projeto" />
@@ -295,7 +299,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Ex: Projeto Elétrico"
                 required
-                readOnly={!canEditField('title')}
+                readOnly={isTaskReadOnly || !canEditField('title')}
               />
             </div>
 
@@ -339,7 +343,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                           }
                         }
                       }}
-                      disabled={!canEditField('assigned_to')}
+                      disabled={isTaskReadOnly || !canEditField('assigned_to')}
                     />
                     <Label
                       htmlFor={`assigned-${member.id}`}
@@ -517,14 +521,16 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {mode === 'create' ? 'Criar Tarefa' : 'Salvar Alterações'}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                {mode === 'view' ? 'Fechar' : 'Cancelar'}
+              </Button>
+              {!isTaskReadOnly && (
+                <Button type="submit">
+                  {mode === 'create' ? 'Criar Tarefa' : 'Salvar Alterações'}
+                </Button>
+              )}
+            </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

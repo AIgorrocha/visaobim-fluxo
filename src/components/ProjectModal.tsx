@@ -116,7 +116,8 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
   };
 
   const isReadOnly = mode === 'view';
-  const isAdmin = user?.role === 'admin';
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
 
   const getTitle = () => {
     switch (mode) {
@@ -288,8 +289,8 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
             />
           </div>
 
-          {/* Informações Financeiras - Apenas em Visualização */}
-          {mode === 'view' && project && (
+          {/* Informações Financeiras - Apenas em Visualização e para Admins */}
+          {mode === 'view' && project && isAdmin && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
               <div className="space-y-2">
                 <Label>Valor do Projeto</Label>

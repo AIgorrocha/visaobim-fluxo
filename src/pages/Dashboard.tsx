@@ -42,23 +42,23 @@ const Dashboard = () => {
   const allTasks = isAdmin ? tasks : userTasks;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-6">
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
           Bem-vindo(a), {profile?.full_name || user?.email?.split('@')[0] || 'Usuário'}!
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">
           Aqui está um resumo das suas atividades hoje.
         </p>
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -66,14 +66,15 @@ const Dashboard = () => {
         >
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Minhas Tarefas</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Minhas Tarefas</CardTitle>
               <CheckSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{userTasks.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {pendingTasks.length} pendentes
-              </p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>{pendingTasks.length} pendentes</div>
+                <div>{completedTasks.length} concluídas</div>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -85,7 +86,7 @@ const Dashboard = () => {
         >
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Meus Projetos</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Meus Projetos</CardTitle>
               <FolderOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -104,7 +105,7 @@ const Dashboard = () => {
         >
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pontuação</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Pontuação</CardTitle>
               <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -123,7 +124,7 @@ const Dashboard = () => {
         >
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Taxa de Conclusão</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -139,7 +140,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Level Progress */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -239,12 +240,12 @@ const Dashboard = () => {
       </div>
 
       {/* Admin Section */}
-      {isAdmin && (
+       {isAdmin && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.8 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
         >
           <Card>
             <CardHeader>
