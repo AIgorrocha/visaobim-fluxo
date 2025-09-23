@@ -83,9 +83,24 @@ const Relatorios = () => {
       const projectNumber = index + 1;
       const emoji = projectNumber === 1 ? '1️⃣' : projectNumber === 2 ? '2️⃣' : projectNumber === 3 ? '3️⃣' : projectNumber === 4 ? '4️⃣' : projectNumber === 5 ? '5️⃣' : `${projectNumber}️⃣`;
 
+      // Formatar valores financeiros
+      const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(value);
+      };
+
       report += `${emoji} ${project.name}
+- Cliente: ${project.client}
 - Status do Projeto: ${project.status}
+- Tipo: ${project.type === 'publico' ? 'Público' : 'Privado'}
 - Seus responsáveis no projeto: ${getResponsibleNames(project.responsible_ids)}
+- Início do Contrato: ${formatDate(project.contract_start)}
+- Fim do Contrato: ${formatDate(project.contract_end)}${project.project_value ? `
+- Valor do Projeto: ${formatCurrency(project.project_value)}` : ''}${project.amount_paid ? `
+- Valor Pago: ${formatCurrency(project.amount_paid)}` : ''}${project.amount_pending ? `
+- Valor Pendente: ${formatCurrency(project.amount_pending)}` : ''}
 
 `;
     });
@@ -116,11 +131,13 @@ const Relatorios = () => {
 🏗️ Projeto: ${project?.name || 'Projeto não encontrado'}${coResponsible ? '\n' + coResponsible : ''}
 📊 Fase: ${task.phase || '-'}
 🔄 Status: ${task.status}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
-📅 Início: ${formatDate(task.start_date)}
+🏆 Pontos: ${task.points || 0} pontos
+⚡ Prioridade: ${task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'}
+📅 Início: ${formatDate(task.activity_start)}
 ⏰ Prazo: ${formatDate(task.due_date)}${isUpcoming ? ' ⚠️ PRÓXIMO' : ''}
 📝 Entrega Realizada: ${formatDate(task.completed_at)}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
-🔒 Restrições: ${task.restrictions || '-'}
-💬 Comentário: ${task.comments || '-'}
+🔒 Restrições: ${task.restricoes || '-'}
+💬 Comentário: ${task.comment || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━
 
@@ -131,11 +148,22 @@ const Relatorios = () => {
     const upcomingTaskName = upcomingTasks.length > 0 ? upcomingTasks[0].title : '';
     const upcomingTaskDate = upcomingTasks.length > 0 ? formatDate(upcomingTasks[0].due_date) : '';
 
+    // Calcular pontos totais
+    const totalPoints = userTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    const completedPoints = completedUserTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    const pendingPoints = pendingUserTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+
     report += `📊 RESUMO:
 - Total de Tarefas: ${userTasks.length}
 - Concluídas: ${completedUserTasks.length} ✓
 - Pendentes: ${pendingUserTasks.length}${upcomingTasks.length > 0 ? `
-- ${upcomingTaskName} para ${upcomingTaskDate}` : ''}
+- Próxima: ${upcomingTaskName} para ${upcomingTaskDate}` : ''}
+
+🏆 PONTUAÇÃO:
+- Pontos Totais Disponíveis: ${totalPoints}
+- Pontos Conquistados: ${completedPoints} ✓
+- Pontos Pendentes: ${pendingPoints}
+- Taxa de Conquista: ${totalPoints > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0}%
 
 Qualquer dúvida, estou à disposição!`;
 
