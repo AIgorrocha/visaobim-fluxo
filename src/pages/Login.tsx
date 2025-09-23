@@ -167,13 +167,6 @@ const Login = () => {
               </Button>
             </form>
 
-            <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-              <p className="text-xs text-muted-foreground text-center">
-                Para demonstração, use qualquer e-mail @visaoprojetosbim.com
-                <br />
-                Admin: igor@visaoprojetosbim.com (senha: admin@2025)
-              </p>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

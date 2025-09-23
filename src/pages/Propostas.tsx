@@ -1,11 +1,48 @@
 import { motion } from 'framer-motion';
-import { Plus, FileText, Calendar, DollarSign } from 'lucide-react';
+import { Plus, FileText, Calendar, DollarSign, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 import { mockProposals } from '@/data/mockData';
 
 const Propostas = () => {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  // Verificar se é admin (apenas Igor e Stael)
+  const isAdmin = user.role === 'admin' && (user.id === '1' || user.id === '13');
+
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl font-bold text-foreground">Gestão de Propostas</h1>
+          <p className="text-muted-foreground">Acesso restrito à administração</p>
+        </motion.div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Lock className="h-5 w-5 mr-2 text-warning" />
+              Acesso Restrito
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>
+              Este módulo está disponível apenas para administradores autorizados.
+              Entre em contato com Igor ou Stael para mais informações.
+            </CardDescription>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',

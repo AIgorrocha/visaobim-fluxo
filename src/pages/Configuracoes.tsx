@@ -57,7 +57,7 @@ const Configuracoes = () => {
                 <Label htmlFor="phone">Telefone</Label>
                 <Input id="phone" placeholder="(11) 99999-9999" />
               </div>
-              <Button>Salvar Alterações</Button>
+              <Button onClick={() => alert('Funcionalidade em desenvolvimento')}>Salvar Alterações</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -84,7 +84,7 @@ const Configuracoes = () => {
                 <Switch id="project-notifications" />
                 <Label htmlFor="project-notifications">Notificações de projetos</Label>
               </div>
-              <Button>Salvar Alterações</Button>
+              <Button onClick={() => alert('Funcionalidade em desenvolvimento')}>Salvar Alterações</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -107,7 +107,7 @@ const Configuracoes = () => {
                 <Switch id="compact-view" />
                 <Label htmlFor="compact-view">Visualização compacta</Label>
               </div>
-              <Button>Salvar Alterações</Button>
+              <Button onClick={() => alert('Funcionalidade em desenvolvimento')}>Salvar Alterações</Button>
             </CardContent>
           </Card>
         </TabsContent>

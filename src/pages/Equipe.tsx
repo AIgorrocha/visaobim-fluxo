@@ -1,22 +1,96 @@
 import { motion } from 'framer-motion';
-import { Trophy, Users, Target, TrendingUp } from 'lucide-react';
+import { Trophy, Users, Target, TrendingUp, Award, Clock, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppData } from '@/contexts/AppDataContext';
 
-const mockTeamData = [
-  { id: '1', name: 'Igor', role: 'admin', points: 2500, level: 6, tasks: 12, projects: 8 },
-  { id: '2', name: 'Gustavo', points: 850, level: 3, tasks: 8, projects: 3 },
-  { id: '4', name: 'Leonardo', points: 1200, level: 4, tasks: 10, projects: 4 },
-  { id: '9', name: 'Rondinelly', points: 920, level: 3, tasks: 7, projects: 2 },
-  { id: '7', name: 'Nicolas', points: 780, level: 3, tasks: 5, projects: 2 }
+// Dados reais da equipe com base no AuthContext
+const teamMembersData = [
+  { id: '1', name: 'Igor', role: 'admin' },
+  { id: '2', name: 'Gustavo' },
+  { id: '3', name: 'Bessa' },
+  { id: '4', name: 'Leonardo' },
+  { id: '5', name: 'Pedro' },
+  { id: '6', name: 'Thiago' },
+  { id: '7', name: 'Nicolas' },
+  { id: '8', name: 'Eloisy' },
+  { id: '9', name: 'Rondinelly' },
+  { id: '10', name: 'Edilson' },
+  { id: '11', name: 'Philip' },
+  { id: '12', name: 'Nara' },
+  { id: '13', name: 'Stael', role: 'admin' },
+  { id: '14', name: 'Projetista Externo' }
 ];
 
 const Equipe = () => {
   const { user } = useAuth();
+  const { projects, tasks } = useAppData();
 
-  const sortedTeam = mockTeamData.sort((a, b) => b.points - a.points);
+  // Calcular estatísticas reais para cada membro
+  const teamWithStats = teamMembersData.map(member => {
+    const memberTasks = tasks.filter(task =>
+      Array.isArray(task.assigned_to)
+        ? task.assigned_to.includes(member.id)
+        : task.assigned_to === member.id
+    );
+    const memberProjects = projects.filter(project =>
+      project.responsible_ids.includes(member.id)
+    );
+
+    // Calcular pontos baseados nas tarefas concluídas com sistema real de pontuação
+    const completedTasks = memberTasks.filter(t => t.status === 'CONCLUIDA');
+    const totalPoints = completedTasks.reduce((sum, task) => {
+      if (!task.due_date || !task.completed_at) return sum;
+
+      const dueDate = new Date(task.due_date);
+      const completedDate = new Date(task.completed_at);
+      const daysDiff = Math.floor((dueDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff > 0) {
+        // Entregue antes do prazo: +2 pontos por dia
+        return sum + (daysDiff * 2);
+      } else if (daysDiff < 0) {
+        // Entregue com atraso: -4 pontos por dia
+        return sum + (daysDiff * 4); // daysDiff já é negativo
+      } else {
+        // Entregue no prazo: 0 pontos
+        return sum;
+      }
+    }, 0);
+
+    // Calcular nível baseado nos pontos (sistema realista: 2 pontos por dia antecipado, -4 por atraso)
+    const getLevelFromPoints = (points: number) => {
+      if (points < 0) return 0; // Nível 0 para pontuação negativa
+      if (points < 10) return 1;
+      if (points < 30) return 2;
+      if (points < 60) return 3;
+      if (points < 100) return 4;
+      if (points < 150) return 5;
+      if (points < 200) return 6;
+      if (points < 300) return 7;
+      if (points < 400) return 8;
+      return 9;
+    };
+
+    return {
+      ...member,
+      tasks: memberTasks.length,
+      projects: memberProjects.length,
+      completedTasks: completedTasks.length,
+      activeTasks: memberTasks.filter(t => t.status === 'EM_ANDAMENTO').length,
+      points: totalPoints,
+      level: getLevelFromPoints(totalPoints)
+    };
+  });
+
+  const sortedTeam = teamWithStats.sort((a, b) => b.points - a.points);
+
+  // Estatísticas gerais
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA').length;
+  const totalPoints = teamWithStats.reduce((sum, member) => sum + member.points, 0);
 
   return (
     <div className="space-y-6">
@@ -38,7 +112,8 @@ const Equipe = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{teamWithStats.length}</div>
+            <p className="text-xs text-muted-foreground">Total da equipe</p>
           </CardContent>
         </Card>
 
@@ -50,7 +125,8 @@ const Equipe = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87</div>
+            <div className="text-2xl font-bold">{completedTasks}</div>
+            <p className="text-xs text-muted-foreground">de {totalTasks} tarefas</p>
           </CardContent>
         </Card>
 
@@ -58,11 +134,12 @@ const Equipe = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Trophy className="h-5 w-5 mr-2 text-accent" />
-              Pontuação Total
+              Total de Pontos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8.250</div>
+            <div className="text-2xl font-bold">{totalPoints.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Pontuação geral</p>
           </CardContent>
         </Card>
       </div>
@@ -90,7 +167,7 @@ const Equipe = () => {
                 <div className="flex-1">
                   <p className="font-medium">{member.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {member.tasks} tarefas • {member.projects} projetos
+                    {member.tasks} tarefas ({member.completedTasks} concluídas) • {member.projects} projetos
                   </p>
                 </div>
                 <div className="text-right">

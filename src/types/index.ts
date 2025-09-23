@@ -23,9 +23,37 @@ export interface Project {
   contract_end: string;
   vigencia_contrato?: string;
   prazo_vigencia?: string;
+  // Campos financeiros
+  project_value?: number;
+  amount_paid?: number;
+  amount_pending?: number;
+  expenses?: number;
+  profit_margin?: number;
   created_by: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Financial {
+  project_id: string;
+  project_name: string;
+  client: string;
+  contract_value: number;
+  amount_received: number;
+  amount_pending: number;
+  expenses: number;
+  profit: number;
+  responsible_payment?: { [user_id: string]: number }; // Pagamentos por responsável
+  payment_history?: PaymentRecord[];
+}
+
+export interface PaymentRecord {
+  id: string;
+  project_id: string;
+  user_id: string;
+  amount: number;
+  payment_date: string;
+  description?: string;
 }
 
 export interface Task {
