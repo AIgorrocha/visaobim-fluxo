@@ -141,37 +141,99 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Gerenciar mudanças de autenticação
   useEffect(() => {
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Verificar sessão atual primeiro
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+
+        if (sessionError) {
+          console.error('Erro ao buscar sessão:', sessionError);
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        // Configurar estados baseados na sessão
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        // Buscar perfil se usuário estiver logado
+        if (session?.user) {
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            if (isMounted) {
+              setProfile(userProfile as Profile);
+            }
+          } catch (error) {
+            console.error('Erro ao buscar perfil:', error);
+            if (isMounted) {
+              setProfile(null);
+            }
+          }
+        } else {
+          setProfile(null);
+        }
+
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Erro na inicialização da auth:', error);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
+      }
+    };
+
     // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+
+        console.log('Auth state changed:', event, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
 
         // Buscar perfil quando usuário faz login
         if (session?.user) {
-          const userProfile = await fetchProfile(session.user.id);
-          setProfile(userProfile as Profile);
+          try {
+            const userProfile = await fetchProfile(session.user.id);
+            if (isMounted) {
+              setProfile(userProfile as Profile);
+            }
+          } catch (error) {
+            console.error('Erro ao buscar perfil no listener:', error);
+            if (isMounted) {
+              setProfile(null);
+            }
+          }
         } else {
           setProfile(null);
         }
 
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id).then((profile) => setProfile(profile as Profile));
-      }
-      
-      setLoading(false);
-    });
+    // Inicializar
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value: AuthContextType = {
