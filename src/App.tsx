@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/SupabaseAuthContext";
 import { SupabaseDataProvider } from "@/contexts/SupabaseDataContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
+import { DataDebugPanel } from "@/components/DataDebugPanel";
 
 // Pages
 import Login from "./pages/Login";
@@ -99,6 +100,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <DataDebugPanel />
         </TooltipProvider>
       </SupabaseDataProvider>
     </AuthProvider>
