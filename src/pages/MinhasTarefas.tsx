@@ -37,12 +37,6 @@ const MinhasTarefas = () => {
   const isAdmin = profile?.role === 'admin';
   const userTasks = isAdmin ? tasks : getTasksByUser(user.id);
 
-  // Debug logs
-  console.log('MinhasTarefas - Current user:', user);
-  console.log('MinhasTarefas - isAdmin:', isAdmin);
-  console.log('MinhasTarefas - All tasks:', tasks);
-  console.log('MinhasTarefas - User tasks:', userTasks);
-
 
   const filteredAndSortedTasks = userTasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

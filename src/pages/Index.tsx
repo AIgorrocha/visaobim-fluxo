@@ -13,7 +13,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/dashboard');
+      navigate('/');
     }
   }, [user, loading, navigate]);
 
@@ -26,7 +26,7 @@ const Index = () => {
   }
 
   if (user) {
-    return null; // Vai redirecionar para dashboard
+    return null; // Vai redirecionar para o painel principal
   }
 
   return (
