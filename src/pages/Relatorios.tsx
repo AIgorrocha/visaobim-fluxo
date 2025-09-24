@@ -1,10 +1,6 @@
 import { motion } from 'framer-motion';
 import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock, Copy, X, RefreshCw, AlertTriangle } from 'lucide-react';
-  // Helper function to get blocking reason
-  const getBlockingReason = (restrictions: TaskRestriction[]) => {
-    if (!restrictions || restrictions.length === 0) return '';
-    return restrictions.map(r => r.blocking_task_title || 'Unknown Task').join(', ');
-  };
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -27,6 +23,12 @@ const Relatorios = () => {
   const [reportType, setReportType] = useState<string>('completo');
   const [taskRestrictions, setTaskRestrictions] = useState<TaskRestriction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Helper function to get blocking reason
+  const getBlockingReason = (restrictions: TaskRestriction[]) => {
+    if (!restrictions || restrictions.length === 0) return '';
+    return restrictions.map(r => r.blocking_task_title || 'Unknown Task').join(', ');
+  };
 
   // Estado para controlar qual usuário está sendo visualizado
   const currentUserId = (selectedUserId === 'own_data' || !selectedUserId) ? user?.id || '' : selectedUserId;
