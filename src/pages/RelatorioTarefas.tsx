@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, TrendingUp, Users, Calendar } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Users, Calendar, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -89,7 +89,7 @@ const RelatorioTarefas = () => {
             Relatório de Tarefas
           </h1>
           <p className="text-muted-foreground mt-2">
-            Visão em tempo real de tarefas, bloqueios e performance da equipe
+            Relatórios, cronograma e bloqueios de tarefas
           </p>
         </div>
       </div>
@@ -99,7 +99,7 @@ const RelatorioTarefas = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{tasks.filter(t => !t.is_archived).length}</div>
@@ -138,7 +138,7 @@ const RelatorioTarefas = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Membros da Equipe</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{profiles.length}</div>
@@ -241,63 +241,49 @@ const RelatorioTarefas = () => {
         </CardContent>
       </Card>
 
-      {/* Performance por Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição por Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {['PENDENTE', 'EM_ANDAMENTO', 'EM_ESPERA', 'PARALISADA', 'CONCLUIDA'].map(status => {
-                const count = tasks.filter(t => t.status === status && !t.is_archived).length;
-                const percentage = tasks.length ? Math.round((count / tasks.filter(t => !t.is_archived).length) * 100) : 0;
-                
+      {/* Relatório de Cronograma */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-500" />
+            Cronograma das Tarefas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {tasks
+              .filter(t => !t.is_archived && (t.activity_start || t.due_date))
+              .sort((a, b) => {
+                const dateA = new Date(a.activity_start || a.due_date || '');
+                const dateB = new Date(b.activity_start || b.due_date || '');
+                return dateA.getTime() - dateB.getTime();
+              })
+              .slice(0, 10)
+              .map((task) => {
+                const project = projects.find(p => p.id === task.project_id);
                 return (
-                  <div key={status} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(status)}>
-                        {status}
-                      </Badge>
+                  <div key={task.id} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex-1">
+                      <div className="font-medium">{task.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {project?.name} - {project?.client}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-medium">{count}</span>
-                      <span className="text-muted-foreground text-sm ml-2">({percentage}%)</span>
+                    <div className="text-right text-sm">
+                      {task.activity_start && (
+                        <div>Início: {format(new Date(task.activity_start), 'dd/MM', { locale: ptBR })}</div>
+                      )}
+                      {task.due_date && (
+                        <div>Prazo: {format(new Date(task.due_date), 'dd/MM', { locale: ptBR })}</div>
+                      )}
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance da Equipe</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {profiles
-                .sort((a, b) => (b.points || 0) - (a.points || 0))
-                .slice(0, 5)
-                .map((member) => (
-                  <div key={member.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
-                        {member.full_name?.charAt(0) || 'U'}
-                      </div>
-                      <span className="font-medium">{member.full_name}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-medium">{member.points || 0}</span>
-                      <span className="text-muted-foreground text-sm ml-2">pts</span>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              })
+            }
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

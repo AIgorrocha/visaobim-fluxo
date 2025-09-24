@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useProjects, useTasks, useProposals, useAchievements, useProfiles } from '@/hooks/useSupabaseData';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { Achievement } from '@/types';
 
 interface SupabaseDataContextType {
   // Profiles
@@ -40,12 +41,15 @@ interface SupabaseDataContextType {
   refetchProposals: any;
 
   // Achievements
-  achievements: any[];
+  achievements: Achievement[];
   achievementsLoading: boolean;
   achievementsError: string | null;
   createAchievement: any;
   getAchievementsByUser: any;
   refetchAchievements: any;
+
+  // Sincronização global
+  refetchAllData: () => Promise<void>;
 }
 
 const SupabaseDataContext = createContext<SupabaseDataContextType | undefined>(undefined);
@@ -101,7 +105,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
   } = useAchievements();
 
   // Set up real-time sync to refetch all data when changes occur
-  const refetchAllData = () => {
+  const handleRealtimeRefetch = () => {
     console.log('🔄 Refetching all data due to real-time change');
     refetchProfiles();
     refetchProjects();
@@ -110,7 +114,20 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     refetchAchievements();
   };
 
-  useRealtimeSync(refetchAllData);
+  useRealtimeSync(handleRealtimeRefetch);
+
+  // Função para sincronizar todos os dados manualmente
+  const refetchAllData = async () => {
+    console.log('🔄 Sincronizando todos os dados...');
+    await Promise.all([
+      refetchProfiles(),
+      refetchProjects(),
+      refetchTasks(),
+      refetchProposals(),
+      refetchAchievements()
+    ]);
+    console.log('✅ Sincronização completa!');
+  };
 
   const value: SupabaseDataContextType = {
     // Profiles
@@ -155,7 +172,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     achievementsError,
     createAchievement,
     getAchievementsByUser,
-    refetchAchievements
+    refetchAchievements,
+
+    // Sync
+    refetchAllData
   };
 
   return (

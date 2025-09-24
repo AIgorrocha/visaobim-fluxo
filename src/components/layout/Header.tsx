@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bell, Settings, LogOut, User, Menu } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Settings, LogOut, User, Menu, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -13,16 +13,43 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useNavigate } from 'react-router-dom';
 import { TaskNotificationSystem } from '@/components/TaskNotificationSystem';
+import { useToast } from '@/hooks/use-toast';
 
 export const Header = () => {
   const { user, profile, signOut } = useAuth();
+  const { refetchAllData } = useSupabaseData();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleRefreshData = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchAllData();
+      toast({
+        title: "Dados atualizados",
+        description: "Todos os dados foram sincronizados com o Supabase.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erro ao sincronizar dados:', error);
+      toast({
+        title: "Erro na sincronização",
+        description: "Não foi possível atualizar os dados. Tente novamente.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -51,6 +78,18 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Refresh Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefreshData}
+            disabled={isRefreshing}
+            className="hidden sm:flex"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="ml-2">Atualizar dados</span>
+          </Button>
+
           {/* Notifications */}
           <TaskNotificationSystem />
 
@@ -90,6 +129,11 @@ export const Header = () => {
                   </div>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleRefreshData} disabled={isRefreshing} className="sm:hidden">
+                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Atualizar dados</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
                 <User className="mr-2 h-4 w-4" />

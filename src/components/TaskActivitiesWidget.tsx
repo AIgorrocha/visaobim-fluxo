@@ -68,6 +68,12 @@ const TaskActivitiesWidget = () => {
     loadTaskActivities();
   }, [user, tasks]);
 
+  // Recarregar quando houver mudanças nas tarefas ou restrições
+  useEffect(() => {
+    const interval = setInterval(loadTaskActivities, 30000); // Atualizar a cada 30s
+    return () => clearInterval(interval);
+  }, []);
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'dd/MM', { locale: ptBR });
