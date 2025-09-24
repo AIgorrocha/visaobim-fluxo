@@ -665,6 +665,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: number
       }
+      calculate_task_points: {
+        Args: { p_completed_at: string; p_due_date: string }
+        Returns: number
+      }
       calculate_user_level: {
         Args: { user_points: number }
         Returns: number
@@ -696,6 +700,10 @@ export type Database = {
       recalculate_all_user_scores: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      recalculate_user_total_points: {
+        Args: { user_uuid: string }
+        Returns: number
       }
     }
     Enums: {
