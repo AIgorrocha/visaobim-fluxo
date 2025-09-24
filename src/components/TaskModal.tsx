@@ -20,26 +20,14 @@ interface TaskModalProps {
 }
 
 const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
-  const { projects, updateTask, createTask } = useSupabaseData();
+  const { projects, updateTask, createTask, profiles } = useSupabaseData();
   const { user } = useAuth();
 
-  // Lista de responsáveis
-  const teamMembers = [
-    { id: '1', name: 'Igor' },
-    { id: '2', name: 'Gustavo' },
-    { id: '3', name: 'Bessa' },
-    { id: '4', name: 'Leonardo' },
-    { id: '5', name: 'Pedro' },
-    { id: '6', name: 'Thiago' },
-    { id: '7', name: 'Nicolas' },
-    { id: '8', name: 'Eloisy' },
-    { id: '9', name: 'Rondinelly' },
-    { id: '10', name: 'Edilson' },
-    { id: '11', name: 'Philip' },
-    { id: '12', name: 'Nara' },
-    { id: '13', name: 'Stael' },
-    { id: '14', name: 'Projetista Externo' }
-  ];
+  // Lista de responsáveis usando dados reais do Supabase
+  const teamMembers = profiles.map(profile => ({
+    id: profile.id,
+    name: profile.full_name || profile.email
+  }));
 
   // Lista de disciplinas para dependências
   const disciplines = [

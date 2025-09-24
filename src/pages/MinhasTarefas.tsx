@@ -377,12 +377,10 @@ const MinhasTarefas = () => {
           </p>
         </div>
 
-        {isAdmin && (
-          <Button className="w-full sm:w-auto" onClick={handleCreateTask}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Tarefa
-          </Button>
-        )}
+        <Button className="w-full sm:w-auto" onClick={handleCreateTask}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Tarefa
+        </Button>
       </motion.div>
 
       {/* Filtros */}

@@ -18,15 +18,19 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useAchievements } from '@/hooks/useAchievements';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 import { useUserData } from '@/hooks/useUserData';
 import { useProfileSync } from '@/hooks/useProfileSync';
 import { DependencyDashboard } from '@/components/DependencyDashboard';
+import { RestrictionsWidget } from '@/components/RestrictionsWidget';
+import { Achievement } from '@/types';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { tasks, proposals, profiles, projects } = useSupabaseData();
   const { profile } = useProfileSync(); // Usar dados sincronizados
+  const { checkAndAwardAchievements } = useAchievements();
   const {
     isAdmin,
     userProjects,
@@ -146,9 +150,10 @@ const Dashboard = () => {
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="dependencies">Atividades</TabsTrigger>
+          <TabsTrigger value="restrictions">Restrições</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6">
@@ -302,6 +307,116 @@ const Dashboard = () => {
             </motion.div>
           </div>
 
+          {/* Segunda linha - Widgets adicionais */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Ranking da Equipe */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-secondary" />
+                    Ranking da Equipe
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {profiles
+                      .sort((a, b) => (b.points || 0) - (a.points || 0))
+                      .slice(0, 5)
+                      .map((member, index) => (
+                        <div key={member.id} className={`flex items-center space-x-3 ${member.id === user?.id ? 'bg-muted/50 rounded-md p-2 -m-2' : ''}`}>
+                          <div className={`text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center ${
+                            index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                            index === 1 ? 'bg-gray-100 text-gray-800' :
+                            index === 2 ? 'bg-orange-100 text-orange-800' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.full_name || member.email}
+                              {member.id === user?.id && ' (Você)'}
+                            </p>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-xs text-muted-foreground">
+                                {member.points || 0} pontos
+                              </p>
+                              <Badge variant="outline" className="text-xs">
+                                Nível {member.level || 1}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Métricas de Produtividade */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.9 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2 text-accent" />
+                    Métricas de Produtividade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Taxa de Conclusão</span>
+                      <div className="flex items-center space-x-2">
+                        <Progress 
+                          value={userTasks.length > 0 ? (completedTasks.length / userTasks.length) * 100 : 0} 
+                          className="w-20 h-2" 
+                        />
+                        <span className="text-sm font-medium">
+                          {userTasks.length > 0 ? Math.round((completedTasks.length / userTasks.length) * 100) : 0}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm">Tarefas em Atraso</span>
+                      <span className="text-sm font-medium text-destructive">
+                        {pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date()).length}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm">Pontos Este Mês</span>
+                      <span className="text-sm font-medium text-success">
+                        +{completedTasks
+                          .filter(t => t.completed_at && 
+                            new Date(t.completed_at).getMonth() === new Date().getMonth())
+                          .reduce((sum, t) => sum + (t.points || 0), 0)}
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Sua Posição</span>
+                        <Badge variant="secondary">
+                          #{profiles.sort((a, b) => (b.points || 0) - (a.points || 0)).findIndex(p => p.id === user?.id) + 1} de {profiles.length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
           {/* Admin Section */}
            {isAdmin && (
             <motion.div
@@ -390,6 +505,10 @@ const Dashboard = () => {
 
         <TabsContent value="dependencies">
           <DependencyDashboard />
+        </TabsContent>
+
+        <TabsContent value="restrictions">
+          <RestrictionsWidget />
         </TabsContent>
       </Tabs>
     </div>
