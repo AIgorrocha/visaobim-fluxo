@@ -59,7 +59,7 @@ const menuItems = [
     title: 'Financeiro',
     url: '/financeiro',
     icon: DollarSign,
-    roles: ['admin']
+    roles: ['admin', 'user']
   },
   {
     title: 'Propostas',

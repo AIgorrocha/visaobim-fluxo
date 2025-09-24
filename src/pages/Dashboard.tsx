@@ -23,7 +23,7 @@ import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/sco
 import { useUserData } from '@/hooks/useUserData';
 import { useProfileSync } from '@/hooks/useProfileSync';
 import { DependencyDashboard } from '@/components/DependencyDashboard';
-import { RestrictionsWidget } from '@/components/RestrictionsWidget';
+import { TaskRestrictionsWidget } from '@/components/TaskRestrictionsWidget';
 import { Achievement } from '@/types';
 
 const Dashboard = () => {
@@ -150,10 +150,9 @@ const Dashboard = () => {
 
       {/* Dashboard Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+        <TabsList className="grid w-full grid-cols-2 max-w-lg">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="dependencies">Atividades</TabsTrigger>
-          <TabsTrigger value="restrictions">Restrições</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6">
@@ -241,7 +240,6 @@ const Dashboard = () => {
                   {pendingTasks
                     .filter(task => task.due_date)
                     .sort((a, b) => {
-                      // Ordenar por prazo - mais próximo primeiro
                       const dateA = new Date(a.due_date).getTime();
                       const dateB = new Date(b.due_date).getTime();
                       return dateA - dateB;
@@ -307,118 +305,8 @@ const Dashboard = () => {
             </motion.div>
           </div>
 
-          {/* Segunda linha - Widgets adicionais */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {/* Ranking da Equipe */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-secondary" />
-                    Ranking da Equipe
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {profiles
-                      .sort((a, b) => (b.points || 0) - (a.points || 0))
-                      .slice(0, 5)
-                      .map((member, index) => (
-                        <div key={member.id} className={`flex items-center space-x-3 ${member.id === user?.id ? 'bg-muted/50 rounded-md p-2 -m-2' : ''}`}>
-                          <div className={`text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-800' :
-                            index === 1 ? 'bg-gray-100 text-gray-800' :
-                            index === 2 ? 'bg-orange-100 text-orange-800' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {member.full_name || member.email}
-                              {member.id === user?.id && ' (Você)'}
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              <p className="text-xs text-muted-foreground">
-                                {member.points || 0} pontos
-                              </p>
-                              <Badge variant="outline" className="text-xs">
-                                Nível {member.level || 1}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Métricas de Produtividade */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.9 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-accent" />
-                    Métricas de Produtividade
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Taxa de Conclusão</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress 
-                          value={userTasks.length > 0 ? (completedTasks.length / userTasks.length) * 100 : 0} 
-                          className="w-20 h-2" 
-                        />
-                        <span className="text-sm font-medium">
-                          {userTasks.length > 0 ? Math.round((completedTasks.length / userTasks.length) * 100) : 0}%
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <span className="text-sm">Tarefas em Atraso</span>
-                      <span className="text-sm font-medium text-destructive">
-                        {pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date()).length}
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <span className="text-sm">Pontos Este Mês</span>
-                      <span className="text-sm font-medium text-success">
-                        +{completedTasks
-                          .filter(t => t.completed_at && 
-                            new Date(t.completed_at).getMonth() === new Date().getMonth())
-                          .reduce((sum, t) => sum + (t.points || 0), 0)}
-                      </span>
-                    </div>
-
-                    <div className="pt-2 border-t">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Sua Posição</span>
-                        <Badge variant="secondary">
-                          #{profiles.sort((a, b) => (b.points || 0) - (a.points || 0)).findIndex(p => p.id === user?.id) + 1} de {profiles.length}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
           {/* Admin Section */}
-           {isAdmin && (
+          {isAdmin && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -428,23 +316,23 @@ const Dashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-secondary" />
-                    Visão Geral da Equipe
+                    <Zap className="h-5 w-5 mr-2 text-warning" />
+                    Sistema Geral
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Membros Ativos</span>
-                <span className="text-sm font-medium">{profiles.length}</span>
-              </div>
+                  <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm">Tarefas em Andamento</span>
-                      <span className="text-sm font-medium">{allTasks.filter(t => t.status === 'EM_ANDAMENTO').length}</span>
+                      <span className="text-sm">Total de Tarefas</span>
+                      <span className="text-sm font-medium">{tasks.length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Projetos Ativos</span>
-                      <span className="text-sm font-medium">{projects.filter(p => p.status === 'EM_ANDAMENTO').length}</span>
+                      <span className="text-sm">Total de Projetos</span>
+                      <span className="text-sm font-medium">{projects.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Usuários Ativos</span>
+                      <span className="text-sm font-medium">{profiles.length}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -503,12 +391,18 @@ const Dashboard = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="dependencies">
-          <DependencyDashboard />
-        </TabsContent>
-
-        <TabsContent value="restrictions">
-          <RestrictionsWidget />
+        <TabsContent value="dependencies" className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            {/* Dependency Dashboard - 2/3 da tela */}
+            <div className="lg:col-span-2">
+              <DependencyDashboard />
+            </div>
+            
+            {/* Task Restrictions Widget - 1/3 da tela */}
+            <div className="lg:col-span-1">
+              <TaskRestrictionsWidget />
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

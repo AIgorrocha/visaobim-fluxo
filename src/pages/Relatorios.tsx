@@ -24,6 +24,27 @@ const Relatorios = () => {
   const [taskRestrictions, setTaskRestrictions] = useState<TaskRestriction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Recalcular pontuação automaticamente ao carregar
+  useEffect(() => {
+    if (user?.id) {
+      recalculateUserScore();
+    }
+  }, [user?.id]);
+
+  const recalculateUserScore = async () => {
+    try {
+      // Chamar função do Supabase para recalcular pontuação
+      const { error } = await supabase.rpc('recalculate_all_user_scores');
+      if (error) {
+        console.error('Erro ao recalcular pontuação:', error);
+      } else {
+        console.log('✅ Pontuação recalculada com sucesso');
+      }
+    } catch (error) {
+      console.error('Erro ao executar recalculação:', error);
+    }
+  };
+
   // Helper function to get blocking reason
   const getBlockingReason = (restrictions: TaskRestriction[]) => {
     if (!restrictions || restrictions.length === 0) return '';
@@ -318,8 +339,9 @@ ${hasRestrictions ? `🚫 Restrições: ${restrictionsInfo}` : '✅ Sem restriç
 - Eficiência (sem bloqueios): ${filteredTasks.length > 0 ? Math.round((filteredTasks.filter(t => t.can_start).length / filteredTasks.length) * 100) : 100}%
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 Relatório sincronizado com todas as tabelas do sistema
-🔄 Tasks | Projects | Task_Restrictions | Profiles
+📅 Relatório com dados em tempo real do Supabase
+🔄 Tasks | Projects | Task_Restrictions | Profiles | Automatic Scoring
+⚡ Sistema de pontuação automático ativo
 ⏰ Gerado em: ${new Date().toLocaleString('pt-BR')}`;
 
     return report;
@@ -348,6 +370,7 @@ ${hasRestrictions ? `🚫 Restrições: ${restrictionsInfo}` : '✅ Sem restriç
     setRefreshing(true);
     try {
       await loadTaskRestrictions();
+      await recalculateUserScore(); // Recalcular pontuação também
       // Os outros dados são atualizados automaticamente pelo contexto
     } finally {
       setRefreshing(false);

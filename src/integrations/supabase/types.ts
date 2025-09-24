@@ -665,6 +665,14 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: number
       }
+      calculate_user_level: {
+        Args: { user_points: number }
+        Returns: number
+      }
+      calculate_user_points_automatic: {
+        Args: { user_uuid: string }
+        Returns: number
+      }
       cleanup_old_activity_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -684,6 +692,10 @@ export type Database = {
       newsletter_signup_handler: {
         Args: { payload: Json }
         Returns: Json
+      }
+      recalculate_all_user_scores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
