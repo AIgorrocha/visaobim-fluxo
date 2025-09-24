@@ -19,7 +19,7 @@ import Equipe from "./pages/Equipe";
 import Conquistas from "./pages/Conquistas";
 import Financeiro from "./pages/Financeiro";
 import Propostas from "./pages/Propostas";
-import Relatorios from "./pages/Relatorios";
+import RelatorioTarefas from "./pages/RelatorioTarefas";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -71,7 +71,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/financeiro" element={
-              <ProtectedRoute adminOnly>
+              <ProtectedRoute>
                 <Layout>
                   <Financeiro />
                 </Layout>
@@ -84,10 +84,10 @@ const App = () => (
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/relatorios" element={
+            <Route path="/relatorio-tarefas" element={
               <ProtectedRoute>
                 <Layout>
-                  <Relatorios />
+                  <RelatorioTarefas />
                 </Layout>
               </ProtectedRoute>
             } />

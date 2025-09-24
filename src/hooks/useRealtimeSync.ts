@@ -61,11 +61,47 @@ export function useRealtimeSync(onDataChange?: () => void) {
       )
       .subscribe();
 
+    // Listen to changes in task restrictions
+    const restrictionsChannel = supabase
+      .channel('restrictions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_restrictions'
+        },
+        (payload) => {
+          console.log('📡 Task restrictions change detected:', payload);
+          onDataChange();
+        }
+      )
+      .subscribe();
+
+    // Listen to changes in profiles (for points/levels)
+    const profilesChannel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('📡 Profiles change detected:', payload);
+          onDataChange();
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('🔌 Unsubscribing from real-time channels');
       projectsChannel.unsubscribe();
       tasksChannel.unsubscribe();
       proposalsChannel.unsubscribe();
+      restrictionsChannel.unsubscribe();
+      profilesChannel.unsubscribe();
     };
   }, [user, onDataChange]);
 }

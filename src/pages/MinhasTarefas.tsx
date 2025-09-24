@@ -343,6 +343,15 @@ const MinhasTarefas = () => {
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => handleViewTask(task)}
+                className="whitespace-nowrap"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Visualizar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => handleEditTask(task)}
                 className="whitespace-nowrap"
               >

@@ -199,41 +199,35 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   }, [formData.due_date, formData.last_delivery]);
 
-  // Automaticamente marcar como concluída quando data de entrega é preenchida
-  useEffect(() => {
-    if (formData.last_delivery && formData.status !== 'PARALISADA') {
-      setFormData(prev => ({
-        ...prev,
-        status: 'CONCLUIDA',
-        completed_at: formData.last_delivery + 'T18:00:00Z'
-      }));
-    } else if (!formData.last_delivery && formData.status === 'CONCLUIDA') {
-      // Se remover a data de entrega e estava concluída, volta para pendente
-      setFormData(prev => ({
-        ...prev,
-        status: 'PENDENTE',
-        completed_at: undefined
-      }));
-    }
-  }, [formData.last_delivery]);
+  // Não preencher completed_at automaticamente - deixar para o usuário decidir
+  // Apenas atualizar se o usuário escolher status CONCLUIDA E informar last_delivery
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Não calcular pontos no frontend - deixar para o trigger do banco
+    // Só enviar completed_at se status for CONCLUIDA E houver last_delivery
     const taskData = {
       ...formData,
       activity_start: formData.activity_start,
       due_date: formData.due_date,
       last_delivery: formData.last_delivery || undefined,
       comment: formData.comment || undefined,
-      dependencies: formData.dependencies.length > 0 ? formData.dependencies : undefined,
-      completed_at: formData.completed_at
+      dependencies: formData.dependencies.length > 0 ? formData.dependencies : undefined
+    };
+
+    const finalTaskData = {
+      ...taskData,
+      completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery) 
+        ? (taskData.last_delivery + 'T18:00:00Z') 
+        : undefined,
+      assigned_to: taskData.assigned_to || []
     };
 
     if (mode === 'create') {
-      createTask(taskData);
+      createTask(finalTaskData);
     } else if (mode === 'edit' && task) {
-      updateTask(task.id, taskData);
+      updateTask(task.id, finalTaskData);
     }
 
     onClose();

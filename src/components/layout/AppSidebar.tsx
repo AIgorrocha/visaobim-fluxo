@@ -67,12 +67,7 @@ const menuItems = [
     icon: FileText,
     roles: ['admin']
   },
-  {
-    title: 'Relatórios',
-    url: '/relatorios',
-    icon: BarChart3,
-    roles: ['admin', 'user']
-  },
+  { title: "Relatório de Tarefas", url: "/relatorio-tarefas", icon: BarChart3, roles: ["admin", "user"] },
   {
     title: 'Configurações',
     url: '/configuracoes',

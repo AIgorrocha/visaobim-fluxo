@@ -22,8 +22,7 @@ import { useAchievements } from '@/hooks/useAchievements';
 import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 import { useUserData } from '@/hooks/useUserData';
 import { useProfileSync } from '@/hooks/useProfileSync';
-import { DependencyDashboard } from '@/components/DependencyDashboard';
-import { TaskRestrictionsWidget } from '@/components/TaskRestrictionsWidget';
+import TaskActivitiesWidget from '@/components/TaskActivitiesWidget';
 import { Achievement } from '@/types';
 
 const Dashboard = () => {
