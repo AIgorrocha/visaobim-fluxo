@@ -677,8 +677,8 @@ export type Database = {
         Args: { payload: Json }
         Returns: Json
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
+      get_user_role_simple: {
+        Args: { user_uuid?: string }
         Returns: string
       }
       newsletter_signup_handler: {
