@@ -665,6 +665,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: number
       }
+      cleanup_old_activity_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
