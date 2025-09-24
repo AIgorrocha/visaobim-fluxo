@@ -62,8 +62,13 @@ export function TaskRestrictionsManager({ task, onRestrictionsUpdate }: TaskRest
   const loadTaskRestrictions = async () => {
     try {
       const { data, error } = await supabase
-        .from('task_restrictions_detailed')
-        .select('*')
+        .from('task_restrictions')
+        .select(`
+          *,
+          waiting_task:tasks!waiting_task_id(title, status, assigned_to),
+          blocking_task:tasks!blocking_task_id(title, status, assigned_to),
+          blocking_user:profiles!blocking_user_id(full_name, email)
+        `)
         .eq('waiting_task_id', task.id)
         .eq('status', 'active');
 
@@ -74,11 +79,12 @@ export function TaskRestrictionsManager({ task, onRestrictionsUpdate }: TaskRest
         waiting_task_id: item.waiting_task_id,
         blocking_task_id: item.blocking_task_id,
         blocking_user_id: item.blocking_user_id,
-        status: item.status,
+        status: item.status as 'active' | 'resolved' | 'cancelled',
         created_at: item.created_at,
         updated_at: item.updated_at,
-        blocking_task_title: item.blocking_task_title,
-        blocking_user_name: item.blocking_user_name
+        resolved_at: item.resolved_at,
+        blocking_task_title: item.blocking_task?.title || 'Unknown Task',
+        blocking_user_name: item.blocking_user?.full_name || 'Unknown User'
       })) || [];
 
       setRestrictions(formattedRestrictions);

@@ -1,6 +1,10 @@
 import { motion } from 'framer-motion';
 import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock, Copy, X, RefreshCw, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  // Helper function to get blocking reason
+  const getBlockingReason = (restrictions: TaskRestriction[]) => {
+    if (!restrictions || restrictions.length === 0) return '';
+    return restrictions.map(r => r.blocking_task_title || 'Unknown Task').join(', ');
+  };
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -52,8 +56,9 @@ const Relatorios = () => {
         waiting_task_id: item.waiting_task_id,
         blocking_task_id: item.blocking_task_id,
         blocking_user_id: item.blocking_user_id,
-        status: item.status,
+        status: item.status as 'active' | 'resolved' | 'cancelled',
         created_at: item.created_at,
+        updated_at: item.updated_at || item.created_at,
         resolved_at: item.resolved_at
       })) || [];
 

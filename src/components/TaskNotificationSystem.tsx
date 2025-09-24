@@ -38,7 +38,7 @@ export function TaskNotificationSystem() {
         id: item.id,
         user_id: item.user_id,
         task_id: item.task_id,
-        type: item.type,
+        type: item.type as 'task_released' | 'restriction_added' | 'task_completed',
         title: item.title,
         message: item.message,
         read: item.read,

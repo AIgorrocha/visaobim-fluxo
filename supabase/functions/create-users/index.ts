@@ -101,7 +101,7 @@ serve(async (req) => {
         results.push({ 
           email: userData.email, 
           success: false, 
-          error: error.message 
+          error: error instanceof Error ? error.message : 'Unknown error occurred'
         })
       }
     }
@@ -123,7 +123,7 @@ serve(async (req) => {
     console.error('Function error:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         details: 'Failed to create users'
       }),
       { 
