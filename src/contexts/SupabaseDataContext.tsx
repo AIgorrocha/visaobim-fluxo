@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useProjects, useTasks, useProposals, useAchievements, useProfiles } from '@/hooks/useSupabaseData';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 interface SupabaseDataContextType {
   // Profiles
@@ -98,6 +99,18 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     getAchievementsByUser,
     refetch: refetchAchievements
   } = useAchievements();
+
+  // Set up real-time sync to refetch all data when changes occur
+  const refetchAllData = () => {
+    console.log('🔄 Refetching all data due to real-time change');
+    refetchProfiles();
+    refetchProjects();
+    refetchTasks();
+    refetchProposals();
+    refetchAchievements();
+  };
+
+  useRealtimeSync(refetchAllData);
 
   const value: SupabaseDataContextType = {
     // Profiles

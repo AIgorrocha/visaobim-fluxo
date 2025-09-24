@@ -10,14 +10,21 @@ export function useProfiles() {
 
   const fetchProfiles = async () => {
     try {
+      console.log('🔍 Fetching profiles...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching profiles:', error);
+        throw error;
+      }
+      
+      console.log('✅ Profiles fetched:', data?.length || 0, 'items');
       setProfiles((data || []) as Profile[]);
     } catch (err: any) {
+      console.error('❌ Profiles fetch failed:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -76,15 +83,22 @@ export function useProjects() {
 
   const fetchProjects = async () => {
     try {
+      console.log('🔍 Fetching projects...');
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching projects:', error);
+        throw error;
+      }
+      
+      console.log('✅ Projects fetched:', data?.length || 0, 'items');
       setProjects((data || []) as Project[]);
     } catch (err: any) {
+      console.error('❌ Projects fetch failed:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -160,15 +174,22 @@ export function useTasks() {
 
   const fetchTasks = async () => {
     try {
+      console.log('🔍 Fetching tasks...');
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching tasks:', error);
+        throw error;
+      }
+      
+      console.log('✅ Tasks fetched:', data?.length || 0, 'items');
       setTasks((data || []) as Task[]);
     } catch (err: any) {
+      console.error('❌ Tasks fetch failed:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -267,15 +288,22 @@ export function useProposals() {
 
   const fetchProposals = async () => {
     try {
+      console.log('🔍 Fetching proposals...');
       const { data, error } = await supabase
         .from('proposals')
         .select('*')
         .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching proposals:', error);
+        throw error;
+      }
+      
+      console.log('✅ Proposals fetched:', data?.length || 0, 'items');
       setProposals((data || []) as Proposal[]);
     } catch (err: any) {
+      console.error('❌ Proposals fetch failed:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -351,14 +379,21 @@ export function useAchievements() {
 
   const fetchAchievements = async () => {
     try {
+      console.log('🔍 Fetching achievements...');
       const { data, error } = await supabase
         .from('achievements')
         .select('*')
         .order('earned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching achievements:', error);
+        throw error;
+      }
+      
+      console.log('✅ Achievements fetched:', data?.length || 0, 'items');
       setAchievements((data || []) as Achievement[]);
     } catch (err: any) {
+      console.error('❌ Achievements fetch failed:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);

@@ -145,13 +145,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        console.log('🔐 Initializing auth...');
         // Verificar sessão atual primeiro
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (!isMounted) return;
 
         if (sessionError) {
-          console.error('Erro ao buscar sessão:', sessionError);
+          console.error('❌ Erro ao buscar sessão:', sessionError);
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -159,6 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        console.log('✅ Session found:', !!session);
+        
         // Configurar estados baseados na sessão
         setSession(session);
         setUser(session?.user ?? null);
@@ -166,12 +169,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Buscar perfil se usuário estiver logado
         if (session?.user) {
           try {
+            console.log('👤 Fetching user profile:', session.user.id);
             const userProfile = await fetchProfile(session.user.id);
             if (isMounted) {
               setProfile(userProfile as Profile);
+              console.log('✅ User profile loaded:', userProfile?.full_name);
             }
           } catch (error) {
-            console.error('Erro ao buscar perfil:', error);
+            console.error('❌ Erro ao buscar perfil:', error);
             if (isMounted) {
               setProfile(null);
             }
@@ -184,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         }
       } catch (error) {
-        console.error('Erro na inicialização da auth:', error);
+        console.error('❌ Erro na inicialização da auth:', error);
         if (isMounted) {
           setSession(null);
           setUser(null);
