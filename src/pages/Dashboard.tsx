@@ -390,18 +390,8 @@ const Dashboard = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="dependencies" className="space-y-4 md:space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Dependency Dashboard - 2/3 da tela */}
-            <div className="lg:col-span-2">
-              <DependencyDashboard />
-            </div>
-            
-            {/* Task Restrictions Widget - 1/3 da tela */}
-            <div className="lg:col-span-1">
-              <TaskRestrictionsWidget />
-            </div>
-          </div>
+        <TabsContent value="atividades" className="space-y-6">
+          <TaskActivitiesWidget />
         </TabsContent>
       </Tabs>
     </div>
