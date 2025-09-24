@@ -436,6 +436,109 @@ export type Database = {
         }
         Relationships: []
       }
+      task_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          task_id: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          task_id: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          task_id?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_restrictions: {
+        Row: {
+          blocking_task_id: string
+          blocking_user_id: string
+          created_at: string | null
+          id: string
+          resolved_at: string | null
+          status: string
+          updated_at: string | null
+          waiting_task_id: string
+        }
+        Insert: {
+          blocking_task_id: string
+          blocking_user_id: string
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string | null
+          waiting_task_id: string
+        }
+        Update: {
+          blocking_task_id?: string
+          blocking_user_id?: string
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string | null
+          waiting_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_restrictions_blocking_task_id_fkey"
+            columns: ["blocking_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_restrictions_blocking_user_id_fkey"
+            columns: ["blocking_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_restrictions_waiting_task_id_fkey"
+            columns: ["waiting_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           activity_start: string | null
@@ -507,24 +610,51 @@ export type Database = {
           },
         ]
       }
-      tasks_restricoes_backup: {
-        Row: {
-          id: string | null
-          restricoes: string | null
-        }
-        Insert: {
-          id?: string | null
-          restricoes?: string | null
-        }
-        Update: {
-          id?: string | null
-          restricoes?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
-      [_ in never]: never
+      task_restrictions_detailed: {
+        Row: {
+          blocking_task_assigned_to: string[] | null
+          blocking_task_id: string | null
+          blocking_task_status: string | null
+          blocking_task_title: string | null
+          blocking_user_email: string | null
+          blocking_user_id: string | null
+          blocking_user_name: string | null
+          created_at: string | null
+          id: string | null
+          resolved_at: string | null
+          status: string | null
+          updated_at: string | null
+          waiting_task_assigned_to: string[] | null
+          waiting_task_id: string | null
+          waiting_task_status: string | null
+          waiting_task_title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_restrictions_blocking_task_id_fkey"
+            columns: ["blocking_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_restrictions_blocking_user_id_fkey"
+            columns: ["blocking_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_restrictions_waiting_task_id_fkey"
+            columns: ["waiting_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       budget_request_handler: {
@@ -534,6 +664,10 @@ export type Database = {
       calculate_points_for_user: {
         Args: { target_user_id: string }
         Returns: number
+      }
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       contact_lead_handler: {
         Args: { payload: Json }
