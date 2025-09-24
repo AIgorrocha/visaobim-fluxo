@@ -1,5 +1,10 @@
 // Sistema de pontuação e nível compartilhado
-export const calculateUserPoints = (completedTasks: any[]) => {
+interface TaskForScoring {
+  due_date?: string;
+  completed_at?: string;
+}
+
+export const calculateUserPoints = (completedTasks: TaskForScoring[]) => {
   return completedTasks.reduce((sum, task) => {
     if (!task.due_date || !task.completed_at) return sum;
 

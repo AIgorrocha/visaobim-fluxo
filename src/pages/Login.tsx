@@ -40,10 +40,6 @@ const Login = () => {
       const { error } = await signIn(email, password);
       
       if (!error) {
-        toast({
-          title: "Sucesso",
-          description: "Login realizado com sucesso!",
-        });
         navigate('/');
       } else {
         toast({

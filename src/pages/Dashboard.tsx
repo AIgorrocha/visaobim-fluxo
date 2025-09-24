@@ -148,7 +148,7 @@ const Dashboard = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="dependencies">Dependências</TabsTrigger>
+          <TabsTrigger value="dependencies">Atividades</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6">
@@ -233,16 +233,66 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {pendingTasks.slice(0, 3).length > 0 ? (
+                  {pendingTasks
+                    .filter(task => task.due_date)
+                    .sort((a, b) => {
+                      // Ordenar por prazo - mais próximo primeiro
+                      const dateA = new Date(a.due_date).getTime();
+                      const dateB = new Date(b.due_date).getTime();
+                      return dateA - dateB;
+                    })
+                    .slice(0, 3).length > 0 ? (
                     <div className="space-y-3">
-                      {pendingTasks.slice(0, 3).map((task) => (
-                        <div key={task.id} className="space-y-1">
-                          <p className="text-sm font-medium">{task.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Prazo: {new Date(task.due_date).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                      ))}
+                      {pendingTasks
+                        .filter(task => task.due_date)
+                        .sort((a, b) => {
+                          const dateA = new Date(a.due_date).getTime();
+                          const dateB = new Date(b.due_date).getTime();
+                          return dateA - dateB;
+                        })
+                        .slice(0, 3)
+                        .map((task) => {
+                          const daysUntil = Math.ceil(
+                            (new Date(task.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                          );
+
+                          let statusText = '';
+                          let statusColor = '';
+
+                          if (daysUntil < 0) {
+                            statusText = `${Math.abs(daysUntil)} dias atrasado`;
+                            statusColor = 'text-destructive';
+                          } else if (daysUntil === 0) {
+                            statusText = 'Hoje';
+                            statusColor = 'text-destructive';
+                          } else if (daysUntil === 1) {
+                            statusText = 'Amanhã';
+                            statusColor = 'text-destructive';
+                          } else if (daysUntil <= 3) {
+                            statusText = `${daysUntil} dias`;
+                            statusColor = 'text-destructive';
+                          } else if (daysUntil <= 7) {
+                            statusText = `${daysUntil} dias`;
+                            statusColor = 'text-warning';
+                          } else {
+                            statusText = `${daysUntil} dias`;
+                            statusColor = 'text-muted-foreground';
+                          }
+
+                          return (
+                            <div key={task.id} className="space-y-1">
+                              <p className="text-sm font-medium">{task.title}</p>
+                              <div className="flex justify-between items-center">
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                                </p>
+                                <p className={`text-xs ${statusColor} font-medium`}>
+                                  📅 {statusText}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">Nenhum prazo próximo</p>

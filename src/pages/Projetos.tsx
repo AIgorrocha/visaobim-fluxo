@@ -26,7 +26,7 @@ const Projetos = () => {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [typeFilter, setTypeFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
-  const [vigenciaFilter, setVigenciaFilter] = useState<string>('todos');
+  const [contractEndFilter, setContractEndFilter] = useState<string>('todos');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -51,37 +51,32 @@ const Projetos = () => {
   };
 
 
-  const filteredProjects = allProjects.filter(project => {
+  // Filtragem básica (sem vigência e contrato)
+  const baseFilteredProjects = allProjects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || project.status === statusFilter;
     const matchesType = typeFilter === 'todos' || project.type === typeFilter;
     const matchesResponsible = responsibleFilter === 'todos' || project.responsible_ids.includes(responsibleFilter);
 
-    // Filtro de vigência
-    let matchesVigencia = true;
-    if (vigenciaFilter !== 'todos' && project.prazo_vigencia) {
-      const vigenciaDate = new Date(project.prazo_vigencia);
-      const today = new Date();
+    return matchesSearch && matchesStatus && matchesType && matchesResponsible;
+  });
 
-      switch (vigenciaFilter) {
-        case 'vencidos':
-          matchesVigencia = vigenciaDate < today;
-          break;
-        case 'proximos_30':
-          const em30Dias = new Date();
-          em30Dias.setDate(today.getDate() + 30);
-          matchesVigencia = vigenciaDate >= today && vigenciaDate <= em30Dias;
-          break;
-        case 'vigentes':
-          matchesVigencia = vigenciaDate >= today;
-          break;
+  // Aplicação da ordenação por prazo de contrato
+  const filteredProjects = [...baseFilteredProjects].sort((a, b) => {
+    // Ordenação por fim de contrato
+    if (contractEndFilter === 'prazo_asc' || contractEndFilter === 'prazo_desc') {
+      const dateA = a.contract_end ? new Date(a.contract_end).getTime() : Infinity;
+      const dateB = b.contract_end ? new Date(b.contract_end).getTime() : Infinity;
+
+      if (contractEndFilter === 'prazo_asc') {
+        return dateA - dateB; // Mais próximo primeiro
+      } else {
+        return dateB - dateA; // Mais distante primeiro
       }
-    } else if (vigenciaFilter !== 'todos' && !project.prazo_vigencia) {
-      matchesVigencia = vigenciaFilter === 'sem_vigencia';
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesResponsible && matchesVigencia;
+    return 0; // Sem ordenação
   });
 
   const formatDate = (dateString: string) => {
@@ -125,7 +120,7 @@ const Projetos = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -134,7 +129,7 @@ const Projetos = () => {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Projetos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Projetos</h1>
           <p className="text-muted-foreground">
             {isAdmin ? 'Gerencie todos os projetos da empresa' : 'Seus projetos atribuídos'}
           </p>
@@ -212,16 +207,15 @@ const Projetos = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={vigenciaFilter} onValueChange={setVigenciaFilter}>
+
+                <Select value={contractEndFilter} onValueChange={setContractEndFilter}>
                   <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Vigência" />
+                    <SelectValue placeholder="Ordenar por Contrato" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todos">Todas Vigências</SelectItem>
-                    <SelectItem value="vencidos">Vencidos</SelectItem>
-                    <SelectItem value="proximos_30">Próximos 30 dias</SelectItem>
-                    <SelectItem value="vigentes">Vigentes</SelectItem>
-                    <SelectItem value="sem_vigencia">Sem vigência</SelectItem>
+                    <SelectItem value="todos">Sem ordenação</SelectItem>
+                    <SelectItem value="prazo_asc">Prazo: Mais próximo primeiro</SelectItem>
+                    <SelectItem value="prazo_desc">Prazo: Mais distante primeiro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -274,10 +268,20 @@ const Projetos = () => {
                       <TableCell>
                         {project.prazo_vigencia ? formatDate(project.prazo_vigencia) : 'Não definido'}
                       </TableCell>
-                      <TableCell className="max-w-48">
-                        <div className="truncate" title={getResponsibleNames(project.responsible_ids)}>
-                          {getResponsibleNames(project.responsible_ids) || 'Não atribuído'}
-                        </div>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1 justify-start text-left"
+                          onClick={() => handleViewProject(project)}
+                        >
+                          <div className="text-primary hover:underline">
+                            {project.responsible_ids && project.responsible_ids.length > 0
+                              ? `${project.responsible_ids.length} responsável(is)`
+                              : 'Não atribuído'
+                            }
+                          </div>
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">

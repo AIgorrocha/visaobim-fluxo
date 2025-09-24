@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Task } from '@/types';
+import { TaskRestrictionsManager } from './TaskRestrictionsManager';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -120,10 +122,40 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     due_date: '',
     last_delivery: '',
     comment: '',
-    restricoes: '',
     dependencies: [] as string[],
     completed_at: undefined as string | undefined
   });
+
+  const [hasActiveRestrictions, setHasActiveRestrictions] = useState(false);
+  const [restrictionsCount, setRestrictionsCount] = useState(0);
+
+  // Função para verificar restrições ativas
+  const checkActiveRestrictions = async () => {
+    if (!task?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('task_restrictions')
+        .select('id')
+        .eq('waiting_task_id', task.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const activeCount = data?.length || 0;
+      setHasActiveRestrictions(activeCount > 0);
+      setRestrictionsCount(activeCount);
+    } catch (error) {
+      console.error('Erro ao verificar restrições:', error);
+    }
+  };
+
+  // Verificar restrições quando o modal abrir
+  useEffect(() => {
+    if (task && isOpen) {
+      checkActiveRestrictions();
+    }
+  }, [task, isOpen]);
 
   useEffect(() => {
     if (task && (mode === 'edit' || mode === 'view')) {
@@ -140,7 +172,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         due_date: formatDateForInput(task.due_date || ''),
         last_delivery: formatDateForInput(task.last_delivery || ''),
         comment: task.comment || '',
-        restricoes: task.restricoes || '',
         dependencies: task.dependencies || [],
         completed_at: task.completed_at
       });
@@ -158,7 +189,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         due_date: '',
         last_delivery: '',
         comment: '',
-        restricoes: '',
         dependencies: [],
         completed_at: undefined
       });
@@ -231,15 +261,10 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
       : task.assigned_to === user?.id
   ) : false;
 
-  // Usuários podem editar todos os campos de suas próprias tarefas, admins podem editar tudo
+  // Usuários e admins podem editar todos os campos das tarefas
   const canEditField = (fieldName: string) => {
-    if (isAdmin) return true;
-    if (isAssignedToTask) {
-      // Usuários podem editar todos os campos de suas tarefas exceto alguns específicos
-      if (['project_id', 'assigned_to'].includes(fieldName)) return false;
-      return true;
-    }
-    return false;
+    if (mode === 'view') return false;
+    return true; // Todos podem editar todos os campos
   };
 
   const getTitle = () => {
@@ -251,7 +276,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   };
 
-  const isTaskReadOnly = mode === 'view' || (!isAdmin && !isAssignedToTask);
+  const isTaskReadOnly = mode === 'view';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -260,9 +285,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
           <DialogTitle>{getTitle()}</DialogTitle>
           <DialogDescription>
             {mode === 'create' && 'Preencha as informações para criar uma nova tarefa.'}
-            {mode === 'edit' && isAdmin && 'Edite as informações da tarefa.'}
-            {mode === 'edit' && !isAdmin && isAssignedToTask && 'Você pode editar os campos desta tarefa atribuída a você.'}
-            {mode === 'edit' && !isAdmin && !isAssignedToTask && 'Você só pode visualizar esta tarefa.'}
+            {mode === 'edit' && 'Edite as informações da tarefa.'}
             {mode === 'view' && 'Visualize as informações da tarefa.'}
           </DialogDescription>
         </DialogHeader>
@@ -435,13 +458,40 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             {/* Início da Atividade */}
             <div className="space-y-2">
               <Label htmlFor="activity_start">Início da Atividade</Label>
-              <Input
-                id="activity_start"
-                type="date"
-                value={formData.activity_start}
-                onChange={(e) => setFormData(prev => ({ ...prev, activity_start: e.target.value }))}
-                readOnly={!canEditField('activity_start')}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="activity_start"
+                  type="date"
+                  value={formData.activity_start}
+                  onChange={(e) => setFormData(prev => ({ ...prev, activity_start: e.target.value }))}
+                  readOnly={!canEditField('activity_start')}
+                />
+                {!formData.activity_start && task && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!hasActiveRestrictions) {
+                        const today = new Date().toISOString().split('T')[0];
+                        setFormData(prev => ({ ...prev, activity_start: today }));
+                      }
+                    }}
+                    disabled={hasActiveRestrictions}
+                    title={hasActiveRestrictions
+                      ? `Esta tarefa possui ${restrictionsCount} restrição(ões) ativa(s). Consulte a seção 'Restrições da Tarefa'`
+                      : "Marcar início hoje"
+                    }
+                  >
+                    {hasActiveRestrictions ? '🔒 Bloqueada' : '▶️ Iniciar Hoje'}
+                  </Button>
+                )}
+              </div>
+              {hasActiveRestrictions && (
+                <p className="text-xs text-orange-600">
+                  ⚠️ Esta tarefa possui {restrictionsCount} dependência(s) ativa(s). Verifique a seção "Restrições da Tarefa" abaixo.
+                </p>
+              )}
             </div>
 
             {/* Prazo */}
@@ -457,7 +507,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               />
             </div>
 
-            {/* Entrega Realizada - USUÁRIOS PODEM EDITAR */}
+            {/* Entrega Realizada */}
             <div className="space-y-2">
               <Label htmlFor="last_delivery">Entrega Realizada</Label>
               <Input
@@ -466,11 +516,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                 value={formData.last_delivery}
                 onChange={(e) => setFormData(prev => ({ ...prev, last_delivery: e.target.value }))}
                 readOnly={!canEditField('last_delivery')}
-                className={canEditField('last_delivery') ? 'border-green-300 bg-green-50' : ''}
               />
-              {canEditField('last_delivery') && (
-                <p className="text-xs text-green-600">✓ Você pode editar este campo</p>
-              )}
             </div>
           </div>
 
@@ -487,24 +533,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             />
           </div>
 
-          {/* Restrições */}
-          <div className="space-y-2">
-            <Label htmlFor="restricoes">Restrições</Label>
-            <Textarea
-              id="restricoes"
-              value={formData.restricoes}
-              onChange={(e) => setFormData(prev => ({ ...prev, restricoes: e.target.value }))}
-              placeholder="Ex: ARQUITETURA, ESTRUTURA, CONSTRUÇÃO VIRTUAL..."
-              rows={2}
-              readOnly={!canEditField('restricoes')}
-            />
-            <p className="text-xs text-muted-foreground">
-              Informe as dependências necessárias para iniciar a tarefa
-            </p>
-          </div>
-
-
-          {/* Comentário - USUÁRIOS PODEM EDITAR */}
+          {/* Comentário */}
           <div className="space-y-2">
             <Label htmlFor="comment">Comentário</Label>
             <Textarea
@@ -514,12 +543,21 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               placeholder="Adicione comentários sobre a atividade..."
               rows={3}
               readOnly={!canEditField('comment')}
-              className={canEditField('comment') ? 'border-green-300 bg-green-50' : ''}
             />
-            {canEditField('comment') && (
-              <p className="text-xs text-green-600">✓ Você pode editar este campo</p>
-            )}
           </div>
+
+          {/* Sistema de Restrições - Apenas para tarefas existentes */}
+          {task && (mode === 'edit' || mode === 'view') && (
+            <div className="space-y-2 pt-4 border-t">
+              <TaskRestrictionsManager
+                task={task}
+                onRestrictionsUpdate={() => {
+                  // Recarregar verificação de restrições
+                  checkActiveRestrictions();
+                }}
+              />
+            </div>
+          )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>

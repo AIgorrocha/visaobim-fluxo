@@ -1,13 +1,16 @@
 import { motion } from 'framer-motion';
-import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock, Copy, X } from 'lucide-react';
+import { BarChart3, FileDown, Calendar, TrendingUp, Users, Clock, Copy, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { TaskRestriction } from '@/types';
+import { useState, useEffect, useMemo } from 'react';
 
 const Relatorios = () => {
   const { user, profile } = useAuth();
@@ -17,40 +20,101 @@ const Relatorios = () => {
   const [showTimeline, setShowTimeline] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('own_data');
+  const [reportType, setReportType] = useState<string>('completo');
+  const [taskRestrictions, setTaskRestrictions] = useState<TaskRestriction[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Estado para controlar qual usuário está sendo visualizado
   const currentUserId = (selectedUserId === 'own_data' || !selectedUserId) ? user?.id || '' : selectedUserId;
   const currentUser = profiles.find(p => p.id === currentUserId) || user;
 
-  if (!user) return null;
-
   const isAdmin = profile?.role === 'admin';
 
-  // Função para obter projetos do usuário
+
+  // Carregamento das restrições de tarefas
+  useEffect(() => {
+    if (currentUserId) {
+      loadTaskRestrictions();
+    }
+  }, [currentUserId, tasks]);
+
+  const loadTaskRestrictions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('task_restrictions_detailed')
+        .select('*')
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const formattedRestrictions: TaskRestriction[] = data?.map(item => ({
+        id: item.id,
+        waiting_task_id: item.waiting_task_id,
+        blocking_task_id: item.blocking_task_id,
+        blocking_user_id: item.blocking_user_id,
+        status: item.status,
+        created_at: item.created_at,
+        resolved_at: item.resolved_at
+      })) || [];
+
+      setTaskRestrictions(formattedRestrictions);
+    } catch (error) {
+      console.error('Erro ao carregar restrições:', error);
+    }
+  };
+
+  if (!user) return null;
+
+  // Função para obter projetos do usuário com dados completos e sincronizados
   const getProjectsByUser = (userId: string) => {
-    return projects.filter(project => 
+    return projects.filter(project =>
       project.responsible_ids && project.responsible_ids.includes(userId)
     );
   };
 
-  // Estatísticas básicas para relatórios (baseadas no usuário selecionado)
-  const userProjects = isAdmin && selectedUserId !== 'own_data' ? getProjectsByUser(currentUserId) : getProjectsByUser(user?.id || '');
-  const userTasks = isAdmin && selectedUserId !== 'own_data' ? getTasksByUser(currentUserId) : getTasksByUser(user?.id || '');
-  
+  // Função para obter tarefas com restrições integradas
+  const getTasksWithRestrictions = (userId: string) => {
+    const userTasks = getTasksByUser(userId);
+
+    return userTasks.map(task => {
+      // Buscar restrições ativas para esta tarefa
+      const activeRestrictions = taskRestrictions.filter(restriction =>
+        restriction.waiting_task_id === task.id && restriction.status === 'active'
+      );
+
+      // Buscar restrições onde esta tarefa está bloqueando outras
+      const blockingRestrictions = taskRestrictions.filter(restriction =>
+        restriction.blocking_task_id === task.id && restriction.status === 'active'
+      );
+
+      return {
+        ...task,
+        active_restrictions: activeRestrictions,
+        blocking_restrictions: blockingRestrictions,
+        can_start: activeRestrictions.length === 0
+      };
+    });
+  };
+
+  // Estatísticas integradas e sincronizadas
+  const userProjects = getProjectsByUser(currentUserId);
+  const userTasksWithRestrictions = getTasksWithRestrictions(currentUserId);
+
   const totalProjects = userProjects.length;
   const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
   const completedProjects = userProjects.filter(p => p.status === 'CONCLUIDO' || p.status === 'FINALIZADO').length;
-  const totalTasks = userTasks.length;
-  const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA').length;
-  const activeTasks = userTasks.filter(t => t.status === 'EM_ANDAMENTO').length;
+  const totalTasks = userTasksWithRestrictions.length;
+  const completedTasks = userTasksWithRestrictions.filter(t => t.status === 'CONCLUIDA').length;
+  const activeTasks = userTasksWithRestrictions.filter(t => t.status === 'EM_ANDAMENTO').length;
+  const blockedTasks = userTasksWithRestrictions.filter(t => !t.can_start && t.status !== 'CONCLUIDA').length;
 
   // Função para obter o nome dos responsáveis por ID
   const getResponsibleNames = (responsibleIds: string[]) => {
     if (!responsibleIds || responsibleIds.length === 0) return 'Não atribuído';
-    
+
     return responsibleIds.map(id => {
       const profile = profiles.find(p => p.id === id);
-      return profile?.full_name || 'Usuário não encontrado';
+      return profile?.full_name || profile?.email || 'Usuário não encontrado';
     }).join(', ');
   };
 
@@ -65,16 +129,50 @@ const Relatorios = () => {
     return new Date().toLocaleDateString('pt-BR');
   };
 
-  // Função para gerar o relatório padronizado
+  // Função para obter detalhes das restrições de uma tarefa
+  const getTaskRestrictionsDetails = (task: any) => {
+    if (!task.active_restrictions || task.active_restrictions.length === 0) {
+      return 'Nenhuma restrição ativa';
+    }
+
+    return task.active_restrictions.map((restriction: TaskRestriction) => {
+      const blockingTask = tasks.find(t => t.id === restriction.blocking_task_id);
+      const blockingUser = profiles.find(p => p.id === restriction.blocking_user_id);
+
+      return `Aguardando: "${blockingTask?.title || 'Tarefa não encontrada'}" (responsável: ${blockingUser?.full_name || blockingUser?.email || 'Usuário não encontrado'})`;
+    }).join('; ');
+  };
+
+  // Função para gerar o relatório padronizado e sincronizado
   const generateTaskReport = () => {
-    const reportUserId = isAdmin && selectedUserId !== 'own_data' ? selectedUserId : user?.id || '';
-    const reportUser = isAdmin && selectedUserId !== 'own_data' ? currentUser : user;
-    const userTasks = getTasksByUser(reportUserId);
+    const reportUserId = currentUserId;
+    const reportUser = currentUser;
+
+    const tasksWithRestrictions = getTasksWithRestrictions(reportUserId);
     const userProjects = getProjectsByUser(reportUserId);
     const activeUserProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO');
 
-    const completedUserTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
-    const pendingUserTasks = userTasks.filter(t => t.status === 'PENDENTE');
+    // Filtrar tarefas baseado no tipo de relatório selecionado
+    let filteredTasks = tasksWithRestrictions;
+    switch (reportType) {
+      case 'concluidas':
+        filteredTasks = tasksWithRestrictions.filter(t => t.status === 'CONCLUIDA');
+        break;
+      case 'pendentes':
+        filteredTasks = tasksWithRestrictions.filter(t => t.status !== 'CONCLUIDA');
+        break;
+      case 'bloqueadas':
+        filteredTasks = tasksWithRestrictions.filter(t => !t.can_start && t.status !== 'CONCLUIDA');
+        break;
+      case 'completo':
+      default:
+        filteredTasks = tasksWithRestrictions;
+        break;
+    }
+
+    const completedUserTasks = filteredTasks.filter(t => t.status === 'CONCLUIDA');
+    const pendingUserTasks = filteredTasks.filter(t => t.status !== 'CONCLUIDA');
+    const blockedUserTasks = filteredTasks.filter(t => !t.can_start && t.status !== 'CONCLUIDA');
 
     // Verificar tarefas próximas do prazo (próximos 7 dias)
     const today = new Date();
@@ -87,18 +185,26 @@ const Relatorios = () => {
       return dueDate >= today && dueDate <= nextWeek;
     });
 
-    let report = `📊 RELATÓRIO DE TAREFAS - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
+    const reportTypeLabel = {
+      'completo': 'COMPLETO',
+      'concluidas': 'TAREFAS CONCLUÍDAS',
+      'pendentes': 'TAREFAS PENDENTES',
+      'bloqueadas': 'TAREFAS BLOQUEADAS'
+    }[reportType] || 'COMPLETO';
+
+    let report = `📊 RELATÓRIO DE TAREFAS ${reportTypeLabel} - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
 📅 Data: ${getCurrentDate()}
+🔄 Sincronizado com: Tasks, Projects e Task_Restrictions
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📂 SEUS PROJETOS ATIVOS:
+📂 PROJETOS ATIVOS (${activeUserProjects.length}):
 
 `;
 
     // Lista de projetos ativos
     activeUserProjects.forEach((project, index) => {
       const projectNumber = index + 1;
-      const emoji = projectNumber === 1 ? '1️⃣' : projectNumber === 2 ? '2️⃣' : projectNumber === 3 ? '3️⃣' : projectNumber === 4 ? '4️⃣' : projectNumber === 5 ? '5️⃣' : `${projectNumber}️⃣`;
+      const emoji = projectNumber <= 5 ? `${projectNumber}️⃣` : `${projectNumber}️⃣`;
 
       // Formatar valores financeiros
       const formatCurrency = (value: number) => {
@@ -108,81 +214,106 @@ const Relatorios = () => {
         }).format(value);
       };
 
+      // Contar tarefas deste projeto
+      const projectTasks = filteredTasks.filter(t => t.project_id === project.id);
+      const projectCompletedTasks = projectTasks.filter(t => t.status === 'CONCLUIDA').length;
+      const projectPendingTasks = projectTasks.filter(t => t.status !== 'CONCLUIDA').length;
+
       report += `${emoji} ${project.name}
 - Cliente: ${project.client}
-- Status do Projeto: ${project.status}
+- Status: ${project.status}
 - Tipo: ${project.type === 'publico' ? 'Público' : 'Privado'}
-- Seus responsáveis no projeto: ${getResponsibleNames(project.responsible_ids)}
-- Início do Contrato: ${formatDate(project.contract_start)}
-- Fim do Contrato: ${formatDate(project.contract_end)}${project.project_value ? `
-- Valor do Projeto: ${formatCurrency(project.project_value)}` : ''}${project.amount_paid ? `
-- Valor Pago: ${formatCurrency(project.amount_paid)}` : ''}${project.amount_pending ? `
-- Valor Pendente: ${formatCurrency(project.amount_pending)}` : ''}
+- Responsáveis: ${getResponsibleNames(project.responsible_ids)}
+- Tarefas: ${projectCompletedTasks} concluídas | ${projectPendingTasks} pendentes
+- Início: ${formatDate(project.contract_start)} | Fim: ${formatDate(project.contract_end)}${project.project_value ? `
+- Valor: ${formatCurrency(project.project_value)}` : ''}${project.amount_paid ? `
+- Pago: ${formatCurrency(project.amount_paid)}` : ''}
 
 `;
     });
 
     report += `━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 SUAS TAREFAS:
-
+📋 ${reportTypeLabel} (${filteredTasks.length}):
+${blockedUserTasks.length > 0 ? `🚫 ${blockedUserTasks.length} tarefas bloqueadas por restrições\n` : ''}
 `;
 
-    // Lista de todas as tarefas do usuário
-    userTasks.forEach((task, index) => {
+    // Lista de tarefas filtradas com informações de restrições
+    filteredTasks.forEach((task, index) => {
       const project = projects.find(p => p.id === task.project_id);
       const isUpcoming = upcomingTasks.some(t => t.id === task.id);
-      const statusEmoji = task.status === 'CONCLUIDA' ? '✓' : task.status === 'EM_ANDAMENTO' ? '🔄' : '⏳';
+      const statusEmoji = task.status === 'CONCLUIDA' ? '✅' :
+                         task.status === 'EM_ANDAMENTO' ? '🔄' :
+                         !task.can_start ? '🚫' : '⏳';
 
       // Obter co-responsáveis (excluindo o usuário atual)
       let coResponsible = '';
       if (Array.isArray(task.assigned_to)) {
-        const otherResponsibles = task.assigned_to.filter(id => id !== reportUserId);
+        const otherResponsibles = task.assigned_to.filter((id: string) => id !== reportUserId);
         if (otherResponsibles.length > 0) {
           coResponsible = `👥 Co-responsável: ${getResponsibleNames(otherResponsibles)}`;
         }
       }
 
-      report += `✅ TAREFA ${index + 1}
+      // Informações de restrições detalhadas
+      const restrictionsInfo = getTaskRestrictionsDetails(task);
+      const hasRestrictions = task.active_restrictions && task.active_restrictions.length > 0;
+
+      report += `${statusEmoji} TAREFA ${index + 1}${!task.can_start ? ' [BLOQUEADA]' : ''}
 📌 Título: ${task.title}
 🏗️ Projeto: ${project?.name || 'Projeto não encontrado'}${coResponsible ? '\n' + coResponsible : ''}
 📊 Fase: ${task.phase || '-'}
-🔄 Status: ${task.status}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
+🔄 Status: ${task.status}${task.status === 'CONCLUIDA' ? ' ✅' : ''}
+${hasRestrictions ? `🚫 Restrições: ${restrictionsInfo}` : '✅ Sem restrições - pode iniciar'}
 🏆 Pontos: ${task.points || 0} pontos
-⚡ Prioridade: ${task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'}
+⚡ Prioridade: ${task.priority === 'alta' ? 'Alta 🔴' : task.priority === 'media' ? 'Média 🟡' : 'Baixa 🟢'}
 📅 Início: ${formatDate(task.activity_start)}
 ⏰ Prazo: ${formatDate(task.due_date)}${isUpcoming ? ' ⚠️ PRÓXIMO' : ''}
-📝 Entrega Realizada: ${formatDate(task.completed_at)}${task.status === 'CONCLUIDA' ? ' ✓' : ''}
-🔒 Restrições: ${task.restricoes || '-'}
-💬 Comentário: ${task.comment || '-'}
+📝 Entrega: ${formatDate(task.completed_at)}${task.status === 'CONCLUIDA' ? ' ✅' : ''}
+💬 Observações: ${task.comment || '-'}
 
 ━━━━━━━━━━━━━━━━━━━━━
-
 `;
     });
 
-    // Resumo final
-    const upcomingTaskName = upcomingTasks.length > 0 ? upcomingTasks[0].title : '';
-    const upcomingTaskDate = upcomingTasks.length > 0 ? formatDate(upcomingTasks[0].due_date) : '';
-
-    // Calcular pontos totais
-    const totalPoints = userTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    // Resumo final com estatísticas completas
+    const totalPoints = filteredTasks.reduce((sum, task) => sum + (task.points || 0), 0);
     const completedPoints = completedUserTasks.reduce((sum, task) => sum + (task.points || 0), 0);
     const pendingPoints = pendingUserTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    const blockedPoints = blockedUserTasks.reduce((sum, task) => sum + (task.points || 0), 0);
 
-    report += `📊 RESUMO:
-- Total de Tarefas: ${userTasks.length}
-- Concluídas: ${completedUserTasks.length} ✓
-- Pendentes: ${pendingUserTasks.length}${upcomingTasks.length > 0 ? `
-- Próxima: ${upcomingTaskName} para ${upcomingTaskDate}` : ''}
+    report += `
+📊 RESUMO EXECUTIVO:
+━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 ESTATÍSTICAS GERAIS:
+- Total de Projetos: ${totalProjects}
+- Projetos Ativos: ${activeProjects}
+- Projetos Concluídos: ${completedProjects}
+
+📋 ANÁLISE DE TAREFAS (${reportTypeLabel}):
+- Total: ${filteredTasks.length}
+- Concluídas: ${completedUserTasks.length} ✅
+- Pendentes: ${pendingUserTasks.length} ⏳
+- Bloqueadas: ${blockedUserTasks.length} 🚫
+- Podem iniciar: ${filteredTasks.filter(t => t.can_start && t.status !== 'CONCLUIDA').length} 🟢${upcomingTasks.length > 0 ? `
+- Próximas (7 dias): ${upcomingTasks.length} ⚠️` : ''}
 
 🏆 PONTUAÇÃO:
-- Pontos Totais Disponíveis: ${totalPoints}
-- Pontos Conquistados: ${completedPoints} ✓
-- Pontos Pendentes: ${pendingPoints}
+- Total Disponível: ${totalPoints} pontos
+- Conquistada: ${completedPoints} pontos ✅
+- Pendente: ${pendingPoints} pontos ⏳
+- Bloqueada: ${blockedPoints} pontos 🚫
 - Taxa de Conquista: ${totalPoints > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0}%
 
-Qualquer dúvida, estou à disposição!`;
+🚫 ANÁLISE DE RESTRIÇÕES:
+- Tarefas com restrições ativas: ${filteredTasks.filter(t => !t.can_start).length}
+- Tarefas liberadas: ${filteredTasks.filter(t => t.can_start).length}
+- Eficiência (sem bloqueios): ${filteredTasks.length > 0 ? Math.round((filteredTasks.filter(t => t.can_start).length / filteredTasks.length) * 100) : 100}%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 Relatório sincronizado com todas as tabelas do sistema
+🔄 Tasks | Projects | Task_Restrictions | Profiles
+⏰ Gerado em: ${new Date().toLocaleString('pt-BR')}`;
 
     return report;
   };
@@ -205,135 +336,222 @@ Qualquer dúvida, estou à disposição!`;
     setShowReport(true);
   };
 
-  // Função para gerar cronograma de projetos
+  // Função para atualizar dados
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadTaskRestrictions();
+      // Os outros dados são atualizados automaticamente pelo contexto
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Função para gerar cronograma de tarefas em ordem cronológica
   const generateProjectTimeline = () => {
-    const reportUserId = isAdmin && selectedUserId ? selectedUserId : user?.id || '';
-    const reportUser = isAdmin && selectedUserId ? currentUser : user;
-    const userTasks = getTasksByUser(reportUserId);
+    const tasksWithRestrictions = getTasksWithRestrictions(currentUserId);
 
-    // Agrupar tarefas por mês
-    const tasksByMonth = userTasks.reduce((acc: { [key: string]: any[] }, task: any) => {
-      if (!task.due_date) return acc;
+    // Filtrar apenas tarefas pendentes e com prazo definido, depois ordenar por data
+    const pendingTasksWithDueDate = tasksWithRestrictions
+      .filter(task => task.due_date && task.status !== 'CONCLUIDA')
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
 
-      const date = new Date(task.due_date);
-      const monthKey = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const today = new Date();
 
-      if (!acc[monthKey]) acc[monthKey] = [];
-      acc[monthKey].push(task);
+    // Separar tarefas por urgência
+    const overdueTasks = pendingTasksWithDueDate.filter(task => {
+      const dueDate = new Date(task.due_date);
+      return dueDate < today;
+    });
 
-      return acc;
-    }, {} as { [key: string]: any[] });
+    const urgentTasks = pendingTasksWithDueDate.filter(task => {
+      const dueDate = new Date(task.due_date);
+      const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays <= 7 && diffDays >= 0;
+    });
 
-    let timeline = `📅 CRONOGRAMA DE PROJETOS - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
-📅 Data: ${getCurrentDate()}
+    const normalTasks = pendingTasksWithDueDate.filter(task => {
+      const dueDate = new Date(task.due_date);
+      const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays > 7;
+    });
+
+    let timeline = `📅 CRONOGRAMA DE TAREFAS - ${(currentUser?.full_name || currentUser?.email || 'USUÁRIO').toUpperCase()}
+📅 Gerado em: ${getCurrentDate()}
+🔄 Total: ${pendingTasksWithDueDate.length} tarefas pendentes com prazo
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 CRONOGRAMA DE PRAZOS:
-
 `;
 
-    Object.entries(tasksByMonth).forEach(([month, monthTasks]: [string, any[]]) => {
-      timeline += `📅 ${month.toUpperCase()}
-`;
-
-      monthTasks
-        .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-        .forEach((task, index) => {
-          const project = projects.find(p => p.id === task.project_id);
-          const statusIcon = task.status === 'CONCLUIDA' ? '✅' : task.status === 'EM_ANDAMENTO' ? '🔄' : '⏳';
-
-          timeline += `  ${statusIcon} ${formatDate(task.due_date)} - ${task.title}
-      🏗️ ${project?.name || 'Projeto não encontrado'}
-      📊 ${task.phase || '-'} | Status: ${task.status}
+    // TAREFAS VENCIDAS
+    if (overdueTasks.length > 0) {
+      timeline += `🚨 TAREFAS VENCIDAS (${overdueTasks.length}):
 
 `;
-        });
+      overdueTasks.forEach((task, index) => {
+        const project = projects.find(p => p.id === task.project_id);
+        const dueDate = new Date(task.due_date);
+        const daysOverdue = Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      timeline += `━━━━━━━━━━━━━━━━━━━━━
+        timeline += `${index + 1}. ❌ "${task.title}"
+   📁 ${project?.title || 'Projeto N/A'}
+   📅 Venceu há ${daysOverdue} dia(s) - ${dueDate.toLocaleDateString('pt-BR')}
+   ${task.active_restrictions?.length > 0 ? '🚫 BLOQUEADA: ' + getBlockingReason(task.active_restrictions) : '✅ Pode iniciar agora'}
 
 `;
-    });
+      });
+    }
+
+    // TAREFAS URGENTES (próximos 7 dias)
+    if (urgentTasks.length > 0) {
+      timeline += `⚡ TAREFAS URGENTES - Próximos 7 dias (${urgentTasks.length}):
+
+`;
+      urgentTasks.forEach((task, index) => {
+        const project = projects.find(p => p.id === task.project_id);
+        const dueDate = new Date(task.due_date);
+        const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        timeline += `${index + 1}. ⚡ "${task.title}"
+   📁 ${project?.title || 'Projeto N/A'}
+   📅 ${daysUntilDue === 0 ? '🔥 VENCE HOJE!' : `Prazo: ${daysUntilDue} dia(s)`} - ${dueDate.toLocaleDateString('pt-BR')}
+   ${task.active_restrictions?.length > 0 ? '🚫 BLOQUEADA: ' + getBlockingReason(task.active_restrictions) : '✅ Pode iniciar agora'}
+
+`;
+      });
+    }
+
+    // PRÓXIMAS TAREFAS (mais de 7 dias)
+    if (normalTasks.length > 0) {
+      timeline += `📋 PRÓXIMAS TAREFAS - Cronograma Completo (${normalTasks.length}):
+
+`;
+      normalTasks.slice(0, 15).forEach((task, index) => {  // Limitar a 15 tarefas para não ficar muito longo
+        const project = projects.find(p => p.id === task.project_id);
+        const dueDate = new Date(task.due_date);
+        const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        timeline += `${index + 1}. 📅 "${task.title}"
+   📁 ${project?.title || 'Projeto N/A'}
+   📅 Em ${daysUntilDue} dias - ${dueDate.toLocaleDateString('pt-BR')}
+   ${task.active_restrictions?.length > 0 ? '🚫 BLOQUEADA: ' + getBlockingReason(task.active_restrictions) : '✅ Pode iniciar agora'}
+
+`;
+      });
+
+      if (normalTasks.length > 15) {
+        timeline += `... e mais ${normalTasks.length - 15} tarefas futuras.
+
+`;
+      }
+    }
+
+    timeline += `━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 RESUMO:
+• Vencidas: ${overdueTasks.length}
+• Urgentes (≤7 dias): ${urgentTasks.length}
+• Futuras: ${normalTasks.length}
+• Bloqueadas: ${pendingTasksWithDueDate.filter(t => t.active_restrictions?.length > 0).length}
+
+🎯 FOCO: ${overdueTasks.length > 0 ? 'Resolver tarefas vencidas primeiro!' : urgentTasks.length > 0 ? 'Priorizar tarefas urgentes!' : 'Bom trabalho, sem tarefas críticas!'}`;
 
     return timeline;
   };
 
-  // Função para gerar relatório de desempenho do projetista
+  // Função para gerar relatório de desempenho (atualizada)
   const generatePerformanceReport = () => {
-    const reportUserId = isAdmin && selectedUserId !== 'own_data' ? selectedUserId : user?.id || '';
-    const reportUser = isAdmin && selectedUserId !== 'own_data' ? currentUser : user;
-    const userTasks = getTasksByUser(reportUserId);
-    const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
+    const tasksWithRestrictions = getTasksWithRestrictions(currentUserId);
+    const completedTasks = tasksWithRestrictions.filter(t => t.status === 'CONCLUIDA');
+    const pendingTasks = tasksWithRestrictions.filter(t => t.status !== 'CONCLUIDA');
 
-    let performance = `📊 DESEMPENHO DO PROJETISTA - ${(reportUser?.full_name || reportUser?.email || 'USUÁRIO').toUpperCase()}
-📅 Data: ${getCurrentDate()}
-━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Calcular estatísticas básicas
+    const totalDeliveries = completedTasks.length;
 
-📋 HISTÓRICO DE ENTREGAS:
+    let anticipatedCount = 0;
+    let onTimeCount = 0;
+    let delayedCount = 0;
+    let totalPoints = 0;
 
-`;
-
-    completedTasks.forEach((task, index) => {
+    completedTasks.forEach(task => {
       if (!task.due_date || !task.completed_at) return;
 
-      const project = projects.find(p => p.id === task.project_id);
-      const dueDate = new Date(task.due_date);
-      const completedDate = new Date(task.completed_at);
-      const daysDiff = Math.floor((dueDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor((new Date(task.due_date).getTime() - new Date(task.completed_at).getTime()) / (1000 * 60 * 60 * 24));
 
-      let points = 0;
-      let status = '';
       if (daysDiff > 0) {
-        points = daysDiff * 2;
-        status = `📈 ANTECIPADO (+${daysDiff} dias) = +${points} pontos`;
+        anticipatedCount++;
+        totalPoints += daysDiff * 2;
       } else if (daysDiff < 0) {
-        points = daysDiff * 4; // será negativo
-        status = `📉 ATRASADO (${Math.abs(daysDiff)} dias) = ${points} pontos`;
+        delayedCount++;
+        totalPoints += daysDiff * 4; // negativo
       } else {
-        points = 0;
-        status = `🎯 NO PRAZO = 0 pontos`;
+        onTimeCount++;
       }
-
-      performance += `✅ ENTREGA ${index + 1}
-📌 ${task.title}
-🏗️ Projeto: ${project?.name || 'Projeto não encontrado'}
-📊 Fase: ${task.phase || '-'}
-⏰ Prazo: ${formatDate(task.due_date)}
-📝 Entregue: ${formatDate(task.completed_at)}
-${status}
-
-━━━━━━━━━━━━━━━━━━━━━
-
-`;
     });
 
-    // Calcular pontuação total
-    const totalPoints = completedTasks.reduce((sum, task) => {
-      if (!task.due_date || !task.completed_at) return sum;
-      const daysDiff = Math.floor((new Date(task.due_date).getTime() - new Date(task.completed_at).getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff > 0) return sum + (daysDiff * 2);
-      else if (daysDiff < 0) return sum + (daysDiff * 4);
-      else return sum;
-    }, 0);
+    // Analisar tarefas pendentes por urgência
+    const today = new Date();
+    const overduePending = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < today).length;
+    const urgentPending = pendingTasks.filter(t => {
+      if (!t.due_date) return false;
+      const days = Math.ceil((new Date(t.due_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return days <= 7 && days >= 0;
+    }).length;
 
-    performance += `📊 RESUMO DO DESEMPENHO:
-- Total de Entregas: ${completedTasks.length}
-- Pontuação Total: ${totalPoints} pontos
-- Média por Entrega: ${completedTasks.length > 0 ? Math.round(totalPoints / completedTasks.length) : 0} pontos
-- Entregas Antecipadas: ${completedTasks.filter(t => {
-  if (!t.due_date || !t.completed_at) return false;
-  return new Date(t.due_date) > new Date(t.completed_at);
-}).length}
-- Entregas no Prazo: ${completedTasks.filter(t => {
-  if (!t.due_date || !t.completed_at) return false;
-  const diff = Math.floor((new Date(t.due_date).getTime() - new Date(t.completed_at).getTime()) / (1000 * 60 * 60 * 24));
-  return diff === 0;
-}).length}
-- Entregas Atrasadas: ${completedTasks.filter(t => {
-  if (!t.due_date || !t.completed_at) return false;
-  return new Date(t.due_date) < new Date(t.completed_at);
-}).length}
+    // Determinar classificação simples
+    let classification = '';
+    let classificationColor = '';
+    if (totalPoints >= 20) {
+      classification = 'Excelente';
+      classificationColor = '🏆';
+    } else if (totalPoints >= 0) {
+      classification = 'Bom';
+      classificationColor = '👍';
+    } else if (totalPoints >= -20) {
+      classification = 'Regular';
+      classificationColor = '⚠️';
+    } else {
+      classification = 'Precisa Melhorar';
+      classificationColor = '📊';
+    }
 
-Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
+    const performance = `📊 ANÁLISE DE DESEMPENHO - ${(currentUser?.full_name || currentUser?.email || 'USUÁRIO').toUpperCase()}
+📅 Período: ${getCurrentDate()}
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 RESUMO GERAL:
+• Total de tarefas concluídas: ${totalDeliveries}
+• Pontuação atual: ${totalPoints} pontos
+• Classificação: ${classificationColor} ${classification}
+
+📈 HISTÓRICO DE ENTREGAS:
+• ✅ Antecipadas: ${anticipatedCount} (${totalDeliveries > 0 ? Math.round((anticipatedCount / totalDeliveries) * 100) : 0}%)
+• 🎯 No prazo: ${onTimeCount} (${totalDeliveries > 0 ? Math.round((onTimeCount / totalDeliveries) * 100) : 0}%)
+• ⏰ Atrasadas: ${delayedCount} (${totalDeliveries > 0 ? Math.round((delayedCount / totalDeliveries) * 100) : 0}%)
+
+⚡ SITUAÇÃO ATUAL:
+• 🚨 Tarefas vencidas: ${overduePending}
+• ⚠️ Tarefas urgentes (≤7 dias): ${urgentPending}
+• 📋 Total pendentes: ${pendingTasks.length}
+
+${totalDeliveries === 0 ? `
+🔔 PRIMEIRA ANÁLISE:
+Ainda não há tarefas concluídas para análise.
+Complete algumas tarefas para ver seu desempenho!` : ''}
+
+${totalPoints < 0 ? `
+💡 DICAS PARA MELHORAR:
+• Priorize tarefas com prazo mais próximo
+• Monitore bloqueios e restrições
+• Comunique atrasos com antecedência
+• Use o cronograma para se organizar` : ''}
+
+${totalPoints >= 20 ? `
+🎉 PARABÉNS!
+Você está mantendo um excelente desempenho!
+Continue priorizando entregas antecipadas.` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+Sistema: +2 pontos/dia antecipado | -4 pontos/dia atrasado`;
 
     return performance;
   };
@@ -360,37 +578,52 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
       >
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-            <p className="text-muted-foreground">Análise e relatórios do sistema de gestão</p>
+            <h1 className="text-3xl font-bold text-foreground">Relatórios Integrados</h1>
+            <p className="text-muted-foreground">
+              Sistema completo sincronizado com Tarefas • Restrições • Projetos
+            </p>
           </div>
-          
-          {/* Filtro para Administradores */}
-          {isAdmin && (
-            <div className="flex items-center space-x-4">
-              <Label htmlFor="user-select">Filtrar por usuário:</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="w-[200px]" id="user-select">
-                  <SelectValue placeholder="Seus próprios dados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="own_data">Seus próprios dados</SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      {profile.full_name || profile.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Sincronizando...' : 'Atualizar'}
+            </Button>
+
+            {/* Filtro para Administradores */}
+            {isAdmin && (
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="user-select">Usuário:</Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="w-[200px]" id="user-select">
+                    <SelectValue placeholder="Seus próprios dados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="own_data">Seus dados</SelectItem>
+                    {profiles.map((profile) => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.full_name || profile.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
 
-      {/* Estatísticas Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Estatísticas Resumo com Restrições */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Projetos</CardTitle>
+            <CardTitle className="text-sm font-medium">Projetos</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -403,28 +636,41 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
+            <CardTitle className="text-sm font-medium">Tarefas</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalTasks}</div>
             <p className="text-xs text-muted-foreground">
-              {activeTasks} em andamento • {completedTasks} concluídas
+              {activeTasks} ativas • {completedTasks} concluídas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
+            <CardTitle className="text-sm font-medium">Bloqueadas</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{blockedTasks}</div>
+            <p className="text-xs text-muted-foreground">
+              Por restrições ativas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Eficiência</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%
+              {totalTasks > 0 ? Math.round(((totalTasks - blockedTasks) / totalTasks) * 100) : 100}%
             </div>
             <p className="text-xs text-muted-foreground">
-              Performance geral
+              Sem bloqueios
             </p>
           </CardContent>
         </Card>
@@ -436,20 +682,20 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="h-5 w-5 mr-2 text-primary" />
-              Desempenho do Projetista
+              Desempenho Completo
             </CardTitle>
-            <CardDescription>Histórico de entregas, prazos e pontuação</CardDescription>
+            <CardDescription>Análise detalhada com restrições</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Análise</Label>
               <p className="text-sm text-muted-foreground">
-                Relatório completo do seu desempenho individual
+                Histórico completo sincronizado com todas as tabelas
               </p>
             </div>
             <Button className="w-full" onClick={handleShowPerformance}>
               <BarChart3 className="h-4 w-4 mr-2" />
-              Gerar Relatório
+              Gerar Desempenho
             </Button>
           </CardContent>
         </Card>
@@ -458,15 +704,15 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="h-5 w-5 mr-2 text-success" />
-              Cronograma de Projetos
+              Cronograma Integrado
             </CardTitle>
-            <CardDescription>Timeline de prazos no calendário</CardDescription>
+            <CardDescription>Timeline com status de restrições</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Timeline</Label>
               <p className="text-sm text-muted-foreground">
-                Visualize todos os seus prazos organizados por mês
+                Prazos organizados com análise de bloqueios
               </p>
             </div>
             <Button className="w-full" onClick={handleShowTimeline}>
@@ -480,21 +726,22 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileDown className="h-5 w-5 mr-2 text-accent" />
-              Relatório de Tarefas
+              Relatório Sincronizado
             </CardTitle>
-            <CardDescription>Análise completa das atividades</CardDescription>
+            <CardDescription>Dados completos das 3 tabelas</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select>
+              <Label>Tipo de Relatório</Label>
+              <Select value={reportType} onValueChange={setReportType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="concluidas">Tarefas Concluídas</SelectItem>
-                  <SelectItem value="pendentes">Tarefas Pendentes</SelectItem>
                   <SelectItem value="completo">Relatório Completo</SelectItem>
+                  <SelectItem value="concluidas">Apenas Concluídas</SelectItem>
+                  <SelectItem value="pendentes">Apenas Pendentes</SelectItem>
+                  <SelectItem value="bloqueadas">Apenas Bloqueadas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -516,11 +763,14 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
           >
             <div className="flex items-center justify-between p-6 border-b">
               <h3 className="text-lg font-semibold">
-                {showReport && 'Relatório de Tarefas'}
-                {showTimeline && 'Cronograma de Projetos'}
-                {showPerformance && 'Desempenho do Projetista'}
+                {showReport && `Relatório de Tarefas ${reportType !== 'completo' ? `- ${reportType.toUpperCase()}` : ''}`}
+                {showTimeline && 'Cronograma Integrado'}
+                {showPerformance && 'Desempenho Completo'}
               </h3>
               <div className="flex gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  Sincronizado
+                </Badge>
                 <Button variant="outline" size="sm" onClick={copyReport}>
                   <Copy className="h-4 w-4 mr-2" />
                   Copiar
@@ -544,7 +794,7 @@ Sistema: +2 pontos por dia antecipado, -4 pontos por dia de atraso`;
             <div className="p-6 border-t bg-gray-50">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-muted-foreground">
-                  Relatório gerado em {new Date().toLocaleString('pt-BR')}
+                  📊 Relatório gerado em {new Date().toLocaleString('pt-BR')} | 🔄 Dados sincronizados
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={copyReport}>

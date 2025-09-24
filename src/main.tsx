@@ -6,8 +6,8 @@ import { ThemeProvider } from './providers/ThemeProvider';
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider
     attribute="class"
-    defaultTheme="system"
-    enableSystem
+    defaultTheme="light"
+    enableSystem={false}
     disableTransitionOnChange
   >
     <App />

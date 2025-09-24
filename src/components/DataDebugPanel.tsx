@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { EyeOff, RefreshCw } from 'lucide-react';
 
 export function DataDebugPanel() {
   const [isVisible, setIsVisible] = useState(false);
@@ -40,13 +40,13 @@ export function DataDebugPanel() {
     return (
       <div className="fixed bottom-4 right-4 z-50">
         <Button
-          onClick={() => setIsVisible(true)}
+          onClick={handleRefreshAll}
           variant="outline"
           size="sm"
           className="bg-background/80 backdrop-blur-sm"
         >
-          <Eye className="h-4 w-4 mr-2" />
-          Debug Data
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Atualizar Dados
         </Button>
       </div>
     );
@@ -57,7 +57,7 @@ export function DataDebugPanel() {
       <Card className="bg-background/95 backdrop-blur-sm border-2">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm">Data Debug Panel</CardTitle>
+            <CardTitle className="text-sm">Painel de Atualizaçăo</CardTitle>
             <div className="flex gap-2">
               <Button
                 onClick={handleRefreshAll}

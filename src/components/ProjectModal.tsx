@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Project } from '@/types';
@@ -18,26 +19,11 @@ interface ProjectModalProps {
 }
 
 const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => {
-  const { createProject, updateProject } = useSupabaseData();
-  const { user } = useAuth();
+  const { createProject, updateProject, profiles } = useSupabaseData();
+  const { user, profile } = useAuth();
 
-  // Lista de responsáveis (sem Admin)
-  const teamMembers = [
-    { id: '1', name: 'Igor' },
-    { id: '2', name: 'Gustavo' },
-    { id: '3', name: 'Bessa' },
-    { id: '4', name: 'Leonardo' },
-    { id: '5', name: 'Pedro' },
-    { id: '6', name: 'Thiago' },
-    { id: '7', name: 'Nicolas' },
-    { id: '8', name: 'Eloisy' },
-    { id: '9', name: 'Rondinelly' },
-    { id: '10', name: 'Edilson' },
-    { id: '11', name: 'Philip' },
-    { id: '12', name: 'Nara' },
-    { id: '13', name: 'Stael' },
-    { id: '14', name: 'Projetista Externo' }
-  ];
+  const isAdmin = profile?.role === 'admin';
+  const isReadOnly = mode === 'view' || (!isAdmin && mode !== 'create');
 
   // Função para converter data do formato ISO para input date (corrige bug do timezone)
   const formatDateForInput = (dateString: string) => {
@@ -115,9 +101,6 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
     onClose();
   };
 
-  const isReadOnly = mode === 'view';
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin';
 
   const getTitle = () => {
     switch (mode) {
@@ -221,36 +204,55 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
 
             <div className="space-y-2 col-span-full">
               <Label>Responsáveis</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border rounded-lg">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`responsible-${member.id}`}
-                      checked={formData.responsible_ids.includes(member.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            responsible_ids: [...prev.responsible_ids, member.id]
-                          }));
-                        } else {
-                          setFormData(prev => ({
-                            ...prev,
-                            responsible_ids: prev.responsible_ids.filter(id => id !== member.id)
-                          }));
-                        }
-                      }}
-                      disabled={isReadOnly}
-                    />
-                    <Label
-                      htmlFor={`responsible-${member.id}`}
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      {member.name}
-                    </Label>
+              {mode === 'view' ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {project?.responsible_ids && project.responsible_ids.length > 0 ? (
+                      project.responsible_ids.map((responsibleId) => {
+                        const profileData = profiles.find(p => p.id === responsibleId);
+                        return (
+                          <Badge key={responsibleId} variant="secondary" className="px-3 py-1">
+                            {profileData?.full_name || profileData?.email || `Usuário ${responsibleId}`}
+                          </Badge>
+                        );
+                      })
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Nenhum responsável atribuído</span>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border rounded-lg">
+                  {profiles.map((profileData) => (
+                    <div key={profileData.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`responsible-${profileData.id}`}
+                        checked={formData.responsible_ids && (formData.responsible_ids.includes(profileData.id) || formData.responsible_ids.includes(String(profileData.id)))}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              responsible_ids: [...prev.responsible_ids, profileData.id]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              responsible_ids: prev.responsible_ids.filter(id => id !== profileData.id)
+                            }));
+                          }
+                        }}
+                        disabled={isReadOnly}
+                      />
+                      <Label
+                        htmlFor={`responsible-${profileData.id}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {profileData.full_name || profileData.email}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -289,61 +291,24 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
             />
           </div>
 
-          {/* Informações Financeiras - Apenas em Visualização e para Admins */}
-          {mode === 'view' && project && isAdmin && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label>Valor do Projeto</Label>
-                <div className="text-lg font-semibold text-primary">
-                  {project.project_value 
-                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.project_value)
-                    : 'Não informado'
-                  }
+          {/* Informações Adicionais - Visível para todos em modo visualização */}
+          {mode === 'view' && project && (
+            <div className="space-y-4 pt-4 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Criado em</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {project.created_at ? new Date(project.created_at).toLocaleDateString('pt-BR') : 'Não informado'}
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Valor Pago</Label>
-                <div className="text-lg font-semibold text-success">
-                  {project.amount_paid 
-                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.amount_paid)
-                    : 'R$ 0,00'
-                  }
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Valor Pendente</Label>
-                <div className="text-lg font-semibold text-warning">
-                  {project.amount_pending 
-                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.amount_pending)
-                    : 'R$ 0,00'
-                  }
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Gastos/Despesas</Label>
-                <div className="text-lg font-semibold text-destructive">
-                  {project.expenses 
-                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.expenses)
-                    : 'R$ 0,00'
-                  }
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Margem de Lucro</Label>
-                <div className="text-lg font-semibold">
-                  {project.profit_margin ? `${project.profit_margin}%` : 'Não calculada'}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Criado por</Label>
-                <div className="text-sm text-muted-foreground">
-                  {/* Buscar nome do criador */}
-                  Administrador
+                <div className="space-y-2">
+                  <Label>Criado por</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {(() => {
+                      const creator = profiles.find(p => p.id === project.created_by);
+                      return creator?.full_name || creator?.email || 'Usuário não encontrado';
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
@@ -353,10 +318,15 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
             <Button type="button" variant="outline" onClick={onClose}>
               {mode === 'view' ? 'Fechar' : 'Cancelar'}
             </Button>
-            {!isReadOnly && (
+            {!isReadOnly && isAdmin && (
               <Button type="submit">
                 {mode === 'create' ? 'Criar Projeto' : 'Salvar Alterações'}
               </Button>
+            )}
+            {!isAdmin && mode !== 'view' && (
+              <div className="text-xs text-muted-foreground">
+                Apenas administradores podem editar projetos
+              </div>
             )}
           </DialogFooter>
         </form>

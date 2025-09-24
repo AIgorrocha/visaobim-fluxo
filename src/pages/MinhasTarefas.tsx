@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { Task } from '@/types';
@@ -20,7 +21,7 @@ const MinhasTarefas = () => {
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('edit');
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('edit');
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +44,7 @@ const MinhasTarefas = () => {
   console.log('MinhasTarefas - User tasks:', userTasks);
 
 
-  const filteredTasks = userTasks.filter(task => {
+  const filteredAndSortedTasks = userTasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -70,25 +71,41 @@ const MinhasTarefas = () => {
         case 'hoje':
           matchesDeadline = dueDate.toDateString() === today.toDateString();
           break;
-        case 'proximos_7':
+        case 'proximos_7': {
           const em7Dias = new Date();
           em7Dias.setDate(today.getDate() + 7);
           matchesDeadline = dueDate >= today && dueDate <= em7Dias;
           break;
-        case 'proximos_30':
+        }
+        case 'proximos_15': {
+          const em15Dias = new Date();
+          em15Dias.setDate(today.getDate() + 15);
+          matchesDeadline = dueDate >= today && dueDate <= em15Dias;
+          break;
+        }
+        case 'proximos_30': {
           const em30Dias = new Date();
           em30Dias.setDate(today.getDate() + 30);
           matchesDeadline = dueDate >= today && dueDate <= em30Dias;
           break;
+        }
       }
     }
 
     return matchesSearch && matchesProject && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline;
+  }).sort((a, b) => {
+    // Tarefas sem prazo ficam no início
+    if (!a.due_date && !b.due_date) return 0;
+    if (!a.due_date) return -1;
+    if (!b.due_date) return 1;
+
+    // Ordenar por prazo (mais próximo primeiro)
+    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
   });
 
   const getTasksByStatus = (status?: Task['status']) => {
-    if (!status) return filteredTasks;
-    return filteredTasks.filter(task => task.status === status);
+    if (!status) return filteredAndSortedTasks;
+    return filteredAndSortedTasks.filter(task => task.status === status);
   };
 
   const getPriorityIcon = (priority: Task['priority']) => {
@@ -153,6 +170,12 @@ const MinhasTarefas = () => {
     setIsTaskModalOpen(true);
   };
 
+  const handleViewTask = (task: Task) => {
+    setSelectedTask(task);
+    setModalMode('view');
+    setIsTaskModalOpen(true);
+  };
+
   const handleCreateTask = () => {
     setSelectedTask(null);
     setModalMode('create');
@@ -175,6 +198,61 @@ const MinhasTarefas = () => {
   const isOverdue = (dueDate: string) => {
     return new Date(dueDate) < new Date() && new Date(dueDate).toDateString() !== new Date().toDateString();
   };
+
+  const renderTaskRow = (task: Task) => (
+    <TableRow key={task.id} className="hover:bg-muted/50">
+      <TableCell className="font-medium">{task.title}</TableCell>
+      <TableCell>
+        <div className="max-w-48 truncate" title={getProjectNameWithClient(task.project_id)}>
+          {getProjectNameWithClient(task.project_id)}
+        </div>
+      </TableCell>
+      <TableCell>{getStatusBadge(task.status)}</TableCell>
+      <TableCell>
+        <Badge variant="outline" className="text-xs">
+          {task.phase}
+        </Badge>
+      </TableCell>
+      <TableCell>{getPriorityBadge(task.priority)}</TableCell>
+      <TableCell className="text-sm">
+        {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
+      </TableCell>
+      <TableCell className={`text-sm ${
+        task.due_date && isOverdue(task.due_date) ? 'text-destructive font-semibold' : ''
+      }`}>
+        {task.due_date ? (
+          <>
+            {formatDate(task.due_date)}
+            {isOverdue(task.due_date) && ' ⚠️'}
+          </>
+        ) : (
+          <span className="text-muted-foreground">Sem prazo</span>
+        )}
+      </TableCell>
+      <TableCell className="text-sm">
+        {task.last_delivery ? (
+          <span className="text-success font-medium">{formatDate(task.last_delivery)}</span>
+        ) : (
+          <span className="text-muted-foreground">Não realizada</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="text-success border-success">
+          {task.points} pts
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end space-x-2">
+          <Button size="sm" variant="ghost" onClick={() => handleViewTask(task)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleEditTask(task)}>
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
 
   const renderTaskCard = (task: Task) => (
     <motion.div
@@ -285,7 +363,7 @@ const MinhasTarefas = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -294,10 +372,10 @@ const MinhasTarefas = () => {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
             {isAdmin ? 'Todas as Tarefas' : 'Minhas Tarefas'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm sm:text-base">
             {isAdmin
               ? 'Visualize e gerencie todas as tarefas do sistema'
               : 'Gerencie suas tarefas e acompanhe seu progresso'
@@ -398,6 +476,7 @@ const MinhasTarefas = () => {
                     <SelectItem value="atrasadas">Atrasadas</SelectItem>
                     <SelectItem value="hoje">Vencem hoje</SelectItem>
                     <SelectItem value="proximos_7">Próximos 7 dias</SelectItem>
+                    <SelectItem value="proximos_15">Próximos 15 dias</SelectItem>
                     <SelectItem value="proximos_30">Próximos 30 dias</SelectItem>
                   </SelectContent>
                 </Select>
@@ -419,7 +498,7 @@ const MinhasTarefas = () => {
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'PENDENTE').length}</p>
+                  <p className="text-2xl font-bold">{filteredAndSortedTasks.filter(task => task.status === 'PENDENTE').length}</p>
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
@@ -437,7 +516,7 @@ const MinhasTarefas = () => {
               <div className="flex items-center space-x-2">
                 <PlayCircle className="h-4 w-4 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'EM_ANDAMENTO').length}</p>
+                  <p className="text-2xl font-bold">{filteredAndSortedTasks.filter(task => task.status === 'EM_ANDAMENTO').length}</p>
                   <p className="text-xs text-muted-foreground">Em Andamento</p>
                 </div>
               </div>
@@ -455,7 +534,7 @@ const MinhasTarefas = () => {
               <div className="flex items-center space-x-2">
                 <CircleCheckBig className="h-4 w-4 text-success" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'CONCLUIDA').length}</p>
+                  <p className="text-2xl font-bold">{filteredAndSortedTasks.filter(task => task.status === 'CONCLUIDA').length}</p>
                   <p className="text-xs text-muted-foreground">Concluídas</p>
                 </div>
               </div>
@@ -473,7 +552,7 @@ const MinhasTarefas = () => {
               <div className="flex items-center space-x-2">
                 <PauseCircle className="h-4 w-4 text-warning" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'EM_ESPERA').length}</p>
+                  <p className="text-2xl font-bold">{filteredAndSortedTasks.filter(task => task.status === 'EM_ESPERA').length}</p>
                   <p className="text-xs text-muted-foreground">Em Espera</p>
                 </div>
               </div>
@@ -491,7 +570,7 @@ const MinhasTarefas = () => {
               <div className="flex items-center space-x-2">
                 <XCircle className="h-4 w-4 text-destructive" />
                 <div>
-                  <p className="text-2xl font-bold">{filteredTasks.filter(task => task.status === 'PARALISADA').length}</p>
+                  <p className="text-2xl font-bold">{filteredAndSortedTasks.filter(task => task.status === 'PARALISADA').length}</p>
                   <p className="text-xs text-muted-foreground">Paralisadas</p>
                 </div>
               </div>
@@ -510,7 +589,7 @@ const MinhasTarefas = () => {
                 <Trophy className="h-4 w-4 text-accent" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {filteredTasks.reduce((sum, task) => sum + task.points, 0)}
+                    {filteredAndSortedTasks.reduce((sum, task) => sum + task.points, 0)}
                   </p>
                   <p className="text-xs text-muted-foreground">Pontos Totais</p>
                 </div>
@@ -537,17 +616,39 @@ const MinhasTarefas = () => {
           </TabsList>
 
           <TabsContent value="todas" className="mt-6">
-            <div className="space-y-4">
-              {filteredTasks.length > 0 ? (
-                filteredTasks.map(renderTaskCard)
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome da Tarefa</TableHead>
+                        <TableHead>Projeto</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Fase</TableHead>
+                        <TableHead>Prioridade</TableHead>
+                        <TableHead>Início da Atividade</TableHead>
+                        <TableHead>Prazo</TableHead>
+                        <TableHead>Entrega Realizada</TableHead>
+                        <TableHead>Pontuação</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedTasks.length > 0 ? (
+                        filteredAndSortedTasks.map(renderTaskRow)
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={10} className="text-center py-8">
+                            <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="PENDENTE" className="mt-6">

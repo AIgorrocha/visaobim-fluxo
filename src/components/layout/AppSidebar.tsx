@@ -71,7 +71,7 @@ const menuItems = [
     title: 'Relatórios',
     url: '/relatorios',
     icon: BarChart3,
-    roles: ['admin']
+    roles: ['admin', 'user']
   },
   {
     title: 'Configurações',
@@ -94,9 +94,19 @@ export function AppSidebar() {
       : 'hover:bg-accent hover:text-accent-foreground';
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
+  const filteredMenuItems = menuItems.filter(item =>
     profile?.role && item.roles.includes(profile.role)
   );
+
+  // Debug temporário
+  console.log('🔍 DEBUG AppSidebar:', {
+    userEmail: user?.email,
+    profileRole: profile?.role,
+    profileName: profile?.full_name,
+    totalMenuItems: menuItems.length,
+    filteredMenuItems: filteredMenuItems.length,
+    filteredTitles: filteredMenuItems.map(item => item.title)
+  });
 
   return (
     <Sidebar className="w-64">

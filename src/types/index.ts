@@ -70,10 +70,13 @@ export interface Task {
   due_date?: string;
   last_delivery?: string;
   comment?: string;
-  restricoes?: string; // Restrições/dependências
+  restricoes?: string; // Restrições/dependências (deprecated - usar task_restrictions)
   dependencies?: string[]; // Disciplinas necessárias para iniciar
   completed_at?: string;
   created_at: string;
+  // Campos virtuais para restrições
+  active_restrictions?: TaskRestriction[];
+  can_start?: boolean;
 }
 
 export interface Proposal {
@@ -120,4 +123,37 @@ export interface AuthUser {
   points: number;
   level: number;
   avatar_url?: string;
+}
+
+// Interface para restrições entre tarefas
+export interface TaskRestriction {
+  id: string;
+  waiting_task_id: string;
+  blocking_task_id: string;
+  blocking_user_id: string;
+  status: 'active' | 'resolved' | 'cancelled';
+  created_at: string;
+  resolved_at?: string;
+  updated_at: string;
+  // Campos da view detalhada
+  waiting_task_title?: string;
+  waiting_task_status?: string;
+  waiting_task_assigned_to?: string | string[];
+  blocking_task_title?: string;
+  blocking_task_status?: string;
+  blocking_task_assigned_to?: string | string[];
+  blocking_user_name?: string;
+  blocking_user_email?: string;
+}
+
+// Interface para notificações do sistema
+export interface TaskNotification {
+  id: string;
+  user_id: string;
+  task_id: string;
+  type: 'task_released' | 'restriction_added' | 'task_completed';
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
 }
