@@ -235,13 +235,17 @@ export function useTasks() {
         })
       };
 
+      // Remover campos que podem causar problema com triggers antigos
+      delete updateData.points;
+      delete updateData.score;
+      delete updateData.task_points;
+      delete updateData.level;
+
       // CORRIGIDO: Agora salva no Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tasks')
         .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) {
         console.error('❌ Supabase error:', error);
@@ -249,6 +253,25 @@ export function useTasks() {
         console.error('❌ Error hint:', error.hint);
         console.error('❌ Error message:', error.message);
         throw error;
+      }
+
+      // Buscar a tarefa atualizada separadamente
+      const { data, error: fetchError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Fetch error:', fetchError);
+        // Se o fetch falhar, usar os dados locais
+        const localTask = tasks.find(t => t.id === id);
+        if (localTask) {
+          const updatedTask = { ...localTask, ...updateData };
+          setTasks(prev => prev.map(t => t.id === id ? updatedTask as Task : t));
+          return updatedTask;
+        }
+        throw fetchError;
       }
 
 
