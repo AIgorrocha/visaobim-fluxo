@@ -223,23 +223,28 @@ export function useTasks() {
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
-      // Limpar campos undefined e garantir que assigned_to seja array
-      const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([key, value]) => value !== undefined)
-      );
+      // Usar apenas campos essenciais da tabela tasks para evitar triggers
+      const allowedFields = [
+        'project_id', 'title', 'description', 'assigned_to', 'status',
+        'phase', 'priority', 'activity_start', 'due_date', 'last_delivery',
+        'comment', 'dependencies', 'completed_at', 'is_archived'
+      ];
 
-      const updateData = {
-        ...cleanUpdates,
-        ...(updates.assigned_to && {
-          assigned_to: Array.isArray(updates.assigned_to) ? updates.assigned_to : [updates.assigned_to]
-        })
-      };
+      const updateData: any = {};
 
-      // Remover campos que podem causar problema com triggers antigos
-      delete updateData.points;
-      delete updateData.score;
-      delete updateData.task_points;
-      delete updateData.level;
+      // Incluir apenas campos permitidos
+      allowedFields.forEach(field => {
+        if (updates[field as keyof Task] !== undefined) {
+          updateData[field] = updates[field as keyof Task];
+        }
+      });
+
+      // Garantir que assigned_to seja array
+      if (updateData.assigned_to) {
+        updateData.assigned_to = Array.isArray(updateData.assigned_to)
+          ? updateData.assigned_to
+          : [updateData.assigned_to];
+      }
 
       // CORRIGIDO: Agora salva no Supabase
       const { error } = await supabase
