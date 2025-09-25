@@ -17,7 +17,7 @@ import TaskModal from '@/components/TaskModal';
 
 const MinhasTarefas = () => {
   const { user, profile } = useAuth();
-  const { projects, getTasksByUser, tasks, profiles, taskRestrictions } = useSupabaseData();
+  const { projects, getTasksByUser, tasks, profiles, taskRestrictions, updateTask } = useSupabaseData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -275,6 +275,25 @@ const MinhasTarefas = () => {
     setSelectedTask(null);
   };
 
+  const handleArchiveTask = async (task: Task) => {
+    try {
+      await updateTask(task.id, { is_archived: !task.is_archived });
+      toast({
+        title: task.is_archived ? "Tarefa desarquivada" : "Tarefa arquivada",
+        description: task.is_archived
+          ? "A tarefa foi desarquivada com sucesso"
+          : "A tarefa foi arquivada com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao arquivar/desarquivar tarefa:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao arquivar/desarquivar a tarefa",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
 
@@ -345,6 +364,9 @@ const MinhasTarefas = () => {
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end space-x-2">
+          <Button size="sm" variant="ghost" onClick={() => handleArchiveTask(task)}>
+            <Archive className="h-4 w-4" />
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => handleViewTask(task)}>
             <Eye className="h-4 w-4" />
           </Button>
@@ -445,6 +467,15 @@ const MinhasTarefas = () => {
             </div>
             
             <div className="flex flex-col space-y-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleArchiveTask(task)}
+                className="whitespace-nowrap"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar
+              </Button>
               <Button
                 size="sm"
                 variant="outline"

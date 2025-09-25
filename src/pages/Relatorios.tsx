@@ -39,9 +39,12 @@ const Relatorios = () => {
     }
   }, [profiles, isAdmin, user?.id]);
 
-  // Filtrar tarefas do usuário selecionado
+  // Filtrar tarefas do usuário selecionado (excluindo arquivadas)
   const userTasks = useMemo(() => {
     return tasks.filter(task => {
+      // Excluir tarefas arquivadas dos relatórios
+      if (task.is_archived) return false;
+
       if (Array.isArray(task.assigned_to)) {
         return task.assigned_to.includes(selectedUser);
       } else {

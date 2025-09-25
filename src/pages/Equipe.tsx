@@ -78,11 +78,11 @@ const Equipe = () => {
     })
     .sort((a, b) => b.completedTasks - a.completedTasks);
 
-  // Estatísticas gerais
+  // Estatísticas gerais (excluindo tarefas arquivadas)
   const totalMembers = profiles.length;
   const activeMembers = teamWithStats.filter(m => m.userStatus === 'ativo').length;
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA').length;
+  const totalTasks = tasks.filter(t => !t.is_archived).length;
+  const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA' && !t.is_archived).length;
 
   // Funções do modal
   const handleViewProfile = (profile: Profile) => {

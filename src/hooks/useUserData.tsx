@@ -20,9 +20,12 @@ export const useUserData = (userId?: string) => {
     );
   };
 
-  // Função para obter tarefas do usuário
+  // Função para obter tarefas do usuário (excluindo arquivadas)
   const getUserTasks = (id: string) => {
     return tasks.filter(task => {
+      // Excluir tarefas arquivadas
+      if (task.is_archived) return false;
+
       if (Array.isArray(task.assigned_to)) {
         return task.assigned_to.includes(id);
       }

@@ -254,27 +254,39 @@ const Dashboard = () => {
               </Card>
             </motion.div>
 
-            {/* Tarefas Atrasadas */}
-            {userTasks.filter(task => {
-              if (!task.due_date || task.status === 'CONCLUIDA') return false;
-              const dueDate = new Date(task.due_date);
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              return dueDate < today;
-            }).length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-              >
-                <Card className="border-l-4 border-l-destructive">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-destructive">
-                      <AlertTriangle className="h-5 w-5 mr-2" />
-                      Tarefas Atrasadas
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+            {/* Atividades Atrasadas - sempre exibir ou placeholder quando não há tarefas atrasadas */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <Card className={userTasks.filter(task => {
+                if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                const dueDate = new Date(task.due_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return dueDate < today;
+              }).length > 0 ? "border-l-4 border-l-destructive" : ""}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center ${userTasks.filter(task => {
+                    if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                    const dueDate = new Date(task.due_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return dueDate < today;
+                  }).length > 0 ? "text-destructive" : ""}`}>
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    Atividades Atrasadas - Atenção
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {userTasks.filter(task => {
+                    if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                    const dueDate = new Date(task.due_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return dueDate < today;
+                  }).length > 0 ? (
                     <div className="space-y-3">
                       {userTasks
                         .filter(task => {
@@ -304,10 +316,15 @@ const Dashboard = () => {
                           );
                         })}
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">Nenhuma atividade atrasada</p>
+                      <p className="text-xs text-muted-foreground mt-1">✅ Parabéns! Todas as atividades em dia</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Resumo de Atividades */}
