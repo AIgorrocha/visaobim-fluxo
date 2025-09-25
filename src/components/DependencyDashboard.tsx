@@ -338,9 +338,6 @@ export const DependencyDashboard = () => {
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <Badge variant="outline" className="text-success border-success">
-                            {task.points} pts
-                          </Badge>
                           <Badge variant="secondary" className="text-xs">
                             {task.phase}
                           </Badge>

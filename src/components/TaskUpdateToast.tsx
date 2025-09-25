@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 export const useTaskUpdateToast = () => {
   const { toast } = useToast();
 
-  const showTaskCompleted = (taskTitle: string, points: number) => {
+  const showTaskCompleted = (taskTitle: string) => {
     toast({
       title: "Tarefa Concluída! ✅",
-      description: `${taskTitle} foi marcada como concluída. Você ganhou ${points} pontos!`,
+      description: `${taskTitle} foi marcada como concluída.`,
       duration: 5000,
     });
   };

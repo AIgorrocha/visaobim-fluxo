@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertTriangle, Trophy, Edit, Eye, Calendar } from 'lucide-react';
+import { CheckCircle, Clock, AlertTriangle, Edit, Eye, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -105,10 +105,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
                 {getPriorityBadge(task.priority)}
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Trophy className="h-3 w-3" />
-                  {task.points} pontos
-                </Badge>
               </div>
               
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">

@@ -1,6 +1,5 @@
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { calculateUserPoints, getUserLevel } from '@/utils/scoring';
 
 /**
  * Hook personalizado para obter dados e estatísticas do usuário
@@ -46,9 +45,9 @@ export const useUserData = (userId?: string) => {
   const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
   const inProgressTasks = userTasks.filter(t => t.status === 'EM_ANDAMENTO');
   
-  // Calcular pontuação real baseada em tarefas concluídas
-  const userPoints = calculateUserPoints(completedTasks);
-  const userLevel = getUserLevel(userPoints);
+  // Estatísticas simples baseadas em tarefas concluídas
+  const userPoints = completedTasks.length;
+  const userLevel = 1;
 
   // Obter co-responsáveis de uma tarefa (excluindo o usuário alvo)
   const getCoResponsibles = (task: any) => {

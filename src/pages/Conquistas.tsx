@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { useAchievements } from '@/hooks/useAchievements';
 import { Achievement } from '@/types';
 
 interface AchievementCategory {
@@ -163,7 +162,6 @@ const ACHIEVEMENT_TEMPLATES: AchievementTemplate[] = [
 const Conquistas = () => {
   const { user, profile } = useAuth();
   const { profiles, achievements, tasks, projects } = useSupabaseData();
-  const { checkAndAwardAchievements } = useAchievements();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
