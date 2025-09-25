@@ -313,6 +313,61 @@ const Dashboard = () => {
             </Card>
           </motion.div>
 
+          {/* Cards de Tarefas Atrasadas - Se houver */}
+          {userTasks.filter(task => {
+            if (!task.due_date || task.status === 'CONCLUIDA') return false;
+            const dueDate = new Date(task.due_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return dueDate < today;
+          }).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <Card className="border-l-4 border-l-destructive">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-destructive">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    Tarefas Atrasadas - Atenção Urgente!
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {userTasks
+                      .filter(task => {
+                        if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                        const dueDate = new Date(task.due_date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return dueDate < today;
+                      })
+                      .slice(0, 3)
+                      .map((task) => {
+                        const daysOverdue = Math.floor(
+                          (new Date().getTime() - new Date(task.due_date).getTime()) / (1000 * 60 * 60 * 24)
+                        );
+
+                        return (
+                          <div key={task.id} className="flex items-center space-x-3 p-3 bg-destructive/10 rounded-md border border-destructive/20">
+                            <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate text-destructive">{task.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                ⚠️ Atrasado há {daysOverdue} dia{daysOverdue > 1 ? 's' : ''}
+                                • Prioridade: {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Admin Section */}
           {isAdmin && (
             <motion.div

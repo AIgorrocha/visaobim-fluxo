@@ -57,10 +57,32 @@ const MinhasTarefas = () => {
   };
 
   const isTaskBlockingOthers = (task: Task) => {
-    return taskRestrictions.some(restriction =>
+    // Encontrar todas as restrições onde esta tarefa está bloqueando outras
+    const blockingRestrictions = taskRestrictions.filter(restriction =>
       restriction.blocking_task_id === task.id &&
       restriction.status === 'active'
     );
+
+    if (blockingRestrictions.length === 0) return false;
+
+    // Verificar se pelo menos uma das tarefas bloqueadas pertence a outro usuário
+    return blockingRestrictions.some(restriction => {
+      const blockedTask = tasks.find(t => t.id === restriction.waiting_task_id);
+      if (!blockedTask) return false;
+
+      const blockedTaskUsers = Array.isArray(blockedTask.assigned_to)
+        ? blockedTask.assigned_to
+        : [blockedTask.assigned_to];
+
+      // A tarefa bloqueada deve pertencer a outro usuário (não a mim)
+      const isBlockingOthers = !blockedTaskUsers.includes(user?.id || '');
+
+      if (isBlockingOthers) {
+        console.log(`🔒 Tarefa "${task.title}" está bloqueando "${blockedTask.title}" de outro usuário`);
+      }
+
+      return isBlockingOthers;
+    });
   };
 
   const isTaskReadyToStart = (task: Task) => {

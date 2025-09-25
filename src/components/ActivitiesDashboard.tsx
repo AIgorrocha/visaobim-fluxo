@@ -65,7 +65,7 @@ const ActivitiesDashboard = () => {
     if (restrictionsThisTaskIsBlocking.length === 0) return false;
 
     // Verificar se pelo menos uma das tarefas bloqueadas pertence a outro usuário
-    return restrictionsThisTaskIsBlocking.some(restriction => {
+    const isBlocking = restrictionsThisTaskIsBlocking.some(restriction => {
       const blockedTask = tasks.find(t => t.id === restriction.waiting_task_id);
       if (!blockedTask) return false;
 
@@ -74,8 +74,16 @@ const ActivitiesDashboard = () => {
         : [blockedTask.assigned_to];
 
       // A tarefa bloqueada deve pertencer a outro usuário (não a mim)
-      return !blockedTaskUsers.includes(user.id);
+      const isBlockingOthers = !blockedTaskUsers.includes(user.id);
+
+      if (isBlockingOthers) {
+        console.log(`🚫 Dashboard: Tarefa "${task.title}" está impedindo "${blockedTask.title}" de outro usuário`);
+      }
+
+      return isBlockingOthers;
     });
+
+    return isBlocking;
   });
 
   // 3. ATIVIDADES BLOQUEADAS

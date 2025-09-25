@@ -223,16 +223,23 @@ export function useTasks() {
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
-      console.log('🔄 Updating task:', id, updates);
+      console.log('🔄 Updating task:', id);
+      console.log('📝 Updates to apply:', JSON.stringify(updates, null, 2));
 
-      // Garantir que assigned_to seja sempre um array se estiver presente
+      // Limpar campos undefined e garantir que assigned_to seja array
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([key, value]) => value !== undefined)
+      );
+
       const updateData = {
-        ...updates,
+        ...cleanUpdates,
         updated_at: new Date().toISOString(),
         ...(updates.assigned_to && {
           assigned_to: Array.isArray(updates.assigned_to) ? updates.assigned_to : [updates.assigned_to]
         })
       };
+
+      console.log('🧹 Clean update data:', JSON.stringify(updateData, null, 2));
 
       // CORRIGIDO: Agora salva no Supabase
       const { data, error } = await supabase
@@ -243,18 +250,23 @@ export function useTasks() {
         .single();
 
       if (error) {
-        console.error('❌ Error updating task:', error);
+        console.error('❌ Supabase error:', error);
+        console.error('❌ Error details:', error.details);
+        console.error('❌ Error hint:', error.hint);
+        console.error('❌ Error message:', error.message);
         throw error;
       }
 
-      console.log('✅ Task updated in Supabase:', data);
+      console.log('✅ Task updated in Supabase successfully:', data);
 
       // Atualizar o estado local com os dados do Supabase
       setTasks(prev => prev.map(t => t.id === id ? data as Task : t));
 
       return data;
     } catch (err: any) {
-      console.error('❌ Update task failed:', err.message);
+      console.error('❌ Update task failed with error:', err);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Full error object:', JSON.stringify(err, null, 2));
       setError(err.message);
       throw err;
     }
