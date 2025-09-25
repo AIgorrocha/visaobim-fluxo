@@ -76,9 +76,6 @@ const ActivitiesDashboard = () => {
       // A tarefa bloqueada deve pertencer a outro usuário (não a mim)
       const isBlockingOthers = !blockedTaskUsers.includes(user.id);
 
-      if (isBlockingOthers) {
-        console.log(`🚫 Dashboard: Tarefa "${task.title}" está impedindo "${blockedTask.title}" de outro usuário`);
-      }
 
       return isBlockingOthers;
     });

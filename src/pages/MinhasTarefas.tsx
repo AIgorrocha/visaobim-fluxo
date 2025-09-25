@@ -77,9 +77,6 @@ const MinhasTarefas = () => {
       // A tarefa bloqueada deve pertencer a outro usuário (não a mim)
       const isBlockingOthers = !blockedTaskUsers.includes(user?.id || '');
 
-      if (isBlockingOthers) {
-        console.log(`🔒 Tarefa "${task.title}" está bloqueando "${blockedTask.title}" de outro usuário`);
-      }
 
       return isBlockingOthers;
     });

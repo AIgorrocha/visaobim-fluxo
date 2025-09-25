@@ -223,9 +223,6 @@ export function useTasks() {
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
-      console.log('🔄 Updating task:', id);
-      console.log('📝 Updates to apply:', JSON.stringify(updates, null, 2));
-
       // Limpar campos undefined e garantir que assigned_to seja array
       const cleanUpdates = Object.fromEntries(
         Object.entries(updates).filter(([key, value]) => value !== undefined)
@@ -233,13 +230,10 @@ export function useTasks() {
 
       const updateData = {
         ...cleanUpdates,
-        updated_at: new Date().toISOString(),
         ...(updates.assigned_to && {
           assigned_to: Array.isArray(updates.assigned_to) ? updates.assigned_to : [updates.assigned_to]
         })
       };
-
-      console.log('🧹 Clean update data:', JSON.stringify(updateData, null, 2));
 
       // CORRIGIDO: Agora salva no Supabase
       const { data, error } = await supabase
@@ -257,7 +251,6 @@ export function useTasks() {
         throw error;
       }
 
-      console.log('✅ Task updated in Supabase successfully:', data);
 
       // Atualizar o estado local com os dados do Supabase
       setTasks(prev => prev.map(t => t.id === id ? data as Task : t));
