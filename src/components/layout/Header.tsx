@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Bell, Settings, LogOut, User, Menu, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,17 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useNavigate } from 'react-router-dom';
 import { TaskNotificationSystem } from '@/components/TaskNotificationSystem';
-import { useToast } from '@/hooks/use-toast';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
 export const Header = () => {
   const { user, profile, signOut } = useAuth();
-  const { refetchAllData } = useSupabaseData();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { refetchAllData } = useSupabaseData();
 
   const handleLogout = async () => {
     await signOut();
@@ -31,40 +28,16 @@ export const Header = () => {
   };
 
   const handleRefreshData = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetchAllData();
-      toast({
-        title: "Dados atualizados",
-        description: "Todos os dados foram sincronizados com o Supabase.",
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Erro ao sincronizar dados:', error);
-      toast({
-        title: "Erro na sincronização",
-        description: "Não foi possível atualizar os dados. Tente novamente.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+    await refetchAllData();
   };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  const getLevelName = (level: number) => {
-    const levels = [
-      'Iniciante', 'Aprendiz', 'Profissional', 'Especialista', 'Mestre',
-      'Expert', 'Sênior', 'Líder', 'Campeão', 'Lenda'
-    ];
-    return levels[level - 1] || 'Iniciante';
-  };
 
   if (!user) return null;
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -83,11 +56,10 @@ export const Header = () => {
             variant="ghost"
             size="sm"
             onClick={handleRefreshData}
-            disabled={isRefreshing}
-            className="hidden sm:flex"
+            className="h-8 w-8 p-0"
+            title="Atualizar Dados"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="ml-2">Atualizar dados</span>
+            <RefreshCw className="h-4 w-4" />
           </Button>
 
           {/* Notifications */}
@@ -114,26 +86,8 @@ export const Header = () => {
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="secondary">
-                        Nível {profile?.level || 1}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {getLevelName(profile?.level || 1)}
-                      </span>
-                    </div>
-                    <Badge className="bg-accent text-accent-foreground">
-                      {profile?.points || 0} pontos
-                    </Badge>
-                  </div>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleRefreshData} disabled={isRefreshing} className="sm:hidden">
-                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>Atualizar dados</span>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
                 <User className="mr-2 h-4 w-4" />

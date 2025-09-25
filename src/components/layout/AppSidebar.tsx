@@ -4,7 +4,6 @@ import {
   FolderOpen, 
   CheckSquare, 
   Users, 
-  Trophy, 
   DollarSign, 
   FileText, 
   BarChart3, 
@@ -50,12 +49,6 @@ const menuItems = [
     roles: ['admin', 'user']
   },
   {
-    title: 'Conquistas',
-    url: '/conquistas',
-    icon: Trophy,
-    roles: ['admin', 'user']
-  },
-  {
     title: 'Financeiro',
     url: '/financeiro',
     icon: DollarSign,
@@ -67,7 +60,7 @@ const menuItems = [
     icon: FileText,
     roles: ['admin']
   },
-  { title: "Relatório de Tarefas", url: "/relatorio-tarefas", icon: BarChart3, roles: ["admin", "user"] },
+  { title: "Relatórios", url: "/relatorios", icon: BarChart3, roles: ["admin", "user"] },
   {
     title: 'Configurações',
     url: '/configuracoes',
@@ -92,6 +85,7 @@ export function AppSidebar() {
   const filteredMenuItems = menuItems.filter(item =>
     profile?.role && item.roles.includes(profile.role)
   );
+
 
   return (
     <Sidebar className="w-64">
@@ -131,7 +125,7 @@ export function AppSidebar() {
                     {profile.full_name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {profile.points || 0} pontos • Nível {profile.level || 1}
+                    Usuário do sistema
                   </p>
                 </div>
               </div>

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Filter, Trophy, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig, Eye } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Filter, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig, Eye, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
@@ -16,7 +17,7 @@ import TaskModal from '@/components/TaskModal';
 
 const MinhasTarefas = () => {
   const { user, profile } = useAuth();
-  const { projects, getTasksByUser, tasks, profiles } = useSupabaseData();
+  const { projects, getTasksByUser, tasks, profiles, taskRestrictions } = useSupabaseData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -30,12 +31,45 @@ const MinhasTarefas = () => {
   const [priorityFilter, setPriorityFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
   const [deadlineFilter, setDeadlineFilter] = useState<string>('todos');
+  const [restrictionFilter, setRestrictionFilter] = useState<string>('todos');
+  const [showCompleted, setShowCompleted] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   if (!user) return null;
 
   // Admin vê todas as tarefas, usuários comuns veem apenas as suas
   const isAdmin = profile?.role === 'admin';
-  const userTasks = isAdmin ? tasks : getTasksByUser(user.id);
+  const userTasks = isAdmin ? tasks : tasks.filter(task => {
+    if (Array.isArray(task.assigned_to)) {
+      return task.assigned_to.includes(user.id);
+    } else {
+      return task.assigned_to === user.id;
+    }
+  });
+
+  // Funções para determinar status de restrições
+  const isTaskBlocked = (task: Task) => {
+    if (task.status !== 'PENDENTE') return false;
+    return taskRestrictions.some(restriction =>
+      restriction.waiting_task_id === task.id &&
+      restriction.status === 'active'
+    );
+  };
+
+  const isTaskBlockingOthers = (task: Task) => {
+    return taskRestrictions.some(restriction =>
+      restriction.blocking_task_id === task.id &&
+      restriction.status === 'active'
+    );
+  };
+
+  const isTaskReadyToStart = (task: Task) => {
+    if (task.status !== 'PENDENTE') return false;
+    return !taskRestrictions.some(restriction =>
+      restriction.waiting_task_id === task.id &&
+      restriction.status === 'active'
+    );
+  };
 
 
   const filteredAndSortedTasks = userTasks.filter(task => {
@@ -86,7 +120,27 @@ const MinhasTarefas = () => {
       }
     }
 
-    return matchesSearch && matchesProject && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline;
+    // Filtro de restrições
+    let matchesRestriction = true;
+    if (restrictionFilter !== 'todos') {
+      switch (restrictionFilter) {
+        case 'bloqueadas':
+          matchesRestriction = isTaskBlocked(task);
+          break;
+        case 'prontas':
+          matchesRestriction = isTaskReadyToStart(task);
+          break;
+        case 'bloqueando_outros':
+          matchesRestriction = isTaskBlockingOthers(task);
+          break;
+      }
+    }
+
+    // Filtros de status
+    const matchesCompletedFilter = showCompleted || task.status !== 'CONCLUIDA';
+    const matchesArchivedFilter = showArchived ? true : !task.is_archived;
+
+    return matchesSearch && matchesProject && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
   }).sort((a, b) => {
     // Tarefas sem prazo ficam no início
     if (!a.due_date && !b.due_date) return 0;
@@ -139,6 +193,27 @@ const MinhasTarefas = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
+  const getRestrictionSituationBadge = (task: Task) => {
+    // Se a tarefa está concluída
+    if (task.status === 'CONCLUIDA') {
+      return <Badge className="bg-success text-success-foreground">Finalizada</Badge>;
+    }
+
+    // Para todas as outras tarefas, verificar restrições
+    // Verificar se está bloqueada
+    if (isTaskBlocked(task)) {
+      return <Badge className="bg-destructive text-destructive-foreground">Bloqueada</Badge>;
+    }
+
+    // Verificar se está bloqueando outros
+    if (isTaskBlockingOthers(task)) {
+      return <Badge className="bg-warning text-warning-foreground">Bloqueando</Badge>;
+    }
+
+    // Todas as outras situações = Pronta para iniciar
+    return <Badge className="bg-success text-success-foreground">Pronta</Badge>;
+  };
+
   const getProjectNameWithClient = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return 'Projeto não encontrado';
@@ -182,7 +257,17 @@ const MinhasTarefas = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    if (!dateString) return '';
+
+    // Se a data está no formato YYYY-MM-DD, usar diretamente
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    // Para outros formatos, usar Date com meio-dia para evitar problemas de timezone
+    const date = new Date(dateString.includes('T') ? dateString : dateString + 'T12:00:00');
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -190,7 +275,15 @@ const MinhasTarefas = () => {
   };
 
   const isOverdue = (dueDate: string) => {
-    return new Date(dueDate) < new Date() && new Date(dueDate).toDateString() !== new Date().toDateString();
+    if (!dueDate) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const due = new Date(dueDate.includes('T') ? dueDate : dueDate + 'T12:00:00');
+    due.setHours(0, 0, 0, 0);
+
+    return due < today;
   };
 
   const renderTaskRow = (task: Task) => (
@@ -202,6 +295,7 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(task.status)}</TableCell>
+      <TableCell>{getRestrictionSituationBadge(task)}</TableCell>
       <TableCell>
         <Badge variant="outline" className="text-xs">
           {task.phase}
@@ -229,11 +323,6 @@ const MinhasTarefas = () => {
         ) : (
           <span className="text-muted-foreground">Não realizada</span>
         )}
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="text-success border-success">
-          {task.points} pts
-        </Badge>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end space-x-2">
@@ -277,11 +366,8 @@ const MinhasTarefas = () => {
               
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
+                {getRestrictionSituationBadge(task)}
                 {getPriorityBadge(task.priority)}
-                <Badge variant="outline">
-                  <Trophy className="h-3 w-3 mr-1" />
-                  {task.points} pontos
-                </Badge>
               </div>
               
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
@@ -481,6 +567,50 @@ const MinhasTarefas = () => {
                     <SelectItem value="proximos_30">Próximos 30 dias</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={restrictionFilter} onValueChange={setRestrictionFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Restrições" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas as Situações</SelectItem>
+                    <SelectItem value="prontas">Prontas para Iniciar</SelectItem>
+                    <SelectItem value="bloqueadas">Bloqueadas</SelectItem>
+                    <SelectItem value="bloqueando_outros">Bloqueando</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtros de visualização */}
+              <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-completed"
+                    checked={showCompleted}
+                    onCheckedChange={(checked) => setShowCompleted(checked === true)}
+                  />
+                  <label
+                    htmlFor="show-completed"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Mostrar concluídas
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-archived"
+                    checked={showArchived}
+                    onCheckedChange={(checked) => setShowArchived(checked === true)}
+                  />
+                  <label
+                    htmlFor="show-archived"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-1"
+                  >
+                    <Archive className="h-3 w-3" />
+                    Mostrar arquivadas
+                  </label>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -488,7 +618,7 @@ const MinhasTarefas = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -579,25 +709,6 @@ const MinhasTarefas = () => {
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.45 }}
-        >
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <Trophy className="h-4 w-4 text-accent" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {filteredAndSortedTasks.reduce((sum, task) => sum + task.points, 0)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Pontos Totais</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
 
       {/* Tasks Tabs */}
@@ -626,12 +737,12 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Situação</TableHead>
                         <TableHead>Fase</TableHead>
                         <TableHead>Prioridade</TableHead>
                         <TableHead>Início da Atividade</TableHead>
                         <TableHead>Prazo</TableHead>
                         <TableHead>Entrega Realizada</TableHead>
-                        <TableHead>Pontuação</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -640,7 +751,7 @@ const MinhasTarefas = () => {
                         filteredAndSortedTasks.map(renderTaskRow)
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center py-8">
+                          <TableCell colSpan={9} className="text-center py-8">
                             <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
                           </TableCell>
                         </TableRow>

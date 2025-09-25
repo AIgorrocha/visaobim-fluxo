@@ -22,80 +22,120 @@ const ACHIEVEMENT_TEMPLATES: AchievementTemplate[] = [
     title: 'Primeira Tarefa',
     description: 'Complete sua primeira tarefa',
     icon: '🎯',
-    points: 10,
+    points: 5,
     requirement: { type: 'tasks_completed', target: 1 }
+  },
+  {
+    id: 'task_starter',
+    title: 'Iniciante das Tarefas',
+    description: 'Complete 3 tarefas',
+    icon: '⚡',
+    points: 10,
+    requirement: { type: 'tasks_completed', target: 3 }
+  },
+  {
+    id: 'task_achiever',
+    title: 'Realizador',
+    description: 'Complete 5 tarefas',
+    icon: '🌟',
+    points: 15,
+    requirement: { type: 'tasks_completed', target: 5 }
   },
   {
     id: 'task_master',
     title: 'Mestre das Tarefas',
     description: 'Complete 10 tarefas',
-    icon: '⚡',
-    points: 50,
+    icon: '🏆',
+    points: 25,
     requirement: { type: 'tasks_completed', target: 10 }
-  },
-  {
-    id: 'speed_demon',
-    title: 'Demônio da Velocidade',
-    description: 'Complete 25 tarefas',
-    icon: '🚀',
-    points: 100,
-    requirement: { type: 'tasks_completed', target: 25 }
   },
   {
     id: 'task_legend',
     title: 'Lenda das Tarefas',
-    description: 'Complete 50 tarefas',
+    description: 'Complete 20 tarefas',
     icon: '👑',
-    points: 200,
-    requirement: { type: 'tasks_completed', target: 50 }
+    points: 40,
+    requirement: { type: 'tasks_completed', target: 20 }
+  },
+  {
+    id: 'level_rookie',
+    title: 'Novato',
+    description: 'Alcance o nível 2',
+    icon: '🌱',
+    points: 8,
+    requirement: { type: 'level_reached', target: 2 }
   },
   {
     id: 'level_apprentice',
     title: 'Aprendiz',
     description: 'Alcance o nível 3',
-    icon: '🌱',
-    points: 25,
+    icon: '📚',
+    points: 12,
     requirement: { type: 'level_reached', target: 3 }
+  },
+  {
+    id: 'level_professional',
+    title: 'Profissional',
+    description: 'Alcance o nível 5',
+    icon: '💼',
+    points: 20,
+    requirement: { type: 'level_reached', target: 5 }
   },
   {
     id: 'level_expert',
     title: 'Especialista',
-    description: 'Alcance o nível 5',
-    icon: '🏆',
-    points: 75,
-    requirement: { type: 'level_reached', target: 5 }
+    description: 'Alcance o nível 8',
+    icon: '🎖️',
+    points: 30,
+    requirement: { type: 'level_reached', target: 8 }
   },
   {
     id: 'level_master',
     title: 'Mestre',
-    description: 'Alcance o nível 8',
+    description: 'Alcance o nível 10',
     icon: '💎',
-    points: 150,
-    requirement: { type: 'level_reached', target: 8 }
+    points: 50,
+    requirement: { type: 'level_reached', target: 10 }
+  },
+  {
+    id: 'points_beginner',
+    title: 'Colecionador Iniciante',
+    description: 'Acumule 20 pontos',
+    icon: '⭐',
+    points: 8,
+    requirement: { type: 'points_earned', target: 20 }
   },
   {
     id: 'points_collector',
     title: 'Colecionador de Pontos',
-    description: 'Acumule 100 pontos',
-    icon: '⭐',
-    points: 30,
-    requirement: { type: 'points_earned', target: 100 }
+    description: 'Acumule 40 pontos',
+    icon: '🌟',
+    points: 15,
+    requirement: { type: 'points_earned', target: 40 }
   },
   {
     id: 'points_master',
     title: 'Mestre dos Pontos',
-    description: 'Acumule 500 pontos',
-    icon: '🌟',
-    points: 100,
-    requirement: { type: 'points_earned', target: 500 }
+    description: 'Acumule 100 pontos',
+    icon: '💫',
+    points: 25,
+    requirement: { type: 'points_earned', target: 100 }
   },
   {
     id: 'project_starter',
     title: 'Iniciador de Projetos',
-    description: 'Participe de 3 projetos',
+    description: 'Participe de 2 projetos',
     icon: '🚀',
-    points: 40,
-    requirement: { type: 'projects_completed', target: 3 }
+    points: 15,
+    requirement: { type: 'projects_completed', target: 2 }
+  },
+  {
+    id: 'project_collaborator',
+    title: 'Colaborador Ativo',
+    description: 'Participe de 5 projetos',
+    icon: '🤝',
+    points: 25,
+    requirement: { type: 'projects_completed', target: 5 }
   }
 ];
 
@@ -148,7 +188,7 @@ export const useAchievements = () => {
 
               // Atualizar pontos do usuário
               const newPoints = (profile.points || 0) + template.points;
-              const newLevel = Math.floor(newPoints / 100) + 1;
+              const newLevel = Math.floor(newPoints / 20) + 1;
               
               await supabase
                 .from('profiles')

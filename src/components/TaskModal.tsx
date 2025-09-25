@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Archive, ArchiveRestore, AlertTriangle } from 'lucide-react';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Task } from '@/types';
 import { TaskRestrictionsManager } from './TaskRestrictionsManager';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -20,8 +22,9 @@ interface TaskModalProps {
 }
 
 const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
-  const { projects, updateTask, createTask, profiles } = useSupabaseData();
+  const { projects, updateTask, createTask, profiles, refetchTasks } = useSupabaseData();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Lista de responsáveis usando dados reais do Supabase
   const teamMembers = profiles.map(profile => ({
@@ -48,8 +51,42 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
   // Função para converter data do formato ISO para input date
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+
+    // Se a data já está no formato YYYY-MM-DD, retorna diretamente
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Para datas ISO completas, extrair apenas a parte da data
+    if (dateString.includes('T')) {
+      return dateString.split('T')[0];
+    }
+
+    // Para outros formatos, usar Date mas ajustar o timezone
+    const date = new Date(dateString + 'T12:00:00'); // Adiciona meio-dia para evitar problemas de timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Função para garantir que a data seja salva no formato correto
+  const formatDateForSave = (dateString: string) => {
+    if (!dateString) return undefined;
+
+    // Se já está no formato YYYY-MM-DD, retorna diretamente
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Para qualquer outro formato, usar Date e extrair apenas a data
+    const date = new Date(dateString + 'T12:00:00'); // Adiciona meio-dia para evitar problemas de timezone
+    if (isNaN(date.getTime())) return undefined;
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Calcular prioridade baseada no prazo (dias até o vencimento)
@@ -57,7 +94,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     if (!dueDate) return 'media';
 
     const today = new Date();
-    const due = new Date(dueDate);
+    const due = new Date(dueDate + 'T12:00:00'); // Adiciona meio-dia para evitar problemas de timezone
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -70,32 +107,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   };
 
-  // Calcular pontuação baseada na entrega vs prazo
-  const calculatePoints = (dueDate: string, deliveryDate?: string) => {
-    if (!deliveryDate || !dueDate) {
-      return 0; // Sem pontuação para tarefas não entregues
-    }
-
-    const due = new Date(dueDate);
-    const delivery = new Date(deliveryDate);
-
-    // Calcular diferença em dias (prazo - entrega)
-    const diffTime = due.getTime() - delivery.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    let points = 0; // Sem pontuação base
-
-    if (diffDays > 0) {
-      // Entregue ANTES do prazo: +2 pontos por dia antecipado
-      points = diffDays * 2;
-    } else if (diffDays < 0) {
-      // Entregue DEPOIS do prazo: -4 pontos por dia de atraso
-      points = diffDays * 4; // diffDays já é negativo
-    }
-    // Se entregue exatamente no prazo (diffDays === 0), fica com 0 pontos
-
-    return Math.max(0, points); // Não permitir pontuação negativa
-  };
 
   const [formData, setFormData] = useState({
     project_id: '',
@@ -105,7 +116,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     status: 'PENDENTE' as Task['status'],
     phase: 'EXECUTIVO' as Task['phase'],
     priority: 'media' as Task['priority'],
-    points: 0,
     activity_start: '',
     due_date: '',
     last_delivery: '',
@@ -155,7 +165,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         status: task.status,
         phase: task.phase,
         priority: task.priority,
-        points: task.points,
         activity_start: formatDateForInput(task.activity_start || ''),
         due_date: formatDateForInput(task.due_date || ''),
         last_delivery: formatDateForInput(task.last_delivery || ''),
@@ -172,7 +181,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         status: 'PENDENTE',
         phase: 'EXECUTIVO',
         priority: 'media',
-        points: 0,
         activity_start: '',
         due_date: '',
         last_delivery: '',
@@ -191,46 +199,112 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   }, [formData.due_date]);
 
-  // Recalcular pontuação quando delivery date mudar
-  useEffect(() => {
-    if (formData.due_date) {
-      const newPoints = calculatePoints(formData.due_date, formData.last_delivery);
-      setFormData(prev => ({ ...prev, points: newPoints }));
-    }
-  }, [formData.due_date, formData.last_delivery]);
 
   // Não preencher completed_at automaticamente - deixar para o usuário decidir
   // Apenas atualizar se o usuário escolher status CONCLUIDA E informar last_delivery
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Não calcular pontos no frontend - deixar para o trigger do banco
-    // Só enviar completed_at se status for CONCLUIDA E houver last_delivery
+    // Validações básicas
+    if (!formData.title.trim()) {
+      toast({
+        title: "Erro de validação",
+        description: "O título da tarefa é obrigatório.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.project_id) {
+      toast({
+        title: "Erro de validação",
+        description: "Selecione um projeto para a tarefa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.due_date) {
+      toast({
+        title: "Erro de validação",
+        description: "O prazo da tarefa é obrigatório.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.assigned_to || (Array.isArray(formData.assigned_to) && formData.assigned_to.length === 0)) {
+      toast({
+        title: "Erro de validação",
+        description: "Atribua pelo menos um responsável à tarefa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const taskData = {
       ...formData,
-      activity_start: formData.activity_start,
-      due_date: formData.due_date,
-      last_delivery: formData.last_delivery || undefined,
+      activity_start: formatDateForSave(formData.activity_start),
+      due_date: formatDateForSave(formData.due_date),
+      last_delivery: formatDateForSave(formData.last_delivery),
       comment: formData.comment || undefined,
       dependencies: formData.dependencies.length > 0 ? formData.dependencies : undefined
     };
 
     const finalTaskData = {
       ...taskData,
-      completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery) 
-        ? (taskData.last_delivery + 'T18:00:00Z') 
+      completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery)
+        ? (taskData.last_delivery + 'T18:00:00.000Z')
         : undefined,
       assigned_to: taskData.assigned_to || []
     };
 
-    if (mode === 'create') {
-      createTask(finalTaskData);
-    } else if (mode === 'edit' && task) {
-      updateTask(task.id, finalTaskData);
+    try {
+      if (mode === 'create') {
+        await createTask(finalTaskData);
+        toast({
+          title: "Sucesso",
+          description: "Tarefa criada com sucesso!",
+        });
+      } else if (mode === 'edit' && task) {
+        await updateTask(task.id, finalTaskData);
+        toast({
+          title: "Sucesso",
+          description: "Tarefa atualizada com sucesso!",
+        });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar a tarefa. Tente novamente.",
+        variant: "destructive",
+      });
     }
+  };
 
-    onClose();
+  const handleArchiveToggle = async () => {
+    if (!task) return;
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          is_archived: !task.is_archived,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task.id);
+
+      if (error) throw error;
+
+      // Recarregar dados
+      await refetchTasks();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao arquivar/desarquivar tarefa:', error);
+    }
   };
 
   const { profile } = useAuth();
@@ -422,20 +496,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               </p>
             </div>
 
-            {/* Pontuação */}
-            <div className="space-y-2">
-              <Label htmlFor="points">Pontuação</Label>
-              <Input
-                id="points"
-                type="number"
-                value={formData.points}
-                readOnly
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                Calculada automaticamente: +2 pontos por dia antecipado ou -4 pontos por dia atrasado
-              </p>
-            </div>
 
             {/* Início da Atividade */}
             <div className="space-y-2">
@@ -541,15 +601,40 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
             </div>
           )}
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                {mode === 'view' ? 'Fechar' : 'Cancelar'}
-              </Button>
-              {!isTaskReadOnly && (
-                <Button type="submit">
-                  {mode === 'create' ? 'Criar Tarefa' : 'Salvar Alterações'}
+            <DialogFooter className="justify-between">
+              <div className="flex gap-2">
+                {task && mode !== 'create' && (isAdmin || isAssignedToTask) && (
+                  <Button
+                    type="button"
+                    variant={task.is_archived ? "default" : "outline"}
+                    onClick={handleArchiveToggle}
+                    className="flex items-center gap-2"
+                  >
+                    {task.is_archived ? (
+                      <>
+                        <ArchiveRestore className="h-4 w-4" />
+                        Desarquivar
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="h-4 w-4" />
+                        Arquivar
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  {mode === 'view' ? 'Fechar' : 'Cancelar'}
                 </Button>
-              )}
+                {!isTaskReadOnly && (
+                  <Button type="submit">
+                    {mode === 'create' ? 'Criar Tarefa' : 'Salvar Alterações'}
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
         </form>
       </DialogContent>

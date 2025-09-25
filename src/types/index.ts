@@ -4,8 +4,6 @@ export interface Profile {
   full_name: string;
   role: 'admin' | 'user';
   avatar_url?: string;
-  points: number;
-  level: number;
   created_at: string;
   updated_at: string;
 }
@@ -65,7 +63,6 @@ export interface Task {
   status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'PARALISADA' | 'EM_ESPERA';
   phase: 'ESTUDO_PRELIMINAR' | 'PROJETO_BASICO' | 'EXECUTIVO';
   priority: 'baixa' | 'media' | 'alta';
-  points: number;
   activity_start?: string;
   due_date?: string;
   last_delivery?: string;
@@ -74,6 +71,7 @@ export interface Task {
   dependencies?: string[]; // Disciplinas necessárias para iniciar
   completed_at?: string;
   created_at: string;
+  is_archived?: boolean; // Campo para arquivamento de tarefas
   // Campos virtuais para restrições
   active_restrictions?: TaskRestriction[];
   can_start?: boolean;
@@ -93,17 +91,6 @@ export interface Proposal {
   updated_at: string;
 }
 
-export interface Achievement {
-  id: string;
-  user_id: string;
-  achievement_type: string;
-  title: string;
-  description: string;
-  icon?: string;
-  points_earned: number;
-  earned_at: string;
-  unlocked?: boolean;
-}
 
 export interface ActivityLog {
   id: string;
@@ -120,8 +107,6 @@ export interface AuthUser {
   email: string;
   full_name: string;
   role: UserRole;
-  points: number;
-  level: number;
   avatar_url?: string;
 }
 

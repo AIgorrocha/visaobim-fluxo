@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useProjects, useTasks, useProposals, useAchievements, useProfiles } from '@/hooks/useSupabaseData';
+import { useProjects, useTasks, useProposals, useProfiles } from '@/hooks/useSupabaseData';
+import { useTaskRestrictions, TaskRestriction } from '@/hooks/useTaskRestrictions';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
-import { Achievement } from '@/types';
 
 interface SupabaseDataContextType {
   // Profiles
@@ -40,13 +40,15 @@ interface SupabaseDataContextType {
   deleteProposal: any;
   refetchProposals: any;
 
-  // Achievements
-  achievements: Achievement[];
-  achievementsLoading: boolean;
-  achievementsError: string | null;
-  createAchievement: any;
-  getAchievementsByUser: any;
-  refetchAchievements: any;
+
+  // Task Restrictions
+  taskRestrictions: TaskRestriction[];
+  taskRestrictionsLoading: boolean;
+  taskRestrictionsError: string | null;
+  createTaskRestriction: any;
+  deleteTaskRestriction: any;
+  updateTaskRestriction: any;
+  refetchTaskRestrictions: any;
 
   // Sincronização global
   refetchAllData: () => Promise<void>;
@@ -95,14 +97,16 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     refetch: refetchProposals
   } = useProposals();
 
+
   const {
-    achievements,
-    loading: achievementsLoading,
-    error: achievementsError,
-    createAchievement,
-    getAchievementsByUser,
-    refetch: refetchAchievements
-  } = useAchievements();
+    restrictions: taskRestrictions,
+    loading: taskRestrictionsLoading,
+    error: taskRestrictionsError,
+    createRestriction: createTaskRestriction,
+    deleteRestriction: deleteTaskRestriction,
+    updateRestriction: updateTaskRestriction,
+    refetch: refetchTaskRestrictions
+  } = useTaskRestrictions();
 
   // Set up real-time sync to refetch all data when changes occur
   const handleRealtimeRefetch = () => {
@@ -111,7 +115,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     refetchProjects();
     refetchTasks();
     refetchProposals();
-    refetchAchievements();
+    refetchTaskRestrictions();
   };
 
   useRealtimeSync(handleRealtimeRefetch);
@@ -124,7 +128,7 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       refetchProjects(),
       refetchTasks(),
       refetchProposals(),
-      refetchAchievements()
+      refetchTaskRestrictions()
     ]);
     console.log('✅ Sincronização completa!');
   };
@@ -166,13 +170,15 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     deleteProposal,
     refetchProposals,
 
-    // Achievements
-    achievements,
-    achievementsLoading,
-    achievementsError,
-    createAchievement,
-    getAchievementsByUser,
-    refetchAchievements,
+
+    // Task Restrictions
+    taskRestrictions,
+    taskRestrictionsLoading,
+    taskRestrictionsError,
+    createTaskRestriction,
+    deleteTaskRestriction,
+    updateTaskRestriction,
+    refetchTaskRestrictions,
 
     // Sync
     refetchAllData

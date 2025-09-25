@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { 
   CheckSquare, 
   FolderOpen, 
-  Trophy, 
   Calendar, 
   TrendingUp,
   DollarSign,
@@ -18,18 +17,14 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { useAchievements } from '@/hooks/useAchievements';
-import { calculateUserPoints, getUserLevel, getLevelProgress } from '@/utils/scoring';
 import { useUserData } from '@/hooks/useUserData';
 import { useProfileSync } from '@/hooks/useProfileSync';
-import TaskActivitiesWidget from '@/components/TaskActivitiesWidget';
-import { Achievement } from '@/types';
+import ActivitiesDashboard from '@/components/ActivitiesDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { tasks, proposals, profiles, projects } = useSupabaseData();
-  const { profile } = useProfileSync(); // Usar dados sincronizados
-  const { checkAndAwardAchievements } = useAchievements();
+  const { profile } = useProfileSync();
   const {
     isAdmin,
     userProjects,
@@ -40,11 +35,10 @@ const Dashboard = () => {
     pendingTasks,
     completedTasks,
     inProgressTasks,
-    userPoints,
-    userLevel
   } = useUserData();
 
   if (!user) return null;
+
 
   // Para estatísticas gerais de admin, usar todas as tarefas
   const allTasks = isAdmin ? tasks : userTasks;
@@ -106,24 +100,6 @@ const Dashboard = () => {
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">Pontuação</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profile?.points || userPoints}</div>
-              <p className="text-xs text-muted-foreground">
-                Nível {profile?.level || userLevel}
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -151,37 +127,12 @@ const Dashboard = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 max-w-lg">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="dependencies">Atividades</TabsTrigger>
+          <TabsTrigger value="atividades">Atividades</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6">
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Level Progress */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-accent" />
-                    Pontuação e Nível
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Nível {profile?.level || userLevel}</span>
-                    <Badge variant="secondary">{profile?.points || userPoints} pontos</Badge>
-                  </div>
-                  <Progress value={getLevelProgress(profile?.points || userPoints, profile?.level || userLevel)} className="w-full" />
-                  <p className="text-xs text-muted-foreground">
-                    Continue completando tarefas para subir de nível!
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
 
             {/* Recent Tasks */}
             <motion.div
@@ -209,7 +160,7 @@ const Dashboard = () => {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{task.title}</p>
                             <p className="text-xs text-muted-foreground">
-                              {task.points} pontos • {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'} prioridade
+                              {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'} prioridade
                             </p>
                           </div>
                         </div>
@@ -391,7 +342,7 @@ const Dashboard = () => {
         </TabsContent>
 
         <TabsContent value="atividades" className="space-y-6">
-          <TaskActivitiesWidget />
+          <ActivitiesDashboard />
         </TabsContent>
       </Tabs>
     </div>

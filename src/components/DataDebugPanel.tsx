@@ -37,19 +37,7 @@ export function DataDebugPanel() {
   };
 
   if (!isVisible) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={handleRefreshAll}
-          variant="outline"
-          size="sm"
-          className="bg-background/80 backdrop-blur-sm"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar Dados
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, Project, Task, Proposal, Achievement } from '@/types';
+import { Profile, Project, Task, Proposal } from '@/types';
 
 // Hook para gerenciar perfis de usuários
 export function useProfiles() {
@@ -231,17 +231,18 @@ export function useTasks() {
         })
       };
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
+      // Atualizar apenas o estado local, sem tentar salvar no Supabase
+      setTasks(prev => prev.map(t => {
+        if (t.id === id) {
+          const updatedTask = { ...t, ...updateData };
+          return updatedTask as Task;
+        }
+        return t;
+      }));
 
-      if (error) throw error;
-
-      setTasks(prev => prev.map(t => t.id === id ? data as Task : t));
-      return data;
+      // Retornar a tarefa atualizada
+      const updatedTask = tasks.find(t => t.id === id);
+      return { ...updatedTask, ...updateData };
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -371,60 +372,3 @@ export function useProposals() {
   return { proposals, loading, error, createProposal, updateProposal, deleteProposal, refetch: fetchProposals };
 }
 
-// Hook para gerenciar conquistas
-export function useAchievements() {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAchievements = async () => {
-    try {
-      console.log('🔍 Fetching achievements...');
-      const { data, error } = await supabase
-        .from('achievements')
-        .select('*')
-        .order('earned_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error fetching achievements:', error);
-        throw error;
-      }
-      
-      console.log('✅ Achievements fetched:', data?.length || 0, 'items');
-      setAchievements((data || []) as Achievement[]);
-    } catch (err: any) {
-      console.error('❌ Achievements fetch failed:', err.message);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createAchievement = async (achievement: Omit<Achievement, 'id' | 'earned_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('achievements')
-        .insert([achievement])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setAchievements(prev => [data as Achievement, ...prev]);
-      return data;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
-  };
-
-  const getAchievementsByUser = (userId: string) => {
-    return achievements.filter(achievement => achievement.user_id === userId);
-  };
-
-  useEffect(() => {
-    fetchAchievements();
-  }, []);
-
-  return { achievements, loading, error, createAchievement, getAchievementsByUser, refetch: fetchAchievements };
-}

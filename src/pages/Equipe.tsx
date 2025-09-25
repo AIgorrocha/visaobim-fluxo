@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Trophy, Users, Target, TrendingUp, Award, Clock, CheckCircle,
+  Users, Target, TrendingUp, Clock, CheckCircle,
   Search, Filter, Eye, Edit, Plus, UserPlus, Shield, User,
   Calendar, Mail, Phone, Briefcase
 } from 'lucide-react';
@@ -27,7 +27,6 @@ const Equipe = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('todos');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
-  const [levelFilter, setLevelFilter] = useState<string>('todos');
 
   // Estados do modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,11 +61,8 @@ const Equipe = () => {
       projects: memberProjects.length,
       completedTasks: completedTasks.length,
       activeTasks: activeTasks.length,
-      points: member.points || 0,
-      level: member.level || 1,
       lastActivity,
       userStatus,
-      efficiency: memberTasks.length > 0 ? Math.round((completedTasks.length / memberTasks.length) * 100) : 0
     };
   });
 
@@ -78,30 +74,15 @@ const Equipe = () => {
       const matchesRole = roleFilter === 'todos' || member.role === roleFilter;
       const matchesStatus = statusFilter === 'todos' || member.userStatus === statusFilter;
 
-      let matchesLevel = true;
-      if (levelFilter !== 'todos') {
-        const level = member.level || 1;
-        switch (levelFilter) {
-          case 'iniciante': matchesLevel = level >= 1 && level <= 2; break;
-          case 'intermediario': matchesLevel = level >= 3 && level <= 5; break;
-          case 'avancado': matchesLevel = level >= 6 && level <= 8; break;
-          case 'expert': matchesLevel = level >= 9; break;
-        }
-      }
-
-      return matchesSearch && matchesRole && matchesStatus && matchesLevel;
+      return matchesSearch && matchesRole && matchesStatus;
     })
-    .sort((a, b) => b.points - a.points);
+    .sort((a, b) => b.completedTasks - a.completedTasks);
 
   // Estatísticas gerais
   const totalMembers = profiles.length;
   const activeMembers = teamWithStats.filter(m => m.userStatus === 'ativo').length;
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === 'CONCLUIDA').length;
-  const totalPoints = teamWithStats.reduce((sum, member) => sum + member.points, 0);
-  const avgEfficiency = teamWithStats.length > 0
-    ? Math.round(teamWithStats.reduce((sum, member) => sum + member.efficiency, 0) / teamWithStats.length)
-    : 0;
 
   // Funções do modal
   const handleViewProfile = (profile: Profile) => {
@@ -156,17 +137,6 @@ const Equipe = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const getLevelBadge = (level: number) => {
-    const levelName = level <= 2 ? 'Iniciante' :
-                     level <= 5 ? 'Intermediário' :
-                     level <= 8 ? 'Avançado' : 'Expert';
-
-    const className = level <= 2 ? 'bg-slate-500 text-white' :
-                     level <= 5 ? 'bg-blue-500 text-white' :
-                     level <= 8 ? 'bg-orange-500 text-white' : 'bg-green-500 text-white';
-
-    return <Badge className={className}>Nível {level} - {levelName}</Badge>;
-  };
 
   return (
     <div className="space-y-6">
@@ -193,7 +163,7 @@ const Equipe = () => {
       </motion.div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
           <Card>
             <CardContent className="pt-6">
@@ -240,29 +210,16 @@ const Equipe = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
-                <Trophy className="h-4 w-4 text-accent" />
+                <Clock className="h-4 w-4 text-accent" />
                 <div>
-                  <p className="text-2xl font-bold">{totalPoints.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Pontos</p>
+                  <p className="text-2xl font-bold">{totalTasks}</p>
+                  <p className="text-xs text-muted-foreground">Total Tarefas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-2xl font-bold">{avgEfficiency}%</p>
-                  <p className="text-xs text-muted-foreground">Eficiência</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.6 }}>
           <Card>
@@ -323,18 +280,6 @@ const Equipe = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Nível" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos Níveis</SelectItem>
-                  <SelectItem value="iniciante">Iniciante (1-2)</SelectItem>
-                  <SelectItem value="intermediario">Intermediário (3-5)</SelectItem>
-                  <SelectItem value="avancado">Avançado (6-8)</SelectItem>
-                  <SelectItem value="expert">Expert (9+)</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
@@ -357,11 +302,8 @@ const Equipe = () => {
                   <TableRow>
                     <TableHead>Membro</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Nível</TableHead>
                     <TableHead>Tarefas</TableHead>
                     <TableHead>Projetos</TableHead>
-                    <TableHead>Eficiência</TableHead>
-                    <TableHead>Pontos</TableHead>
                     <TableHead>Última Atividade</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -385,7 +327,6 @@ const Equipe = () => {
                           </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(member.userStatus)}</TableCell>
-                        <TableCell>{getLevelBadge(member.level)}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <span className="font-medium">{member.tasks}</span>
@@ -395,16 +336,6 @@ const Equipe = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-center">{member.projects}</TableCell>
-                        <TableCell>
-                          <Badge variant={member.efficiency >= 80 ? "default" : member.efficiency >= 60 ? "secondary" : "outline"}>
-                            {member.efficiency}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-accent text-accent-foreground">
-                            {member.points}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-sm">
                           {formatDate(member.lastActivity)}
                         </TableCell>
@@ -424,7 +355,7 @@ const Equipe = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         <p className="text-muted-foreground">Nenhum membro encontrado</p>
                       </TableCell>
                     </TableRow>
