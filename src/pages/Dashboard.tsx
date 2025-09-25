@@ -134,7 +134,7 @@ const Dashboard = () => {
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
 
-            {/* Recent Tasks */}
+            {/* Atividades em Andamento */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -144,30 +144,30 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <CheckSquare className="h-5 w-5 mr-2 text-primary" />
-                    Tarefas Recentes
+                    Atividades em Andamento
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {userTasks.slice(0, 3).length > 0 ? (
+                  {inProgressTasks.length > 0 ? (
                     <div className="space-y-3">
-                      {userTasks.slice(0, 3).map((task) => (
+                      {inProgressTasks.slice(0, 3).map((task) => (
                         <div key={task.id} className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full ${
-                            task.status === 'CONCLUIDA' ? 'bg-success' :
-                            task.status === 'EM_ANDAMENTO' ? 'bg-warning' :
-                            task.status === 'PARALISADA' ? 'bg-destructive' : 'bg-muted'
-                          }`} />
+                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{task.title}</p>
                             <p className="text-xs text-muted-foreground">
                               {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'} prioridade
+                              {task.due_date && ` • Prazo: ${new Date(task.due_date).toLocaleDateString('pt-BR')}`}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Nenhuma tarefa encontrada</p>
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">Nenhuma atividade em andamento</p>
+                      <p className="text-xs text-muted-foreground mt-1">🚀 Que tal começar uma nova tarefa?</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -254,6 +254,64 @@ const Dashboard = () => {
               </Card>
             </motion.div>
           </div>
+
+          {/* Resumo de Atividades */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{inProgressTasks.length}</div>
+                  <p className="text-xs text-muted-foreground">Em Andamento</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-warning">
+                    {userTasks.filter(task => {
+                      if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                      const dueDate = new Date(task.due_date);
+                      const today = new Date();
+                      const diffTime = dueDate.getTime() - today.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return diffDays >= 0 && diffDays <= 7;
+                    }).length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Prazos Próximos</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-destructive">
+                    {userTasks.filter(task => {
+                      if (!task.due_date || task.status === 'CONCLUIDA') return false;
+                      const dueDate = new Date(task.due_date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return dueDate < today;
+                    }).length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Atrasadas</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-success">{completedTasks.length}</div>
+                  <p className="text-xs text-muted-foreground">Concluídas</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Admin Section */}
           {isAdmin && (

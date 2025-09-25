@@ -223,27 +223,38 @@ export function useTasks() {
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
     try {
+      console.log('🔄 Updating task:', id, updates);
+
       // Garantir que assigned_to seja sempre um array se estiver presente
       const updateData = {
         ...updates,
+        updated_at: new Date().toISOString(),
         ...(updates.assigned_to && {
           assigned_to: Array.isArray(updates.assigned_to) ? updates.assigned_to : [updates.assigned_to]
         })
       };
 
-      // Atualizar apenas o estado local, sem tentar salvar no Supabase
-      setTasks(prev => prev.map(t => {
-        if (t.id === id) {
-          const updatedTask = { ...t, ...updateData };
-          return updatedTask as Task;
-        }
-        return t;
-      }));
+      // CORRIGIDO: Agora salva no Supabase
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
 
-      // Retornar a tarefa atualizada
-      const updatedTask = tasks.find(t => t.id === id);
-      return { ...updatedTask, ...updateData };
+      if (error) {
+        console.error('❌ Error updating task:', error);
+        throw error;
+      }
+
+      console.log('✅ Task updated in Supabase:', data);
+
+      // Atualizar o estado local com os dados do Supabase
+      setTasks(prev => prev.map(t => t.id === id ? data as Task : t));
+
+      return data;
     } catch (err: any) {
+      console.error('❌ Update task failed:', err.message);
       setError(err.message);
       throw err;
     }

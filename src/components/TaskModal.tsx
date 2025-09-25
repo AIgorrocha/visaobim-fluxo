@@ -269,6 +269,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         });
       } else if (mode === 'edit' && task) {
         await updateTask(task.id, finalTaskData);
+        await refetchTasks(); // Forçar atualização dos dados
         toast({
           title: "Sucesso",
           description: "Tarefa atualizada com sucesso!",
@@ -301,6 +302,10 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
 
       // Recarregar dados
       await refetchTasks();
+      toast({
+        title: "Sucesso",
+        description: task.is_archived ? "Tarefa desarquivada com sucesso!" : "Tarefa arquivada com sucesso!",
+      });
       onClose();
     } catch (error) {
       console.error('Erro ao arquivar/desarquivar tarefa:', error);
