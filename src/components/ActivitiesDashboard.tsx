@@ -10,7 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-  Timer
+  Timer,
+  Eye,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +29,10 @@ const ActivitiesDashboard = () => {
   const [showReadyCount, setShowReadyCount] = useState(5);
   const [showBlockingCount, setShowBlockingCount] = useState(5);
   const [showBlockedCount, setShowBlockedCount] = useState(5);
+
+  // Estados para o modal de detalhes da tarefa bloqueadora
+  const [selectedBlockingTask, setSelectedBlockingTask] = useState<Task | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   if (!user) return null;
 
@@ -153,6 +159,45 @@ const ActivitiesDashboard = () => {
     return date.toLocaleDateString('pt-BR');
   };
 
+  // Função para obter detalhes das tarefas que estão aguardando uma tarefa específica
+  const getWaitingTasksDetails = (blockingTaskId: string) => {
+    const restrictions = taskRestrictions.filter(
+      restriction => restriction.blocking_task_id === blockingTaskId && restriction.status === 'active'
+    );
+
+    return restrictions.map(restriction => {
+      const waitingTask = tasks.find(t => t.id === restriction.waiting_task_id);
+      if (!waitingTask) return null;
+
+      const assignedUsers = Array.isArray(waitingTask.assigned_to)
+        ? waitingTask.assigned_to
+        : [waitingTask.assigned_to];
+
+      const userNames = assignedUsers.map(userId => {
+        const profile = profiles.find(p => p.id === userId);
+        return profile?.full_name || profile?.email || 'Usuário não encontrado';
+      });
+
+      return {
+        task: waitingTask,
+        userNames,
+        project: projects.find(p => p.id === waitingTask.project_id)
+      };
+    }).filter(Boolean);
+  };
+
+  // Função para abrir o modal de detalhes
+  const handleShowBlockingDetails = (task: Task) => {
+    setSelectedBlockingTask(task);
+    setIsDetailsModalOpen(true);
+  };
+
+  // Função para fechar o modal
+  const handleCloseDetails = () => {
+    setSelectedBlockingTask(null);
+    setIsDetailsModalOpen(false);
+  };
+
   const TaskCard = ({ task, variant = 'default' }: { task: Task, variant?: 'ready' | 'blocking' | 'blocked' | 'default' }) => {
     const borderColor = {
       ready: 'border-l-success',
@@ -161,8 +206,19 @@ const ActivitiesDashboard = () => {
       default: 'border-l-muted'
     }[variant];
 
+    // Para tarefas que estão bloqueando outros, contar quantas pessoas estão aguardando
+    const waitingTasksDetails = variant === 'blocking' ? getWaitingTasksDetails(task.id) : [];
+    const totalWaitingUsers = waitingTasksDetails.reduce((acc, detail) => acc + (detail?.userNames.length || 0), 0);
+
+    const isClickable = variant === 'blocking';
+
     return (
-      <Card className={`hover:shadow-md transition-shadow border-l-4 ${borderColor}`}>
+      <Card
+        className={`hover:shadow-md transition-shadow border-l-4 ${borderColor} ${
+          isClickable ? 'cursor-pointer hover:bg-muted/50' : ''
+        }`}
+        onClick={isClickable ? () => handleShowBlockingDetails(task) : undefined}
+      >
         <CardContent className="pt-4">
           <div className="space-y-3">
             <div className="flex items-start justify-between">
@@ -172,7 +228,12 @@ const ActivitiesDashboard = () => {
                   {getProjectName(task.project_id)}
                 </p>
               </div>
-              {getPriorityBadge(task.priority)}
+              <div className="flex items-center gap-2">
+                {getPriorityBadge(task.priority)}
+                {isClickable && (
+                  <Eye className="h-3 w-3 text-muted-foreground" />
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-between text-xs">
@@ -192,10 +253,15 @@ const ActivitiesDashboard = () => {
 
             {variant === 'blocking' && (
               <div className="mt-2 pt-2 border-t border-muted">
-                <p className="text-xs text-warning">
-                  <UserCheck className="h-3 w-3 inline mr-1" />
-                  Outros usuários aguardam esta tarefa
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-warning">
+                    <UserCheck className="h-3 w-3 inline mr-1" />
+                    {totalWaitingUsers} {totalWaitingUsers === 1 ? 'pessoa aguarda' : 'pessoas aguardam'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Clique para ver detalhes
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -499,6 +565,137 @@ const ActivitiesDashboard = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Modal de Detalhes das Tarefas Aguardando */}
+      {isDetailsModalOpen && selectedBlockingTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-background rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  Detalhes da Atividade Bloqueadora
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedBlockingTask.title}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCloseDetails}
+                className="hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
+              {/* Informações da tarefa bloqueadora */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base text-warning flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    Tarefa Bloqueadora
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Projeto:</p>
+                      <p className="font-medium">{getProjectName(selectedBlockingTask.project_id)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Prazo:</p>
+                      <p className="font-medium">
+                        {selectedBlockingTask.due_date
+                          ? formatDate(selectedBlockingTask.due_date)
+                          : 'Sem prazo definido'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Status:</p>
+                      <Badge variant={selectedBlockingTask.status === 'EM_ANDAMENTO' ? 'default' : 'secondary'}>
+                        {selectedBlockingTask.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Prioridade:</p>
+                      {getPriorityBadge(selectedBlockingTask.priority)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Lista de usuários e atividades aguardando */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base text-destructive flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Usuários e Atividades Aguardando
+                  </CardTitle>
+                  <CardDescription>
+                    {(() => {
+                      const waitingDetails = getWaitingTasksDetails(selectedBlockingTask.id);
+                      const totalUsers = waitingDetails.reduce((acc, detail) => acc + (detail?.userNames.length || 0), 0);
+                      return `${totalUsers} ${totalUsers === 1 ? 'pessoa aguarda' : 'pessoas aguardam'} esta tarefa ser concluída`;
+                    })()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {getWaitingTasksDetails(selectedBlockingTask.id).map((detail, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{detail?.task.title}</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {detail?.project?.name} - {detail?.project?.client}
+                            </p>
+                          </div>
+                          {detail?.task.priority && getPriorityBadge(detail.task.priority)}
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            {detail?.task.due_date
+                              ? `Prazo: ${formatDate(detail.task.due_date)}`
+                              : 'Sem prazo'
+                            }
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-muted">
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {detail?.userNames.length === 1 ? 'Responsável:' : 'Responsáveis:'}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {detail?.userNames.map((userName, userIndex) => (
+                              <Badge key={userIndex} variant="outline" className="text-xs">
+                                {userName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="flex justify-end p-6 border-t bg-muted/50">
+              <Button onClick={handleCloseDetails} variant="outline">
+                Fechar
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
     </div>
   );

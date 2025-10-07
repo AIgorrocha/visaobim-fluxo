@@ -333,7 +333,6 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(task.status)}</TableCell>
-      <TableCell>{getRestrictionSituationBadge(task)}</TableCell>
       <TableCell>
         <Badge variant="outline" className="text-xs">
           {task.phase}
@@ -787,7 +786,6 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Situação</TableHead>
                         <TableHead>Fase</TableHead>
                         <TableHead>Prioridade</TableHead>
                         <TableHead>Início da Atividade</TableHead>
@@ -801,7 +799,7 @@ const MinhasTarefas = () => {
                         filteredAndSortedTasks.map(renderTaskRow)
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
                           </TableCell>
                         </TableRow>
