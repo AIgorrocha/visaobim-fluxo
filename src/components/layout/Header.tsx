@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Settings, LogOut, User, Menu, RefreshCw } from 'lucide-react';
+import { Bell, Settings, LogOut, User, Menu, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -16,11 +16,16 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { TaskNotificationSystem } from '@/components/TaskNotificationSystem';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useViewAsUser } from '@/contexts/ViewAsUserContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Header = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const { refetchAllData } = useSupabaseData();
+  const { refetchAllData, profiles } = useSupabaseData();
+  const { viewAsUserId, setViewAsUserId, isViewingAsOtherUser } = useViewAsUser();
+  
+  const isAdmin = profile?.role === 'admin';
 
   const handleLogout = async () => {
     await signOut();
@@ -51,6 +56,31 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Admin View As User Selector */}
+          {isAdmin && (
+            <div className="hidden md:flex items-center space-x-2">
+              {isViewingAsOtherUser && (
+                <Badge variant="outline" className="bg-warning/10 text-warning border-warning">
+                  <Eye className="h-3 w-3 mr-1" />
+                  Visualizando
+                </Badge>
+              )}
+              <Select value={viewAsUserId || 'me'} onValueChange={(value) => setViewAsUserId(value === 'me' ? null : value)}>
+                <SelectTrigger className="w-48 h-8">
+                  <SelectValue placeholder="Ver como..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="me">Minha Visão</SelectItem>
+                  {profiles.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name || p.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           {/* Refresh Button */}
           <Button
             variant="ghost"

@@ -30,6 +30,7 @@ export interface Project {
   created_by: string;
   created_at: string;
   updated_at: string;
+  is_archived?: boolean; // Campo para arquivamento de projetos
 }
 
 export interface Financial {
@@ -89,6 +90,7 @@ export interface Proposal {
   notes?: string;
   created_at: string;
   updated_at: string;
+  is_archived?: boolean; // Campo para arquivamento de propostas
 }
 
 

@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useViewAsUser } from '@/contexts/ViewAsUserContext';
 
 /**
  * Hook personalizado para obter dados e estatísticas do usuário
@@ -8,9 +9,11 @@ import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 export const useUserData = (userId?: string) => {
   const { user, profile } = useAuth();
   const { projects, tasks, profiles } = useSupabaseData();
+  const { viewAsUserId } = useViewAsUser();
 
-  const targetUserId = userId || user?.id || '';
-  const targetUser = userId ? profiles.find(p => p.id === userId) : profile;
+  // Se o admin está visualizando como outro usuário, usar esse ID
+  const effectiveUserId = userId || viewAsUserId || user?.id || '';
+  const targetUser = effectiveUserId !== user?.id ? profiles.find(p => p.id === effectiveUserId) : profile;
   const isAdmin = profile?.role === 'admin';
 
   // Função para obter projetos do usuário
@@ -34,8 +37,8 @@ export const useUserData = (userId?: string) => {
   };
 
   // Obter dados do usuário alvo
-  const userProjects = getUserProjects(targetUserId);
-  const userTasks = getUserTasks(targetUserId);
+  const userProjects = getUserProjects(effectiveUserId);
+  const userTasks = getUserTasks(effectiveUserId);
   
   // Estatísticas de projetos
   const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
@@ -57,7 +60,7 @@ export const useUserData = (userId?: string) => {
     if (!Array.isArray(task.assigned_to)) return [];
     
     return task.assigned_to
-      .filter(id => id !== targetUserId)
+      .filter(id => id !== effectiveUserId)
       .map(id => profiles.find(p => p.id === id))
       .filter(Boolean)
       .map(p => p?.full_name || p?.email)
@@ -79,7 +82,7 @@ export const useUserData = (userId?: string) => {
   return {
     // Dados do usuário
     user: targetUser,
-    userId: targetUserId,
+    userId: effectiveUserId,
     isAdmin,
     
     // Projetos e tarefas

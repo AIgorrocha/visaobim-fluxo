@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Project } from '@/types';
 
 const Projetos = () => {
   const { user, profile } = useAuth();
-  const { projects, deleteProject, profiles } = useSupabaseData();
+  const { projects, deleteProject, updateProject, profiles } = useSupabaseData();
 
   // Função para obter projetos do usuário
   const getProjectsByUser = (userId: string) => {
@@ -27,6 +27,7 @@ const Projetos = () => {
   const [typeFilter, setTypeFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
   const [contractEndFilter, setContractEndFilter] = useState<string>('todos');
+  const [showArchived, setShowArchived] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -35,6 +36,11 @@ const Projetos = () => {
 
   const isAdmin = profile?.role === 'admin';
   const allProjects = isAdmin ? projects : getProjectsByUser(user.id);
+  
+  // Filtrar por status de arquivamento
+  const projectsToShow = allProjects.filter(project => 
+    showArchived ? project.is_archived : !project.is_archived
+  );
 
   const getStatusBadge = (status: Project['status']) => {
     const statusConfig = {
@@ -52,7 +58,7 @@ const Projetos = () => {
 
 
   // Filtragem básica (sem vigência e contrato)
-  const baseFilteredProjects = allProjects.filter(project => {
+  const baseFilteredProjects = projectsToShow.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.client.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'todos' || project.status === statusFilter;
@@ -113,6 +119,10 @@ const Projetos = () => {
       deleteProject(project.id);
     }
   };
+  
+  const handleArchiveProject = async (project: Project) => {
+    await updateProject(project.id, { is_archived: !project.is_archived });
+  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -135,12 +145,23 @@ const Projetos = () => {
           </p>
         </div>
         
-        {isAdmin && (
-          <Button className="w-full sm:w-auto" onClick={handleNewProject}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Projeto
+        <div className="flex gap-2">
+          <Button 
+            variant={showArchived ? "default" : "outline"} 
+            className="w-full sm:w-auto" 
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            {showArchived ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
+            {showArchived ? 'Ver Ativos' : 'Ver Arquivados'}
           </Button>
-        )}
+          
+          {isAdmin && (
+            <Button className="w-full sm:w-auto" onClick={handleNewProject}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Projeto
+            </Button>
+          )}
+        </div>
       </motion.div>
 
       {/* Filters */}
@@ -288,7 +309,7 @@ const Projetos = () => {
                           <div>{formatDate(project.contract_start)} - {formatDate(project.contract_end)}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button size="sm" variant="ghost" onClick={() => handleViewProject(project)}>
                             <Eye className="h-4 w-4" />
@@ -297,6 +318,14 @@ const Projetos = () => {
                             <>
                               <Button size="sm" variant="ghost" onClick={() => handleEditProject(project)}>
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleArchiveProject(project)}
+                                title={project.is_archived ? "Desarquivar" : "Arquivar"}
+                              >
+                                {project.is_archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                               </Button>
                               <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteProject(project)}>
                                 <Trash2 className="h-4 w-4" />

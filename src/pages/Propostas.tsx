@@ -37,6 +37,7 @@ const Propostas = () => {
   const [proposalModalMode, setProposalModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
 
@@ -112,7 +113,8 @@ const Propostas = () => {
       const matchesSearch = proposal.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            proposal.notes?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || proposal.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesArchived = showArchived ? true : !proposal.is_archived;
+      return matchesSearch && matchesStatus && matchesArchived;
     });
 
     return filtered.sort((a, b) => {
@@ -131,7 +133,7 @@ const Propostas = () => {
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [enhancedProposals, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [enhancedProposals, searchTerm, statusFilter, sortBy, sortOrder, showArchived]);
 
   // Status configuration
   const getStatusConfig = (status: string) => {
@@ -201,12 +203,20 @@ const Propostas = () => {
   };
 
   const handleDeleteProposal = async (proposalId: string) => {
-    if (confirm('Deseja realmente arquivar esta proposta?')) {
+    if (confirm('Deseja realmente excluir esta proposta?')) {
       try {
         await deleteProposal(proposalId);
       } catch (error) {
         console.error('Error deleting proposal:', error);
       }
+    }
+  };
+  
+  const handleArchiveProposal = async (proposal: Proposal) => {
+    try {
+      await updateProposal(proposal.id, { is_archived: !proposal.is_archived });
+    } catch (error) {
+      console.error('Error archiving proposal:', error);
     }
   };
 
@@ -284,6 +294,16 @@ const Propostas = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="flex items-center gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            {showArchived ? 'Ver Ativas' : 'Ver Arquivadas'}
+          </Button>
+          
           <Button
             variant="outline"
             size="sm"
@@ -551,8 +571,9 @@ const Propostas = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                                    onClick={() => handleDeleteProposal(proposal.id)}
+                                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                                    onClick={() => handleArchiveProposal(proposal)}
+                                    title={proposal.is_archived ? "Desarquivar" : "Arquivar"}
                                   >
                                     <Archive className="h-3 w-3" />
                                   </Button>
@@ -808,8 +829,8 @@ const Propostas = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleDeleteProposal(proposal.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleArchiveProposal(proposal)}
+                                title={proposal.is_archived ? "Desarquivar" : "Arquivar"}
                               >
                                 <Archive className="h-4 w-4" />
                               </Button>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/SupabaseAuthContext";
 import { SupabaseDataProvider } from "@/contexts/SupabaseDataContext";
+import { ViewAsUserProvider } from "@/contexts/ViewAsUserContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
 import { DataDebugPanel } from "@/components/DataDebugPanel";
@@ -29,7 +30,8 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <SupabaseDataProvider>
-        <TooltipProvider>
+        <ViewAsUserProvider>
+          <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -103,7 +105,8 @@ const App = () => (
         </BrowserRouter>
         <DataDebugPanel />
         <TaskNotificationSystem />
-        </TooltipProvider>
+          </TooltipProvider>
+        </ViewAsUserProvider>
       </SupabaseDataProvider>
     </AuthProvider>
   </QueryClientProvider>
