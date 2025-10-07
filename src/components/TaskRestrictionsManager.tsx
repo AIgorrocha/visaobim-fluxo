@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trash2, Plus, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
-import { Task, TaskRestriction } from '@/types';
-import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, X, Plus, Clock, Ban, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { Task } from '@/types';
+
+interface TaskRestriction {
+  id: string;
+  waiting_task_id: string;
+  blocking_task_id: string;
+  blocking_user_id: string;
+  status: string;
+  blocking_task?: { title: string; status: string; assigned_to: string[] };
+  waiting_task?: { title: string; status: string; assigned_to: string[] };
+  blocking_user?: { full_name: string; email: string };
+}
 
 interface TaskRestrictionsManagerProps {
   task: Task;
@@ -18,163 +27,147 @@ interface TaskRestrictionsManagerProps {
 }
 
 export function TaskRestrictionsManager({ task, onRestrictionsUpdate }: TaskRestrictionsManagerProps) {
-  const [restrictions, setRestrictions] = useState<TaskRestriction[]>([]);
-  const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
-  const [newRestriction, setNewRestriction] = useState({
-    blocking_task_id: '',
-    blocking_user_id: ''
-  });
-  const [loading, setLoading] = useState(false);
-
   const { tasks, profiles } = useSupabaseData();
-  const { user } = useAuth();
+  const [waitingRestrictions, setWaitingRestrictions] = useState<TaskRestriction[]>([]);
+  const [blockingRestrictions, setBlockingRestrictions] = useState<TaskRestriction[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Estado para adicionar nova restrição de ESPERA
+  const [newWaitingTaskId, setNewWaitingTaskId] = useState<string>('');
+  const [newWaitingUserId, setNewWaitingUserId] = useState<string>('');
+  
+  // Estado para adicionar nova restrição de BLOQUEIO
+  const [newBlockingTaskId, setNewBlockingTaskId] = useState<string>('');
+  const [newBlockingUserId, setNewBlockingUserId] = useState<string>('');
 
-  // Lista de responsáveis
-  const teamMembers = [
-    { id: '1', name: 'Igor' },
-    { id: '2', name: 'Gustavo' },
-    { id: '3', name: 'Bessa' },
-    { id: '4', name: 'Leonardo' },
-    { id: '5', name: 'Pedro' },
-    { id: '6', name: 'Thiago' },
-    { id: '7', name: 'Nicolas' },
-    { id: '8', name: 'Eloisy' },
-    { id: '9', name: 'Rondinelly' },
-    { id: '10', name: 'Edilson' },
-    { id: '11', name: 'Philip' },
-    { id: '12', name: 'Nara' },
-    { id: '13', name: 'Stael' },
-    { id: '14', name: 'Projetista Externo' }
-  ];
+  // Carregar restrições
+  const loadRestrictions = async () => {
+    if (!task?.id) return;
 
-  useEffect(() => {
-    loadTaskRestrictions();
-    loadAvailableTasks();
-  }, [task.id, tasks, profiles]);
-
-  // Atualizar quando tarefas ou perfis mudarem
-  useEffect(() => {
-    if (task?.id) {
-      loadAvailableTasks();
-    }
-  }, [tasks]);
-
-  const loadTaskRestrictions = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+
+      // Buscar tarefas que ESTA tarefa está ESPERANDO
+      const { data: waitingData, error: waitingError } = await supabase
         .from('task_restrictions')
         .select(`
           *,
-          waiting_task:tasks!waiting_task_id(title, status, assigned_to),
           blocking_task:tasks!blocking_task_id(title, status, assigned_to),
           blocking_user:profiles!blocking_user_id(full_name, email)
         `)
         .eq('waiting_task_id', task.id)
         .eq('status', 'active');
 
-      if (error) throw error;
+      if (waitingError) throw waitingError;
 
-      const formattedRestrictions: TaskRestriction[] = data?.map(item => ({
-        id: item.id,
-        waiting_task_id: item.waiting_task_id,
-        blocking_task_id: item.blocking_task_id,
-        blocking_user_id: item.blocking_user_id,
-        status: item.status as 'active' | 'resolved' | 'cancelled',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        resolved_at: item.resolved_at,
-        blocking_task_title: item.blocking_task?.title || 'Unknown Task',
-        blocking_user_name: item.blocking_user?.full_name || 'Unknown User'
-      })) || [];
-
-      setRestrictions(formattedRestrictions);
-    } catch (error) {
-      console.error('Erro ao carregar restrições:', error);
-    }
-  };
-
-  const loadAvailableTasks = () => {
-    // Filtrar tarefas do mesmo projeto, excluindo a tarefa atual
-    // Inclui todas as tarefas não concluídas do projeto (admins podem ver todas)
-    const isAdmin = profiles.find(p => p.id === user?.id)?.role === 'admin';
-
-    const filtered = tasks.filter(t =>
-      t.project_id === task.project_id &&
-      t.id !== task.id &&
-      t.status !== 'CONCLUIDA'
-    );
-
-    console.log('🔍 Tarefas disponíveis para restrição:', {
-      projectId: task.project_id,
-      totalTasks: tasks.length,
-      filteredTasks: filtered.length,
-      isAdmin,
-      userId: user?.id
-    });
-
-    setAvailableTasks(filtered);
-  };
-
-  const addRestriction = async () => {
-    if (!newRestriction.blocking_task_id) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Encontrar a tarefa bloqueante para obter o usuário responsável
-      const blockingTask = availableTasks.find(t => t.id === newRestriction.blocking_task_id);
-      if (!blockingTask) {
-        console.error('❌ Tarefa bloqueante não encontrada:', newRestriction.blocking_task_id);
-        return;
-      }
-
-      // Se assigned_to é um array, pegar o primeiro usuário, senão usar o valor direto
-      const blockingUserId = Array.isArray(blockingTask.assigned_to)
-        ? blockingTask.assigned_to[0]
-        : blockingTask.assigned_to;
-
-      const restrictionData = {
-        waiting_task_id: task.id,
-        blocking_task_id: newRestriction.blocking_task_id,
-        blocking_user_id: blockingUserId,
-        status: 'active'
-      };
-
-      console.log('🔒 Adicionando restrição:', {
-        waitingTask: task.title,
-        blockingTask: blockingTask.title,
-        blockingUser: blockingUserId,
-        restrictionData
-      });
-
-      const { data, error } = await supabase
+      // Buscar tarefas que ESTA tarefa está BLOQUEANDO
+      const { data: blockingData, error: blockingError } = await supabase
         .from('task_restrictions')
-        .insert([restrictionData])
-        .select();
+        .select(`
+          *,
+          waiting_task:tasks!waiting_task_id(title, status, assigned_to)
+        `)
+        .eq('blocking_task_id', task.id)
+        .eq('status', 'active');
 
-      if (error) throw error;
+      if (blockingError) throw blockingError;
 
-      console.log('✅ Restrição adicionada com sucesso:', data);
-
-      // Recarregar restrições
-      await loadTaskRestrictions();
-
-      setNewRestriction({
-        blocking_task_id: '',
-        blocking_user_id: ''
-      });
-
-      onRestrictionsUpdate?.();
-    } catch (error) {
-      console.error('❌ Erro ao adicionar restrição:', error);
+      setWaitingRestrictions(waitingData || []);
+      setBlockingRestrictions(blockingData || []);
+    } catch (err) {
+      console.error('Erro ao carregar restrições:', err);
+      toast.error('Erro ao carregar restrições');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadRestrictions();
+  }, [task?.id]);
+
+  // Adicionar restrição de ESPERA (esta tarefa está esperando outra)
+  const addWaitingRestriction = async () => {
+    if (!newWaitingTaskId || !newWaitingUserId) {
+      toast.error('Selecione uma tarefa e um responsável');
+      return;
+    }
+
+    // Verificar se já existe esta restrição
+    const exists = waitingRestrictions.some(
+      r => r.blocking_task_id === newWaitingTaskId
+    );
+
+    if (exists) {
+      toast.error('Esta restrição já existe');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('task_restrictions')
+        .insert({
+          waiting_task_id: task.id,
+          blocking_task_id: newWaitingTaskId,
+          blocking_user_id: newWaitingUserId,
+          status: 'active'
+        });
+
+      if (error) throw error;
+
+      toast.success('Restrição adicionada com sucesso');
+      setNewWaitingTaskId('');
+      setNewWaitingUserId('');
+      loadRestrictions();
+      onRestrictionsUpdate?.();
+    } catch (err) {
+      console.error('Erro ao adicionar restrição:', err);
+      toast.error('Erro ao adicionar restrição');
+    }
+  };
+
+  // Adicionar restrição de BLOQUEIO (esta tarefa está bloqueando outra)
+  const addBlockingRestriction = async () => {
+    if (!newBlockingTaskId || !newBlockingUserId) {
+      toast.error('Selecione uma tarefa e um responsável');
+      return;
+    }
+
+    // Verificar se já existe esta restrição
+    const exists = blockingRestrictions.some(
+      r => r.waiting_task_id === newBlockingTaskId
+    );
+
+    if (exists) {
+      toast.error('Esta restrição já existe');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('task_restrictions')
+        .insert({
+          waiting_task_id: newBlockingTaskId,
+          blocking_task_id: task.id,
+          blocking_user_id: newBlockingUserId,
+          status: 'active'
+        });
+
+      if (error) throw error;
+
+      toast.success('Restrição de bloqueio adicionada');
+      setNewBlockingTaskId('');
+      setNewBlockingUserId('');
+      loadRestrictions();
+      onRestrictionsUpdate?.();
+    } catch (err) {
+      console.error('Erro ao adicionar restrição de bloqueio:', err);
+      toast.error('Erro ao adicionar restrição de bloqueio');
+    }
+  };
+
+  // Remover restrição
   const removeRestriction = async (restrictionId: string) => {
-    setLoading(true);
     try {
       const { error } = await supabase
         .from('task_restrictions')
@@ -183,121 +176,241 @@ export function TaskRestrictionsManager({ task, onRestrictionsUpdate }: TaskRest
 
       if (error) throw error;
 
-      // Recarregar restrições
-      await loadTaskRestrictions();
+      toast.success('Restrição removida');
+      loadRestrictions();
       onRestrictionsUpdate?.();
-    } catch (error) {
-      console.error('Erro ao remover restrição:', error);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Erro ao remover restrição:', err);
+      toast.error('Erro ao remover restrição');
     }
   };
 
-  const canStartTask = restrictions.filter(r => r.status === 'active').length === 0;
+  // Filtrar tarefas disponíveis (não arquivadas, não a tarefa atual)
+  const availableTasks = tasks.filter(t => 
+    !t.is_archived && 
+    t.id !== task.id &&
+    t.status !== 'CONCLUIDA'
+  );
+
+  // Obter usuários responsáveis por uma tarefa
+  const getTaskUsers = (taskId: string) => {
+    const selectedTask = tasks.find(t => t.id === taskId);
+    if (!selectedTask?.assigned_to) return [];
+    
+    return profiles.filter(p => selectedTask.assigned_to.includes(p.id));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  const canStart = waitingRestrictions.length === 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Status da Tarefa */}
+      <Alert variant={canStart ? "default" : "destructive"}>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="flex items-center gap-2">
+          {canStart ? (
+            <>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-green-600 dark:text-green-400 font-medium">✅ Esta tarefa pode ser iniciada</span>
+            </>
+          ) : (
+            <>
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">⏸️ Esta tarefa está bloqueada por {waitingRestrictions.length} tarefa(s)</span>
+            </>
+          )}
+        </AlertDescription>
+      </Alert>
+
+      {/* Seção: Tarefas que estou ESPERANDO */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Restrições da Tarefa
+            <Clock className="h-5 w-5 text-orange-500" />
+            Esta tarefa está ESPERANDO
           </CardTitle>
+          <CardDescription>
+            Tarefas que precisam ser concluídas antes desta poder iniciar
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Status da tarefa */}
-          <Alert className={canStartTask ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
-            <AlertDescription>
-              {canStartTask ? (
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span>Esta tarefa pode ser iniciada - sem restrições ativas</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-orange-600" />
-                  <span>Esta tarefa está aguardando {restrictions.filter(r => r.status === 'active').length} dependência(s)</span>
-                </div>
-              )}
-            </AlertDescription>
-          </Alert>
-
           {/* Lista de restrições ativas */}
-          {restrictions.filter(r => r.status === 'active').length > 0 && (
+          {waitingRestrictions.length > 0 ? (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Aguardando:</Label>
-              {restrictions
-                .filter(r => r.status === 'active')
-                .map((restriction) => (
-                  <Card key={restriction.id} className="border-orange-200">
-                    <CardContent className="pt-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-orange-700 border-orange-300">
-                              Bloqueada
-                            </Badge>
-                            <span className="text-sm font-medium">
-                              {restriction.blocking_task_title}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Responsável: <span className="font-medium">{restriction.blocking_user_name}</span>
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeRestriction(restriction.id)}
-                          disabled={loading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              {waitingRestrictions.map((restriction) => (
+                <div
+                  key={restriction.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg border"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium">{restriction.blocking_task?.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Responsável: {restriction.blocking_user?.full_name}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeRestriction(restriction.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhuma restrição de espera</p>
           )}
 
-          {/* Adicionar nova restrição */}
-          <div className="space-y-3 pt-4 border-t">
-            <Label className="text-sm font-medium">Adicionar Nova Restrição:</Label>
+          {/* Adicionar nova restrição de espera */}
+          <div className="space-y-2 pt-4 border-t">
+            <Select value={newWaitingTaskId} onValueChange={setNewWaitingTaskId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a tarefa bloqueante" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTasks.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="blocking_task">Tarefa que está bloqueando</Label>
-                <Select
-                  value={newRestriction.blocking_task_id}
-                  onValueChange={(value) =>
-                    setNewRestriction(prev => ({ ...prev, blocking_task_id: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma tarefa..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTasks.map((availableTask) => (
-                      <SelectItem key={availableTask.id} value={availableTask.id}>
-                        {availableTask.title} - {availableTask.phase}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {newWaitingTaskId && (
+              <Select value={newWaitingUserId} onValueChange={setNewWaitingUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getTaskUsers(newWaitingTaskId).map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-              <Button
-                onClick={addRestriction}
-                disabled={!newRestriction.blocking_task_id || loading}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Restrição
-              </Button>
-            </div>
+            <Button
+              onClick={addWaitingRestriction}
+              disabled={!newWaitingTaskId || !newWaitingUserId}
+              className="w-full"
+              variant="outline"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar tarefa que estou esperando
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Seção: Tarefas que estou BLOQUEANDO */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Ban className="h-5 w-5 text-red-500" />
+            Esta tarefa está BLOQUEANDO
+          </CardTitle>
+          <CardDescription>
+            Tarefas que estão aguardando a conclusão desta tarefa
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Lista de tarefas bloqueadas */}
+          {blockingRestrictions.length > 0 ? (
+            <div className="space-y-2">
+              {blockingRestrictions.map((restriction) => (
+                <div
+                  key={restriction.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg border"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium">{restriction.waiting_task?.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Aguardando esta tarefa ser concluída
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeRestriction(restriction.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Esta tarefa não está bloqueando nenhuma outra</p>
+          )}
+
+          {/* Adicionar nova tarefa bloqueada */}
+          <div className="space-y-2 pt-4 border-t">
+            <Select value={newBlockingTaskId} onValueChange={setNewBlockingTaskId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a tarefa que será bloqueada" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTasks.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {newBlockingTaskId && (
+              <Select value={newBlockingUserId} onValueChange={setNewBlockingUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o responsável da tarefa bloqueada" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getTaskUsers(newBlockingTaskId).map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Button
+              onClick={addBlockingRestriction}
+              disabled={!newBlockingTaskId || !newBlockingUserId}
+              className="w-full"
+              variant="outline"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar tarefa que estou bloqueando
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo */}
+      {(waitingRestrictions.length > 0 || blockingRestrictions.length > 0) && (
+        <Alert>
+          <AlertDescription className="flex items-center gap-4">
+            <Badge variant="outline" className="gap-1">
+              <Clock className="h-3 w-3" />
+              Esperando: {waitingRestrictions.length}
+            </Badge>
+            <Badge variant="outline" className="gap-1">
+              <Ban className="h-3 w-3" />
+              Bloqueando: {blockingRestrictions.length}
+            </Badge>
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
