@@ -50,9 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: user.id,
         email: user.email!,
         full_name,
-        role: 'user',
-        points: 0,
-        level: 1
+        role: 'user'
       };
 
       const { data, error } = await supabase

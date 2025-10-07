@@ -40,6 +40,8 @@ interface SupabaseDataContextType {
   deleteProposal: any;
   refetchProposals: any;
 
+  // Achievements (placeholder - não implementado no backend ainda)
+  achievements: any[];
 
   // Task Restrictions
   taskRestrictions: TaskRestriction[];
@@ -170,6 +172,8 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     deleteProposal,
     refetchProposals,
 
+    // Achievements (placeholder - não implementado no backend ainda)
+    achievements: [],
 
     // Task Restrictions
     taskRestrictions,

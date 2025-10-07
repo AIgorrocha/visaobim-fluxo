@@ -178,8 +178,9 @@ const Conquistas = () => {
 
   // Calculate user stats
   const userStats = useMemo(() => {
-    const totalPoints = profile?.points || 0;
-    const currentLevel = profile?.level || 1;
+    // Calcular pontos baseado nas achievements
+    const totalPoints = userAchievements.reduce((sum, a) => sum + (a.points_earned || 0), 0);
+    const currentLevel = Math.floor(totalPoints / 100) + 1;
     const tasksCompleted = completedTasks.length;
     const projectsParticipated = userProjects.length;
 
@@ -190,17 +191,22 @@ const Conquistas = () => {
       projectsParticipated,
       achievementsEarned: userAchievements.length
     };
-  }, [profile, completedTasks, userProjects, userAchievements]);
+  }, [userAchievements, completedTasks, userProjects]);
 
   // Team ranking
   const teamRanking = useMemo(() => {
+    // Calcular pontos baseado nas achievements
     return profiles
-      .map((member: any) => ({
-        ...member,
-        points: member.points || 0,
-        level: member.level || 1,
-        achievements: achievements.filter((a: Achievement) => a.user_id === member.id).length
-      }))
+      .map((member: any) => {
+        const memberAchievements = achievements.filter((a: Achievement) => a.user_id === member.id);
+        const points = memberAchievements.reduce((sum: number, a: Achievement) => sum + (a.points_earned || 0), 0);
+        return {
+          ...member,
+          points,
+          level: Math.floor(points / 100) + 1,
+          achievements: memberAchievements.length
+        };
+      })
       .sort((a, b) => b.points - a.points);
   }, [profiles, achievements]);
 

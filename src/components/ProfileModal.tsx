@@ -30,9 +30,7 @@ const ProfileModal = ({ isOpen, onClose, profile, mode }: ProfileModalProps) => 
     full_name: '',
     email: '',
     role: 'user' as 'admin' | 'user',
-    avatar_url: '',
-    points: 0,
-    level: 1
+    avatar_url: ''
   });
 
   useEffect(() => {
@@ -41,18 +39,14 @@ const ProfileModal = ({ isOpen, onClose, profile, mode }: ProfileModalProps) => 
         full_name: profile.full_name || '',
         email: profile.email || '',
         role: profile.role || 'user',
-        avatar_url: profile.avatar_url || '',
-        points: profile.points || 0,
-        level: profile.level || 1
+        avatar_url: profile.avatar_url || ''
       });
     } else if (mode === 'create') {
       setFormData({
         full_name: '',
         email: '',
         role: 'user',
-        avatar_url: '',
-        points: 0,
-        level: 1
+        avatar_url: ''
       });
     }
   }, [profile, mode]);
@@ -172,37 +166,6 @@ const ProfileModal = ({ isOpen, onClose, profile, mode }: ProfileModalProps) => 
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="level">Nível</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="level"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.level}
-                  onChange={(e) => setFormData(prev => ({ ...prev, level: parseInt(e.target.value) || 1 }))}
-                  readOnly={isReadOnly || (!isAdmin && !isOwnProfile)} // Admin pode editar qualquer, user só o próprio
-                  className="w-20"
-                />
-                <Badge variant="secondary">
-                  {getLevelName(formData.level)}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="points">Pontos</Label>
-              <Input
-                id="points"
-                type="number"
-                min="0"
-                value={formData.points}
-                onChange={(e) => setFormData(prev => ({ ...prev, points: parseInt(e.target.value) || 0 }))}
-                readOnly={isReadOnly || !isAdmin} // Apenas admin pode alterar pontos
-              />
-            </div>
           </div>
 
           {/* Informações Adicionais - Visível em modo visualização */}
@@ -235,12 +198,6 @@ const ProfileModal = ({ isOpen, onClose, profile, mode }: ProfileModalProps) => 
               <div className="space-y-2">
                 <Label>Status</Label>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-accent text-accent-foreground">
-                    {formData.points} pontos
-                  </Badge>
-                  <Badge variant="secondary">
-                    Nível {formData.level} - {getLevelName(formData.level)}
-                  </Badge>
                   <Badge variant={formData.role === 'admin' ? 'default' : 'outline'}>
                     {formData.role === 'admin' ? 'Administrador' : 'Usuário'}
                   </Badge>

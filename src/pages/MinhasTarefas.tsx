@@ -212,27 +212,6 @@ const MinhasTarefas = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const getRestrictionSituationBadge = (task: Task) => {
-    // Se a tarefa está concluída
-    if (task.status === 'CONCLUIDA') {
-      return <Badge className="bg-success text-success-foreground">Finalizada</Badge>;
-    }
-
-    // Para todas as outras tarefas, verificar restrições
-    // Verificar se está bloqueada
-    if (isTaskBlocked(task)) {
-      return <Badge className="bg-destructive text-destructive-foreground">Bloqueada</Badge>;
-    }
-
-    // Verificar se está bloqueando outros
-    if (isTaskBlockingOthers(task)) {
-      return <Badge className="bg-warning text-warning-foreground">Bloqueando</Badge>;
-    }
-
-    // Todas as outras situações = Pronta para iniciar
-    return <Badge className="bg-success text-success-foreground">Pronta</Badge>;
-  };
-
   const getProjectNameWithClient = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return 'Projeto não encontrado';
@@ -406,7 +385,6 @@ const MinhasTarefas = () => {
               
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
-                {getRestrictionSituationBadge(task)}
                 {getPriorityBadge(task.priority)}
               </div>
               

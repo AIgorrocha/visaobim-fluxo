@@ -142,3 +142,14 @@ export interface TaskNotification {
   read: boolean;
   created_at: string;
 }
+
+// Interface para conquistas (achievements)
+export interface Achievement {
+  id: string;
+  user_id: string;
+  achievement_type: string;
+  title: string;
+  description: string;
+  points_earned: number;
+  earned_at: string;
+}
