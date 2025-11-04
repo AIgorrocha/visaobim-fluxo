@@ -27,6 +27,7 @@ const MinhasTarefas = () => {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [projectFilter, setProjectFilter] = useState<string>('todos');
+  const [projectTypeFilter, setProjectTypeFilter] = useState<string>('todos');
   const [phaseFilter, setPhaseFilter] = useState<string>('todos');
   const [priorityFilter, setPriorityFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
@@ -97,6 +98,12 @@ const MinhasTarefas = () => {
 
     const matchesProject = projectFilter === 'todos' || task.project_id === projectFilter;
 
+    // Filtro por tipo de projeto (público/privado)
+    const matchesProjectType = projectTypeFilter === 'todos' || (() => {
+      const project = projects.find(p => p.id === task.project_id);
+      return project?.type === projectTypeFilter;
+    })();
+
     const matchesPhase = phaseFilter === 'todos' || task.phase === phaseFilter;
 
     const matchesPriority = priorityFilter === 'todos' || task.priority === priorityFilter;
@@ -159,7 +166,7 @@ const MinhasTarefas = () => {
     const matchesCompletedFilter = showCompleted || task.status !== 'CONCLUIDA';
     const matchesArchivedFilter = showArchived ? true : !task.is_archived;
 
-    return matchesSearch && matchesProject && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
+    return matchesSearch && matchesProject && matchesProjectType && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
   }).sort((a, b) => {
     // Tarefas sem prazo ficam no início
     if (!a.due_date && !b.due_date) return 0;
@@ -386,6 +393,15 @@ const MinhasTarefas = () => {
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
                 {getPriorityBadge(task.priority)}
+                {(() => {
+                  const project = projects.find(p => p.id === task.project_id);
+                  if (project?.type === 'publico') {
+                    return <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-300">🏛️ Público</Badge>;
+                  } else if (project?.type === 'privado') {
+                    return <Badge variant="outline" className="bg-gray-500/10 text-gray-600 border-gray-300">🔒 Privado</Badge>;
+                  }
+                  return null;
+                })()}
               </div>
               
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
@@ -536,6 +552,17 @@ const MinhasTarefas = () => {
                     {projects.map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name} - {project.client}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={projectTypeFilter} onValueChange={setProjectTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Tipos</SelectItem>
+                    <SelectItem value="publico">🏛️ Públicos</SelectItem>
+                    <SelectItem value="privado">🔒 Privados</SelectItem>
                   </SelectContent>
                 </Select>
 

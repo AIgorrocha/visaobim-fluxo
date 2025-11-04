@@ -199,9 +199,22 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   }, [formData.due_date]);
 
-
-  // Não preencher completed_at automaticamente - deixar para o usuário decidir
-  // Apenas atualizar se o usuário escolher status CONCLUIDA E informar last_delivery
+  // Auto-conclusão: quando marcar entrega realizada, mudar status para CONCLUIDA
+  const [autoCompletedMessage, setAutoCompletedMessage] = useState(false);
+  
+  useEffect(() => {
+    if (formData.last_delivery && formData.status !== 'CONCLUIDA') {
+      setFormData(prev => ({ 
+        ...prev, 
+        status: 'CONCLUIDA',
+        completed_at: formData.last_delivery + 'T18:00:00.000Z'
+      }));
+      setAutoCompletedMessage(true);
+      
+      // Remover mensagem após 3 segundos
+      setTimeout(() => setAutoCompletedMessage(false), 3000);
+    }
+  }, [formData.last_delivery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -564,6 +577,11 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, last_delivery: e.target.value }))}
                 readOnly={!canEditField('last_delivery')}
               />
+              {autoCompletedMessage && (
+                <p className="text-xs text-success font-medium flex items-center gap-1">
+                  ✅ Status automaticamente alterado para CONCLUÍDA
+                </p>
+              )}
             </div>
           </div>
 
