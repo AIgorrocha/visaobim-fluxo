@@ -206,6 +206,7 @@ export type Database = {
         Row: {
           amount_paid: number | null
           amount_pending: number | null
+          art_emitida: boolean | null
           client: string
           contract_end: string | null
           contract_start: string | null
@@ -228,6 +229,7 @@ export type Database = {
         Insert: {
           amount_paid?: number | null
           amount_pending?: number | null
+          art_emitida?: boolean | null
           client: string
           contract_end?: string | null
           contract_start?: string | null
@@ -250,6 +252,7 @@ export type Database = {
         Update: {
           amount_paid?: number | null
           amount_pending?: number | null
+          art_emitida?: boolean | null
           client?: string
           contract_end?: string | null
           contract_start?: string | null
