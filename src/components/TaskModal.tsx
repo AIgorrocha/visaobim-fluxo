@@ -474,24 +474,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
               </Select>
             </div>
 
-            {/* Fase */}
-            <div className="space-y-2">
-              <Label htmlFor="phase">Fase</Label>
-              <Select
-                value={formData.phase}
-                onValueChange={(value: Task['phase']) => setFormData(prev => ({ ...prev, phase: value }))}
-                disabled={!canEditField('phase')}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ESTUDO_PRELIMINAR">Estudo Preliminar</SelectItem>
-                  <SelectItem value="PROJETO_BASICO">Projeto Básico</SelectItem>
-                  <SelectItem value="EXECUTIVO">Executivo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* Prioridade */}
             <div className="space-y-2">
