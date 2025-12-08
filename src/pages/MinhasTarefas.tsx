@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, Filter, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig, Eye, Archive } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Filter, Edit, Plus, Search, PauseCircle, PlayCircle, XCircle, CircleCheckBig, Eye, Archive, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ import TaskModal from '@/components/TaskModal';
 
 const MinhasTarefas = () => {
   const { user, profile } = useAuth();
-  const { projects, getTasksByUser, tasks, profiles, taskRestrictions, updateTask } = useSupabaseData();
+  const { projects, getTasksByUser, tasks, profiles, taskRestrictions, updateTask, deleteTask } = useSupabaseData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('todas');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -280,6 +280,35 @@ const MinhasTarefas = () => {
     }
   };
 
+  const handleDeleteTask = async (task: Task) => {
+    if (confirm('Tem certeza que deseja excluir esta tarefa permanentemente?')) {
+      try {
+        await deleteTask(task.id);
+        toast({
+          title: "Tarefa excluída",
+          description: "A tarefa foi excluída com sucesso",
+        });
+      } catch (error) {
+        console.error('Erro ao excluir tarefa:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir a tarefa",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleCreateTaskBelow = (task: Task) => {
+    setSelectedTask({
+      project_id: task.project_id,
+      phase: task.phase,
+      priority: task.priority
+    } as Task);
+    setModalMode('create');
+    setIsTaskModalOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
 
@@ -311,7 +340,11 @@ const MinhasTarefas = () => {
   };
 
   const renderTaskRow = (task: Task) => (
-    <TableRow key={task.id} className="hover:bg-muted/50">
+    <TableRow 
+      key={task.id} 
+      className="hover:bg-muted/50 cursor-pointer"
+      onClick={() => handleEditTask(task)}
+    >
       <TableCell className="font-medium">{task.title}</TableCell>
       <TableCell>
         <div className="max-w-48 truncate" title={getProjectNameWithClient(task.project_id)}>
@@ -319,11 +352,6 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(task.status)}</TableCell>
-      <TableCell>
-        <Badge variant="outline" className="text-xs">
-          {task.phase}
-        </Badge>
-      </TableCell>
       <TableCell>{getPriorityBadge(task.priority)}</TableCell>
       <TableCell className="text-sm">
         {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
@@ -348,15 +376,18 @@ const MinhasTarefas = () => {
         )}
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end space-x-2">
-          <Button size="sm" variant="ghost" onClick={() => handleArchiveTask(task)}>
+        <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="ghost" onClick={() => handleCreateTaskBelow(task)} title="Criar tarefa neste projeto">
+            <Plus className="h-4 w-4 text-success" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleDeleteTask(task)} title="Excluir tarefa">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleArchiveTask(task)} title="Arquivar tarefa">
             <Archive className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleViewTask(task)}>
+          <Button size="sm" variant="ghost" onClick={() => handleViewTask(task)} title="Visualizar tarefa">
             <Eye className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleEditTask(task)}>
-            <Edit className="h-4 w-4" />
           </Button>
         </div>
       </TableCell>
@@ -463,6 +494,24 @@ const MinhasTarefas = () => {
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => handleCreateTaskBelow(task)}
+                className="whitespace-nowrap text-success border-success/50 hover:bg-success/10"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Tarefa
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleDeleteTask(task)}
+                className="whitespace-nowrap text-destructive border-destructive/50 hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => handleArchiveTask(task)}
                 className="whitespace-nowrap"
               >
@@ -477,15 +526,6 @@ const MinhasTarefas = () => {
               >
                 <Eye className="h-4 w-4 mr-2" />
                 Visualizar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleEditTask(task)}
-                className="whitespace-nowrap"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
               </Button>
             </div>
           </div>
@@ -791,7 +831,6 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Fase</TableHead>
                         <TableHead>Prioridade</TableHead>
                         <TableHead>Início da Atividade</TableHead>
                         <TableHead>Prazo</TableHead>
@@ -804,7 +843,7 @@ const MinhasTarefas = () => {
                         filteredAndSortedTasks.map(renderTaskRow)
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
                           </TableCell>
                         </TableRow>
