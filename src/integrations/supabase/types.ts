@@ -14,50 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      achievements: {
-        Row: {
-          achievement_type: string
-          description: string
-          earned_at: string | null
-          icon: string | null
-          id: string
-          points_earned: number | null
-          title: string
-          unlocked: boolean | null
-          user_id: string | null
-        }
-        Insert: {
-          achievement_type: string
-          description: string
-          earned_at?: string | null
-          icon?: string | null
-          id?: string
-          points_earned?: number | null
-          title: string
-          unlocked?: boolean | null
-          user_id?: string | null
-        }
-        Update: {
-          achievement_type?: string
-          description?: string
-          earned_at?: string | null
-          icon?: string | null
-          id?: string
-          points_earned?: number | null
-          title?: string
-          unlocked?: boolean | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "achievements_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       activity_logs: {
         Row: {
           action: string
@@ -66,7 +22,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -77,7 +33,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -88,7 +44,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -223,8 +179,6 @@ export type Database = {
           email: string
           full_name: string
           id: string
-          level: number | null
-          points: number | null
           role: string
           updated_at: string | null
         }
@@ -234,8 +188,6 @@ export type Database = {
           email: string
           full_name: string
           id?: string
-          level?: number | null
-          points?: number | null
           role?: string
           updated_at?: string | null
         }
@@ -245,8 +197,6 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
-          level?: number | null
-          points?: number | null
           role?: string
           updated_at?: string | null
         }
@@ -553,7 +503,6 @@ export type Database = {
           is_archived: boolean | null
           last_delivery: string | null
           phase: string | null
-          points: number | null
           priority: string | null
           project_id: string | null
           restricoes: Json | null
@@ -573,7 +522,6 @@ export type Database = {
           is_archived?: boolean | null
           last_delivery?: string | null
           phase?: string | null
-          points?: number | null
           priority?: string | null
           project_id?: string | null
           restricoes?: Json | null
@@ -593,7 +541,6 @@ export type Database = {
           is_archived?: boolean | null
           last_delivery?: string | null
           phase?: string | null
-          points?: number | null
           priority?: string | null
           project_id?: string | null
           restricoes?: Json | null
@@ -657,54 +604,15 @@ export type Database = {
       }
     }
     Functions: {
-      budget_request_handler: {
-        Args: { payload: Json }
-        Returns: Json
-      }
-      calculate_points_for_user: {
-        Args: { target_user_id: string }
-        Returns: number
-      }
-      calculate_task_points: {
-        Args: { p_completed_at: string; p_due_date: string }
-        Returns: number
-      }
-      calculate_user_level: {
-        Args: { user_points: number }
-        Returns: number
-      }
-      calculate_user_points_automatic: {
-        Args: { user_uuid: string }
-        Returns: number
-      }
-      cleanup_old_activity_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      contact_lead_handler: {
-        Args: { payload: Json }
-        Returns: Json
-      }
-      get_user_role_simple: {
-        Args: { user_uuid?: string }
-        Returns: string
-      }
-      newsletter_signup_handler: {
-        Args: { payload: Json }
-        Returns: Json
-      }
-      recalculate_all_user_scores: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      recalculate_user_total_points: {
-        Args: { user_uuid: string }
-        Returns: number
-      }
+      budget_request_handler: { Args: { payload: Json }; Returns: Json }
+      calculate_user_level: { Args: { user_points: number }; Returns: number }
+      cleanup_old_activity_logs: { Args: never; Returns: undefined }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
+      contact_lead_handler: { Args: { payload: Json }; Returns: Json }
+      get_user_role_simple: { Args: { user_uuid?: string }; Returns: string }
+      newsletter_signup_handler: { Args: { payload: Json }; Returns: Json }
+      recalculate_all_user_scores: { Args: never; Returns: undefined }
+      recalculate_all_users: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
