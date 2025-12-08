@@ -48,6 +48,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
     contract_start: '',
     contract_end: '',
     prazo_vigencia: '',
+    art_emitida: false,
     created_by: user?.id || ''
   });
 
@@ -63,6 +64,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
         contract_start: formatDateForInput(project.contract_start),
         contract_end: formatDateForInput(project.contract_end),
         prazo_vigencia: formatDateForInput(project.prazo_vigencia || ''),
+        art_emitida: project.art_emitida || false,
         created_by: project.created_by
       });
     } else if (mode === 'create') {
@@ -76,6 +78,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
         contract_start: '',
         contract_end: '',
         prazo_vigencia: '',
+        art_emitida: false,
         created_by: user?.id || ''
       });
     }
@@ -187,6 +190,7 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
                   <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                   <SelectItem value="PARALISADO">Paralisado</SelectItem>
                   <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
+                  <SelectItem value="AGUARDANDO_APROVACAO">Aguardando Aprovação</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -200,6 +204,21 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
                 onChange={(e) => setFormData(prev => ({ ...prev, prazo_vigencia: e.target.value }))}
                 readOnly={isReadOnly}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>ART Emitida</Label>
+              <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                <Checkbox
+                  id="art_emitida"
+                  checked={formData.art_emitida}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, art_emitida: !!checked }))}
+                  disabled={isReadOnly}
+                />
+                <Label htmlFor="art_emitida" className="text-sm font-normal cursor-pointer">
+                  ART já foi emitida para este projeto
+                </Label>
+              </div>
             </div>
 
             <div className="space-y-2 col-span-full">

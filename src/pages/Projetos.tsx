@@ -49,7 +49,8 @@ const Projetos = () => {
       'CONCLUIDO': { label: 'Concluído', className: 'bg-success text-success-foreground' },
       'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' },
       'PARALISADO': { label: 'Paralisado', className: 'bg-destructive text-destructive-foreground' },
-      'AGUARDANDO_PAGAMENTO': { label: 'Aguardando Pagamento', className: 'bg-secondary text-secondary-foreground' }
+      'AGUARDANDO_PAGAMENTO': { label: 'Aguardando Pagamento', className: 'bg-secondary text-secondary-foreground' },
+      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', className: 'bg-amber-500 text-white' }
     };
     
     const config = statusConfig[status];
@@ -209,6 +210,7 @@ const Projetos = () => {
                     <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                     <SelectItem value="PARALISADO">Paralisado</SelectItem>
                     <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
+                    <SelectItem value="AGUARDANDO_APROVACAO">Aguardando Aprovação</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -268,6 +270,7 @@ const Projetos = () => {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Prazo de Vigência</TableHead>
+                    <TableHead>ART</TableHead>
                     <TableHead>Responsáveis</TableHead>
                     <TableHead>Contrato</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -288,6 +291,13 @@ const Projetos = () => {
                       <TableCell>{getStatusBadge(project.status)}</TableCell>
                       <TableCell>
                         {project.prazo_vigencia ? formatDate(project.prazo_vigencia) : 'Não definido'}
+                      </TableCell>
+                      <TableCell>
+                        {project.art_emitida ? (
+                          <Badge className="bg-success text-success-foreground">✅ Sim</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-destructive border-destructive">❌ Não</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Button
