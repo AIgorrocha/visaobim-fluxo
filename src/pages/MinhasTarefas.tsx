@@ -28,7 +28,6 @@ const MinhasTarefas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [projectFilter, setProjectFilter] = useState<string>('todos');
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('todos');
-  const [phaseFilter, setPhaseFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
   const [deadlineFilter, setDeadlineFilter] = useState<string>('todos');
   const [restrictionFilter, setRestrictionFilter] = useState<string>('todos');
@@ -103,7 +102,7 @@ const MinhasTarefas = () => {
       return project?.type === projectTypeFilter;
     })();
 
-    const matchesPhase = phaseFilter === 'todos' || task.phase === phaseFilter;
+    
 
     const matchesResponsible = responsibleFilter === 'todos' ||
       (Array.isArray(task.assigned_to) ? task.assigned_to.includes(responsibleFilter) : task.assigned_to === responsibleFilter);
@@ -163,7 +162,7 @@ const MinhasTarefas = () => {
     const matchesCompletedFilter = showCompleted || task.status !== 'CONCLUIDA';
     const matchesArchivedFilter = showArchived ? true : !task.is_archived;
 
-    return matchesSearch && matchesProject && matchesProjectType && matchesPhase && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
+    return matchesSearch && matchesProject && matchesProjectType && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
   }).sort((a, b) => {
     // Tarefas sem prazo ficam no início
     if (!a.due_date && !b.due_date) return 0;
@@ -654,17 +653,6 @@ const MinhasTarefas = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Fase" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todas as Fases</SelectItem>
-                    <SelectItem value="ESTUDO_PRELIMINAR">Estudo Preliminar</SelectItem>
-                    <SelectItem value="PROJETO_BASICO">Projeto Básico</SelectItem>
-                    <SelectItem value="EXECUTIVO">Executivo</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
