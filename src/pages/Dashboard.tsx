@@ -156,8 +156,7 @@ const Dashboard = () => {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{task.title}</p>
                             <p className="text-xs text-muted-foreground">
-                              {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'} prioridade
-                              {task.due_date && ` • Prazo: ${new Date(task.due_date).toLocaleDateString('pt-BR')}`}
+                              {task.due_date && `Prazo: ${new Date(task.due_date).toLocaleDateString('pt-BR')}`}
                             </p>
                           </div>
                         </div>
@@ -309,7 +308,6 @@ const Dashboard = () => {
                                 <p className="text-sm font-medium truncate text-destructive">{task.title}</p>
                                 <p className="text-xs text-muted-foreground">
                                   ⚠️ Atrasado há {daysOverdue} dia{daysOverdue > 1 ? 's' : ''}
-                                  • Prioridade: {task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'}
                                 </p>
                               </div>
                             </div>

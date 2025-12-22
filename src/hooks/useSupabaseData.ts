@@ -226,7 +226,7 @@ export function useTasks() {
       // Usar apenas campos essenciais da tabela tasks para evitar triggers
       const allowedFields = [
         'project_id', 'title', 'description', 'assigned_to', 'status',
-        'phase', 'priority', 'activity_start', 'due_date', 'last_delivery',
+        'phase', 'activity_start', 'due_date', 'last_delivery',
         'comment', 'dependencies', 'completed_at', 'is_archived'
       ];
 

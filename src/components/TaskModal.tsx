@@ -89,23 +89,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     return `${year}-${month}-${day}`;
   };
 
-  // Calcular prioridade baseada no prazo (dias até o vencimento)
-  const calculatePriority = (dueDate: string): Task['priority'] => {
-    if (!dueDate) return 'media';
-
-    const today = new Date();
-    const due = new Date(dueDate + 'T12:00:00'); // Adiciona meio-dia para evitar problemas de timezone
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 7) {
-      return 'alta'; // 7 dias ou menos = ALTA
-    } else if (diffDays <= 15) {
-      return 'media'; // 8-15 dias = MÉDIA
-    } else {
-      return 'baixa'; // Mais de 15 dias = BAIXA
-    }
-  };
 
 
   const [formData, setFormData] = useState({
@@ -115,7 +98,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     assigned_to: '' as string | string[],
     status: 'PENDENTE' as Task['status'],
     phase: 'EXECUTIVO' as Task['phase'],
-    priority: 'media' as Task['priority'],
     activity_start: '',
     due_date: '',
     last_delivery: '',
@@ -164,7 +146,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         assigned_to: task.assigned_to,
         status: task.status,
         phase: task.phase,
-        priority: task.priority,
         activity_start: formatDateForInput(task.activity_start || ''),
         due_date: formatDateForInput(task.due_date || ''),
         last_delivery: formatDateForInput(task.last_delivery || ''),
@@ -180,7 +161,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         assigned_to: user?.id || '' as string | string[],
         status: 'PENDENTE',
         phase: 'EXECUTIVO',
-        priority: 'media',
         activity_start: '',
         due_date: '',
         last_delivery: '',
@@ -191,13 +171,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
     }
   }, [task, mode, user]);
 
-  // Recalcular prioridade quando due_date mudar
-  useEffect(() => {
-    if (formData.due_date) {
-      const newPriority = calculatePriority(formData.due_date);
-      setFormData(prev => ({ ...prev, priority: newPriority }));
-    }
-  }, [formData.due_date]);
 
   // Auto-conclusão: quando marcar entrega realizada, mudar status para CONCLUIDA
   const [autoCompletedMessage, setAutoCompletedMessage] = useState(false);
@@ -472,28 +445,6 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
                   <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-
-            {/* Prioridade */}
-            <div className="space-y-2">
-              <Label htmlFor="priority">Prioridade</Label>
-              <Select
-                value={formData.priority}
-                disabled={true}
-              >
-                <SelectTrigger className="bg-muted">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="baixa">Baixa</SelectItem>
-                  <SelectItem value="media">Média</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Calculada automaticamente: ≤7 dias = Alta, 8-15 dias = Média, +15 dias = Baixa
-              </p>
             </div>
 
 

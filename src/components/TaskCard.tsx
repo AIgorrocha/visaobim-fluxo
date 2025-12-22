@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertTriangle, Edit, Eye, Calendar } from 'lucide-react';
+import { Edit, Eye, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,30 +27,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   assigneeName,
   index = 0
 }) => {
-  const getPriorityIcon = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'alta':
-        return <AlertTriangle className="h-4 w-4 text-destructive" />;
-      case 'media':
-        return <Clock className="h-4 w-4 text-warning" />;
-      case 'baixa':
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      default:
-        return null;
-    }
-  };
-
-  const getPriorityBadge = (priority: Task['priority']) => {
-    const priorityConfig = {
-      'alta': { label: 'Alta', className: 'bg-destructive text-destructive-foreground' },
-      'media': { label: 'Média', className: 'bg-warning text-warning-foreground' },
-      'baixa': { label: 'Baixa', className: 'bg-success text-success-foreground' }
-    };
-    
-    const config = priorityConfig[priority];
-    return <Badge className={config.className}>{config.label}</Badge>;
-  };
-
   const getStatusBadge = (status: Task['status']) => {
     const statusConfig = {
       'PENDENTE': { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
@@ -94,7 +70,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1 space-y-3">
               <div className="flex items-center space-x-2">
-                {getPriorityIcon(task.priority)}
                 <h3 className="font-semibold text-base md:text-lg">{task.title}</h3>
               </div>
               
@@ -104,7 +79,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
-                {getPriorityBadge(task.priority)}
               </div>
               
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
