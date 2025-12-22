@@ -281,6 +281,85 @@ const MinhasTarefas = () => {
     setIsTaskModalOpen(true);
   };
 
+  // Handler para mudança de status inline
+  const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
+    try {
+      await updateTask(task.id, { 
+        status: newStatus,
+        completed_at: newStatus === 'CONCLUIDA' ? new Date().toISOString() : null 
+      });
+      toast({
+        title: "Status atualizado",
+        description: `Status alterado para ${getStatusLabel(newStatus)}`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar o status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusLabel = (status: Task['status']) => {
+    const labels: Record<string, string> = {
+      'PENDENTE': 'Pendente',
+      'EM_ANDAMENTO': 'Em Andamento',
+      'EM_ESPERA': 'Em Espera',
+      'PARALISADA': 'Paralisada',
+      'CONCLUIDA': 'Concluída'
+    };
+    return labels[status] || status;
+  };
+
+  // Componente de seletor de status inline
+  const renderStatusSelect = (task: Task) => (
+    <Select
+      value={task.status}
+      onValueChange={(value) => handleStatusChange(task, value as Task['status'])}
+    >
+      <SelectTrigger 
+        className="w-[140px] h-8 text-xs" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="PENDENTE">
+          <span className="flex items-center gap-2">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            Pendente
+          </span>
+        </SelectItem>
+        <SelectItem value="EM_ANDAMENTO">
+          <span className="flex items-center gap-2">
+            <PlayCircle className="h-3 w-3 text-primary" />
+            Em Andamento
+          </span>
+        </SelectItem>
+        <SelectItem value="EM_ESPERA">
+          <span className="flex items-center gap-2">
+            <PauseCircle className="h-3 w-3 text-warning" />
+            Em Espera
+          </span>
+        </SelectItem>
+        <SelectItem value="PARALISADA">
+          <span className="flex items-center gap-2">
+            <XCircle className="h-3 w-3 text-destructive" />
+            Paralisada
+          </span>
+        </SelectItem>
+        <SelectItem value="CONCLUIDA">
+          <span className="flex items-center gap-2">
+            <CheckCircle className="h-3 w-3 text-success" />
+            Concluída
+          </span>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
 
@@ -323,7 +402,7 @@ const MinhasTarefas = () => {
           {getProjectNameWithClient(task.project_id)}
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(task.status)}</TableCell>
+      <TableCell>{renderStatusSelect(task)}</TableCell>
       <TableCell className="text-sm">
         {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
       </TableCell>
@@ -392,7 +471,7 @@ const MinhasTarefas = () => {
               )}
               
               <div className="flex flex-wrap items-center gap-2">
-                {getStatusBadge(task.status)}
+                {renderStatusSelect(task)}
                 {(() => {
                   const project = projects.find(p => p.id === task.project_id);
                   if (project?.type === 'publico') {
