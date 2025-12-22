@@ -185,11 +185,12 @@ export function TaskRestrictionsManager({ task, onRestrictionsUpdate }: TaskRest
     }
   };
 
-  // Filtrar tarefas disponíveis (não arquivadas, não a tarefa atual)
+  // Filtrar tarefas disponíveis (não arquivadas, não a tarefa atual, mesmo projeto)
   const availableTasks = tasks.filter(t => 
     !t.is_archived && 
     t.id !== task.id &&
-    t.status !== 'CONCLUIDA'
+    t.status !== 'CONCLUIDA' &&
+    t.project_id === task.project_id
   );
 
   // Obter usuários responsáveis por uma tarefa
