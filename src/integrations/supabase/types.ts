@@ -14,89 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          entity_id: string | null
-          entity_type: string | null
-          id: string
-          ip_address: unknown
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
-          id?: string
-          ip_address?: unknown
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          entity_id?: string | null
-          entity_type?: string | null
-          id?: string
-          ip_address?: unknown
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "activity_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      budget_requests: {
-        Row: {
-          area_construida: string | null
-          created_at: string | null
-          email: string
-          id: number
-          nome: string
-          quantidade_pavimentos: string | null
-          source: string | null
-          telefone: string
-          tipo_cliente: string | null
-          tipo_projeto: string | null
-        }
-        Insert: {
-          area_construida?: string | null
-          created_at?: string | null
-          email: string
-          id?: number
-          nome: string
-          quantidade_pavimentos?: string | null
-          source?: string | null
-          telefone: string
-          tipo_cliente?: string | null
-          tipo_projeto?: string | null
-        }
-        Update: {
-          area_construida?: string | null
-          created_at?: string | null
-          email?: string
-          id?: number
-          nome?: string
-          quantidade_pavimentos?: string | null
-          source?: string | null
-          telefone?: string
-          tipo_cliente?: string | null
-          tipo_projeto?: string | null
-        }
-        Relationships: []
-      }
       contact_leads: {
         Row: {
           area: string | null
@@ -145,30 +62,6 @@ export type Database = {
           project_type?: string | null
           source?: string | null
           state?: string | null
-        }
-        Relationships: []
-      }
-      newsletter_subscribers: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: number
-          is_active: boolean | null
-          source: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: number
-          is_active?: boolean | null
-          source?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: number
-          is_active?: boolean | null
-          source?: string | null
         }
         Relationships: []
       }
@@ -282,6 +175,39 @@ export type Database = {
           },
         ]
       }
+      proposal_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          project_type: string | null
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          project_type?: string | null
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          project_type?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       proposals: {
         Row: {
           client_name: string
@@ -337,57 +263,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      roi_calculations: {
-        Row: {
-          area_terreo: number
-          area_total: number
-          created_at: string | null
-          custo_total: number
-          economia_conservador: number
-          economia_especial: number
-          economia_otimista: number
-          email: string
-          id: number
-          nome: string
-          quantidade_pavimentos: number
-          source: string | null
-          telefone: string
-          tipo_projeto: string
-        }
-        Insert: {
-          area_terreo: number
-          area_total: number
-          created_at?: string | null
-          custo_total: number
-          economia_conservador: number
-          economia_especial: number
-          economia_otimista: number
-          email: string
-          id?: number
-          nome: string
-          quantidade_pavimentos: number
-          source?: string | null
-          telefone: string
-          tipo_projeto: string
-        }
-        Update: {
-          area_terreo?: number
-          area_total?: number
-          created_at?: string | null
-          custo_total?: number
-          economia_conservador?: number
-          economia_especial?: number
-          economia_otimista?: number
-          email?: string
-          id?: number
-          nome?: string
-          quantidade_pavimentos?: number
-          source?: string | null
-          telefone?: string
-          tipo_projeto?: string
-        }
-        Relationships: []
       }
       task_notifications: {
         Row: {

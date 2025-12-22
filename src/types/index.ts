@@ -64,7 +64,6 @@ export interface Task {
   assigned_to: string | string[]; // Permite múltiplos responsáveis
   status: 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'PARALISADA' | 'EM_ESPERA';
   phase: 'ESTUDO_PRELIMINAR' | 'PROJETO_BASICO' | 'EXECUTIVO';
-  priority: 'baixa' | 'media' | 'alta';
   activity_start?: string;
   due_date?: string;
   last_delivery?: string;

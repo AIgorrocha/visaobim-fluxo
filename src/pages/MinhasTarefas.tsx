@@ -29,7 +29,6 @@ const MinhasTarefas = () => {
   const [projectFilter, setProjectFilter] = useState<string>('todos');
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('todos');
   const [phaseFilter, setPhaseFilter] = useState<string>('todos');
-  const [priorityFilter, setPriorityFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
   const [deadlineFilter, setDeadlineFilter] = useState<string>('todos');
   const [restrictionFilter, setRestrictionFilter] = useState<string>('todos');
@@ -106,8 +105,6 @@ const MinhasTarefas = () => {
 
     const matchesPhase = phaseFilter === 'todos' || task.phase === phaseFilter;
 
-    const matchesPriority = priorityFilter === 'todos' || task.priority === priorityFilter;
-
     const matchesResponsible = responsibleFilter === 'todos' ||
       (Array.isArray(task.assigned_to) ? task.assigned_to.includes(responsibleFilter) : task.assigned_to === responsibleFilter);
 
@@ -166,7 +163,7 @@ const MinhasTarefas = () => {
     const matchesCompletedFilter = showCompleted || task.status !== 'CONCLUIDA';
     const matchesArchivedFilter = showArchived ? true : !task.is_archived;
 
-    return matchesSearch && matchesProject && matchesProjectType && matchesPhase && matchesPriority && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
+    return matchesSearch && matchesProject && matchesProjectType && matchesPhase && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
   }).sort((a, b) => {
     // Tarefas sem prazo ficam no início
     if (!a.due_date && !b.due_date) return 0;
@@ -180,30 +177,6 @@ const MinhasTarefas = () => {
   const getTasksByStatus = (status?: Task['status']) => {
     if (!status) return filteredAndSortedTasks;
     return filteredAndSortedTasks.filter(task => task.status === status);
-  };
-
-  const getPriorityIcon = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'alta':
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case 'media':
-        return <Clock className="h-4 w-4 text-warning" />;
-      case 'baixa':
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      default:
-        return null;
-    }
-  };
-
-  const getPriorityBadge = (priority: Task['priority']) => {
-    const priorityConfig = {
-      'alta': { label: 'Alta', className: 'bg-destructive text-destructive-foreground' },
-      'media': { label: 'Média', className: 'bg-warning text-warning-foreground' },
-      'baixa': { label: 'Baixa', className: 'bg-success text-success-foreground' }
-    };
-    
-    const config = priorityConfig[priority];
-    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   const getStatusBadge = (status: Task['status']) => {
@@ -302,8 +275,7 @@ const MinhasTarefas = () => {
   const handleCreateTaskBelow = (task: Task) => {
     setSelectedTask({
       project_id: task.project_id,
-      phase: task.phase,
-      priority: task.priority
+      phase: task.phase
     } as Task);
     setModalMode('create');
     setIsTaskModalOpen(true);
@@ -352,7 +324,6 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(task.status)}</TableCell>
-      <TableCell>{getPriorityBadge(task.priority)}</TableCell>
       <TableCell className="text-sm">
         {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
       </TableCell>
@@ -413,7 +384,6 @@ const MinhasTarefas = () => {
           <div className="flex items-start justify-between space-x-4">
             <div className="flex-1 space-y-3">
               <div className="flex items-center space-x-2">
-                {getPriorityIcon(task.priority)}
                 <h3 className="font-semibold text-lg">{task.title}</h3>
               </div>
               
@@ -423,7 +393,6 @@ const MinhasTarefas = () => {
               
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(task.status)}
-                {getPriorityBadge(task.priority)}
                 {(() => {
                   const project = projects.find(p => p.id === task.project_id);
                   if (project?.type === 'publico') {
@@ -620,18 +589,6 @@ const MinhasTarefas = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Prioridade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todas Prioridades</SelectItem>
-                    <SelectItem value="alta">Alta</SelectItem>
-                    <SelectItem value="media">Média</SelectItem>
-                    <SelectItem value="baixa">Baixa</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 {isAdmin && (
                   <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
                     <SelectTrigger className="w-full sm:w-48">
@@ -831,7 +788,6 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Prioridade</TableHead>
                         <TableHead>Início da Atividade</TableHead>
                         <TableHead>Prazo</TableHead>
                         <TableHead>Entrega Realizada</TableHead>

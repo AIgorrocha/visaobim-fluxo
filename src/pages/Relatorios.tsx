@@ -144,9 +144,6 @@ const Relatorios = () => {
                           task.status === 'EM_ANDAMENTO' ? '🔄' :
                           task.status === 'PARALISADA' ? '❌' : '⏳';
 
-        const priorityEmoji = task.priority === 'alta' ? '🔴' :
-                             task.priority === 'media' ? '🟡' : '🟢';
-
         const isBlocked = taskRestrictions.some(r =>
           r.waiting_task_id === task.id && r.status === 'active'
         );
@@ -162,8 +159,6 @@ const Relatorios = () => {
         } else {
           report += `✅ Sem restrições - pode iniciar\n`;
         }
-
-        report += `⚡ Prioridade: ${task.priority === 'alta' ? 'Alta' : task.priority === 'media' ? 'Média' : 'Baixa'} ${priorityEmoji}\n`;
 
         if (task.activity_start) {
           report += `📅 Início: ${formatDate(task.activity_start)}\n`;

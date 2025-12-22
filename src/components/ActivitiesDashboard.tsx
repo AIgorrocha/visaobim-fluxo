@@ -134,17 +134,6 @@ const ActivitiesDashboard = () => {
     return project ? project.name : 'Projeto não encontrado';
   };
 
-  const getPriorityBadge = (priority: Task['priority']) => {
-    const priorityConfig = {
-      'alta': { label: 'Alta', className: 'bg-destructive text-destructive-foreground' },
-      'media': { label: 'Média', className: 'bg-warning text-warning-foreground' },
-      'baixa': { label: 'Baixa', className: 'bg-success text-success-foreground' }
-    };
-
-    const config = priorityConfig[priority];
-    return <Badge className={config.className}>{config.label}</Badge>;
-  };
-
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
 
@@ -228,12 +217,9 @@ const ActivitiesDashboard = () => {
                   {getProjectName(task.project_id)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {getPriorityBadge(task.priority)}
-                {isClickable && (
-                  <Eye className="h-3 w-3 text-muted-foreground" />
-                )}
-              </div>
+              {isClickable && (
+                <Eye className="h-3 w-3 text-muted-foreground" />
+              )}
             </div>
 
             <div className="flex items-center justify-between text-xs">
@@ -623,10 +609,6 @@ const ActivitiesDashboard = () => {
                         {selectedBlockingTask.status.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Prioridade:</p>
-                      {getPriorityBadge(selectedBlockingTask.priority)}
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -657,7 +639,6 @@ const ActivitiesDashboard = () => {
                               {detail?.project?.name} - {detail?.project?.client}
                             </p>
                           </div>
-                          {detail?.task.priority && getPriorityBadge(detail.task.priority)}
                         </div>
 
                         <div className="flex items-center justify-between text-xs">
