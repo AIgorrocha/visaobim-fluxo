@@ -36,11 +36,74 @@ export function useDisciplines() {
     }
   };
 
+  const createDiscipline = async (name: string, description?: string) => {
+    try {
+      const { data, error } = await (supabase
+        .from('disciplines') as any)
+        .insert([{ name: name.toUpperCase(), description, is_active: true }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setDisciplines(prev => [...prev, data as Discipline]);
+      return data;
+    } catch (err: any) {
+      console.error('Erro ao criar disciplina:', err.message);
+      throw err;
+    }
+  };
+
+  const updateDiscipline = async (id: string, updates: { name?: string; description?: string }) => {
+    try {
+      const updateData: any = {};
+      if (updates.name) updateData.name = updates.name.toUpperCase();
+      if (updates.description !== undefined) updateData.description = updates.description;
+
+      const { data, error } = await (supabase
+        .from('disciplines') as any)
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setDisciplines(prev => prev.map(d => d.id === id ? data as Discipline : d));
+      return data;
+    } catch (err: any) {
+      console.error('Erro ao atualizar disciplina:', err.message);
+      throw err;
+    }
+  };
+
+  const deleteDiscipline = async (id: string) => {
+    try {
+      // Soft delete - apenas marca como inativo
+      const { error } = await (supabase
+        .from('disciplines') as any)
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+      setDisciplines(prev => prev.filter(d => d.id !== id));
+    } catch (err: any) {
+      console.error('Erro ao deletar disciplina:', err.message);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchDisciplines();
   }, []);
 
-  return { disciplines, loading, error, refetch: fetchDisciplines };
+  return {
+    disciplines,
+    loading,
+    error,
+    refetch: fetchDisciplines,
+    createDiscipline,
+    updateDiscipline,
+    deleteDiscipline
+  };
 }
 
 // ========================================

@@ -9,7 +9,8 @@ import {
   X,
   Search,
   User,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -77,7 +78,7 @@ interface PricingFormData {
 const PrecificacaoProjetos = () => {
   const { user, profile } = useAuth();
   const { projects, profiles } = useSupabaseData();
-  const { disciplines, loading: disciplinesLoading } = useDisciplines();
+  const { disciplines, loading: disciplinesLoading, createDiscipline, updateDiscipline, deleteDiscipline, refetch: refetchDisciplines } = useDisciplines();
   const { pricing, loading: pricingLoading, createPricing, updatePricing, deletePricing, refetch } = useProjectPricing();
   const { toast } = useToast();
 
@@ -97,6 +98,13 @@ const PrecificacaoProjetos = () => {
     designer_id: '',
     notes: ''
   });
+
+  // Estados para gerenciamento de disciplinas
+  const [isDisciplinesModalOpen, setIsDisciplinesModalOpen] = useState(false);
+  const [editingDiscipline, setEditingDiscipline] = useState<{ id: string; name: string } | null>(null);
+  const [newDisciplineName, setNewDisciplineName] = useState('');
+  const [deletingDisciplineId, setDeletingDisciplineId] = useState<string | null>(null);
+  const [isDeleteDisciplineDialogOpen, setIsDeleteDisciplineDialogOpen] = useState(false);
 
   // Verificar se usuario e admin
   if (!user || !profile || profile.role !== 'admin') {
@@ -269,6 +277,72 @@ const PrecificacaoProjetos = () => {
   // Calcular valor do projetista
   const calculatedDesignerValue = (formData.total_value * formData.designer_percentage) / 100;
 
+  // Handlers para gerenciamento de disciplinas
+  const handleAddDiscipline = async () => {
+    if (!newDisciplineName.trim()) {
+      toast({
+        title: 'Nome obrigatorio',
+        description: 'Digite o nome da disciplina',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await createDiscipline(newDisciplineName.trim());
+      setNewDisciplineName('');
+      toast({
+        title: 'Disciplina criada',
+        description: 'A disciplina foi criada com sucesso'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao criar',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleUpdateDiscipline = async () => {
+    if (!editingDiscipline || !editingDiscipline.name.trim()) return;
+
+    try {
+      await updateDiscipline(editingDiscipline.id, { name: editingDiscipline.name.trim() });
+      setEditingDiscipline(null);
+      toast({
+        title: 'Disciplina atualizada',
+        description: 'A disciplina foi atualizada com sucesso'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteDiscipline = async () => {
+    if (!deletingDisciplineId) return;
+
+    try {
+      await deleteDiscipline(deletingDisciplineId);
+      setIsDeleteDisciplineDialogOpen(false);
+      setDeletingDisciplineId(null);
+      toast({
+        title: 'Disciplina removida',
+        description: 'A disciplina foi removida com sucesso'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
@@ -276,11 +350,18 @@ const PrecificacaoProjetos = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
       >
-        <h1 className="text-3xl font-bold text-foreground">Precificacao de Projetos</h1>
-        <p className="text-muted-foreground">
-          Defina valores por disciplina e atribua projetistas responsaveis
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Precificacao de Projetos</h1>
+          <p className="text-muted-foreground">
+            Defina valores por disciplina e atribua projetistas responsaveis
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setIsDisciplinesModalOpen(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          Gerenciar Disciplinas
+        </Button>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -628,6 +709,111 @@ const PrecificacaoProjetos = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Gerenciamento de Disciplinas */}
+      <Dialog open={isDisciplinesModalOpen} onOpenChange={setIsDisciplinesModalOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Disciplinas</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova disciplinas do sistema
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Adicionar nova disciplina */}
+            <div className="flex gap-2">
+              <Input
+                value={newDisciplineName}
+                onChange={(e) => setNewDisciplineName(e.target.value)}
+                placeholder="Nova disciplina..."
+                onKeyDown={(e) => e.key === 'Enter' && handleAddDiscipline()}
+              />
+              <Button onClick={handleAddDiscipline}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Lista de disciplinas */}
+            <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+              {disciplines.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground">
+                  Nenhuma disciplina cadastrada
+                </p>
+              ) : (
+                disciplines.map((disc) => (
+                  <div key={disc.id} className="flex items-center justify-between p-3">
+                    {editingDiscipline?.id === disc.id ? (
+                      <div className="flex gap-2 flex-1">
+                        <Input
+                          value={editingDiscipline.name}
+                          onChange={(e) => setEditingDiscipline({ ...editingDiscipline, name: e.target.value })}
+                          onKeyDown={(e) => e.key === 'Enter' && handleUpdateDiscipline()}
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={handleUpdateDiscipline}>
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingDiscipline(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="font-medium">{disc.name}</span>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingDiscipline({ id: disc.id, name: disc.name })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setDeletingDisciplineId(disc.id);
+                              setIsDeleteDisciplineDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDisciplinesModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmacao de Delete Disciplina */}
+      <AlertDialog open={isDeleteDisciplineDialogOpen} onOpenChange={setIsDeleteDisciplineDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusao</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta disciplina?
+              Ela nao aparecera mais nas opcoes de selecao.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingDisciplineId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDiscipline} className="bg-destructive text-destructive-foreground">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
