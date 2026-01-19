@@ -79,15 +79,13 @@ const formatDate = (dateString: string) => {
 
 interface PaymentFormData {
   project_id: string;
-  project_name: string;
   designer_id: string;
   discipline: string;
+  newDiscipline: string;
   amount: number;
   payment_date: string;
   description: string;
   sector: 'privado' | 'publico';
-  invoice_number: string;
-  contract_reference: string;
   status: 'pendente' | 'pago' | 'cancelado';
 }
 
@@ -127,15 +125,13 @@ const AdminFinanceiro = () => {
   // Form data
   const [formData, setFormData] = useState<PaymentFormData>({
     project_id: '',
-    project_name: '',
     designer_id: '',
     discipline: '',
+    newDiscipline: '',
     amount: 0,
     payment_date: new Date().toISOString().split('T')[0],
     description: '',
     sector: 'privado',
-    invoice_number: '',
-    contract_reference: '',
     status: 'pago'
   });
 
@@ -208,15 +204,13 @@ const AdminFinanceiro = () => {
     setEditingPayment(null);
     setFormData({
       project_id: '',
-      project_name: '',
       designer_id: '',
       discipline: '',
+      newDiscipline: '',
       amount: 0,
       payment_date: new Date().toISOString().split('T')[0],
       description: '',
       sector: 'privado',
-      invoice_number: '',
-      contract_reference: '',
       status: 'pago'
     });
     setIsModalOpen(true);
@@ -227,15 +221,13 @@ const AdminFinanceiro = () => {
     setEditingPayment(payment);
     setFormData({
       project_id: payment.project_id || '',
-      project_name: payment.project_name || '',
       designer_id: payment.designer_id,
       discipline: payment.discipline,
+      newDiscipline: '',
       amount: payment.amount,
       payment_date: payment.payment_date,
       description: payment.description || '',
       sector: payment.sector,
-      invoice_number: payment.invoice_number || '',
-      contract_reference: payment.contract_reference || '',
       status: payment.status
     });
     setIsModalOpen(true);
@@ -282,10 +274,15 @@ const AdminFinanceiro = () => {
         return;
       }
 
-      if (!formData.discipline) {
+      // Determinar disciplina (nova ou existente)
+      const disciplineName = formData.discipline === '__new__'
+        ? formData.newDiscipline.trim()
+        : formData.discipline;
+
+      if (!disciplineName) {
         toast({
           title: 'Disciplina obrigatoria',
-          description: 'Selecione uma disciplina',
+          description: 'Selecione ou digite uma disciplina',
           variant: 'destructive'
         });
         return;
@@ -301,7 +298,7 @@ const AdminFinanceiro = () => {
       }
 
       // Buscar nome do projeto se selecionado
-      let projectName = formData.project_name;
+      let projectName = '';
       if (formData.project_id) {
         const project = projects.find(p => p.id === formData.project_id);
         if (project) projectName = project.name;
@@ -314,7 +311,7 @@ const AdminFinanceiro = () => {
 
       const dataToSave: any = {
         designer_id: formData.designer_id,
-        discipline: formData.discipline,
+        discipline: disciplineName,
         amount: Number(formData.amount),
         payment_date: formData.payment_date,
         sector: formData.sector,
@@ -325,8 +322,6 @@ const AdminFinanceiro = () => {
       if (projectId) dataToSave.project_id = projectId;
       if (projectName) dataToSave.project_name = projectName;
       if (formData.description?.trim()) dataToSave.description = formData.description;
-      if (formData.invoice_number?.trim()) dataToSave.invoice_number = formData.invoice_number;
-      if (formData.contract_reference?.trim()) dataToSave.contract_reference = formData.contract_reference;
       if (user.id) dataToSave.created_by = user.id;
 
       console.log('Salvando pagamento:', dataToSave);
@@ -718,7 +713,7 @@ const AdminFinanceiro = () => {
                 <Label>Disciplina *</Label>
                 <Select
                   value={formData.discipline}
-                  onValueChange={(value) => setFormData({ ...formData, discipline: value })}
+                  onValueChange={(value) => setFormData({ ...formData, discipline: value, newDiscipline: '' })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -727,10 +722,23 @@ const AdminFinanceiro = () => {
                     {disciplines.map((d) => (
                       <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
                     ))}
+                    <SelectItem value="__new__">+ Nova disciplina</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
+            {/* Campo para nova disciplina */}
+            {formData.discipline === '__new__' && (
+              <div className="space-y-2">
+                <Label>Nome da Nova Disciplina *</Label>
+                <Input
+                  value={formData.newDiscipline}
+                  onChange={(e) => setFormData({ ...formData, newDiscipline: e.target.value })}
+                  placeholder="Digite o nome da disciplina"
+                />
+              </div>
+            )}
 
             {/* Projeto */}
             <div className="space-y-2">
@@ -739,11 +747,9 @@ const AdminFinanceiro = () => {
                 value={formData.project_id || 'none'}
                 onValueChange={(value) => {
                   const actualValue = value === 'none' ? '' : value;
-                  const project = projects.find(p => p.id === actualValue);
                   setFormData({
                     ...formData,
-                    project_id: actualValue,
-                    project_name: project?.name || ''
+                    project_id: actualValue
                   });
                 }}
               >
@@ -758,18 +764,6 @@ const AdminFinanceiro = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Nome do Projeto (para projetos historicos) */}
-            {!formData.project_id && (
-              <div className="space-y-2">
-                <Label>Nome do Projeto (manual)</Label>
-                <Input
-                  value={formData.project_name}
-                  onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-                  placeholder="Ex: CELESC-RS"
-                />
-              </div>
-            )}
 
             <div className="grid grid-cols-2 gap-4">
               {/* Valor */}
@@ -833,28 +827,6 @@ const AdminFinanceiro = () => {
                     <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Nota Fiscal */}
-              <div className="space-y-2">
-                <Label>Numero da Nota</Label>
-                <Input
-                  value={formData.invoice_number}
-                  onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
-                  placeholder="NF-001"
-                />
-              </div>
-
-              {/* Referencia Contrato */}
-              <div className="space-y-2">
-                <Label>Referencia Contrato</Label>
-                <Input
-                  value={formData.contract_reference}
-                  onChange={(e) => setFormData({ ...formData, contract_reference: e.target.value })}
-                  placeholder="CT-2024-001"
-                />
               </div>
             </div>
 

@@ -36,6 +36,7 @@ import {
   CollapsibleTrigger
 } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useDesignerFinancialSummary, useDesignerPayments } from '@/hooks/useDesignerFinancials';
 import { DesignerPayment, DesignerReceivable } from '@/types';
 
@@ -54,8 +55,18 @@ const formatDate = (dateString: string) => {
 
 const MeuFinanceiro = () => {
   const { user, profile } = useAuth();
-  const { summary, receivables, loading: summaryLoading } = useDesignerFinancialSummary(user?.id || '');
-  const { payments, loading: paymentsLoading } = useDesignerPayments(user?.id);
+  const { profiles } = useSupabaseData();
+
+  // Estado para seletor de projetista (apenas admin)
+  const [selectedDesignerId, setSelectedDesignerId] = useState<string>('');
+
+  // Usar o ID selecionado (admin) ou o ID do usuario logado
+  const targetDesignerId = profile?.role === 'admin' && selectedDesignerId
+    ? selectedDesignerId
+    : user?.id || '';
+
+  const { summary, receivables, loading: summaryLoading, refetch: refetchSummary } = useDesignerFinancialSummary(targetDesignerId);
+  const { payments, loading: paymentsLoading, refetch: refetchPayments } = useDesignerPayments(targetDesignerId || undefined);
 
   // Estados para filtros
   const [filterSector, setFilterSector] = useState<string>('all');
@@ -63,6 +74,11 @@ const MeuFinanceiro = () => {
   const [filterYear, setFilterYear] = useState<string>('all');
   const [showReceivables, setShowReceivables] = useState(true);
   const [showPayments, setShowPayments] = useState(true);
+
+  // Buscar nome do projetista selecionado
+  const selectedDesignerName = selectedDesignerId
+    ? profiles.find(p => p.id === selectedDesignerId)?.full_name
+    : profile?.full_name;
 
   // Extrair disciplinas únicas e anos únicos dos pagamentos
   const uniqueDisciplines = useMemo(() => {
@@ -103,11 +119,42 @@ const MeuFinanceiro = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
       >
-        <h1 className="text-3xl font-bold text-foreground">Meu Financeiro</h1>
-        <p className="text-muted-foreground">
-          Acompanhe seus pagamentos e valores a receber
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            {profile?.role === 'admin' && selectedDesignerId
+              ? `Financeiro: ${selectedDesignerName}`
+              : 'Meu Financeiro'
+            }
+          </h1>
+          <p className="text-muted-foreground">
+            Acompanhe pagamentos e valores a receber
+          </p>
+        </div>
+
+        {/* Seletor de projetista (apenas admin) */}
+        {profile?.role === 'admin' && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Ver como:</span>
+            <Select
+              value={selectedDesignerId || 'self'}
+              onValueChange={(value) => {
+                setSelectedDesignerId(value === 'self' ? '' : value);
+              }}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Selecione um projetista" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="self">Meus dados</SelectItem>
+                {profiles.filter(p => p.id).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </motion.div>
 
       {/* Cards de Resumo */}

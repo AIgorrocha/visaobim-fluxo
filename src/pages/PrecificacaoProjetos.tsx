@@ -67,6 +67,7 @@ const formatCurrency = (value: number) => {
 interface PricingFormData {
   project_id: string;
   discipline_name: string;
+  newDiscipline: string;
   total_value: number;
   designer_percentage: number;
   designer_id: string;
@@ -90,6 +91,7 @@ const PrecificacaoProjetos = () => {
   const [formData, setFormData] = useState<PricingFormData>({
     project_id: '',
     discipline_name: '',
+    newDiscipline: '',
     total_value: 0,
     designer_percentage: 40,
     designer_id: '',
@@ -148,6 +150,7 @@ const PrecificacaoProjetos = () => {
     setFormData({
       project_id: selectedProjectId,
       discipline_name: '',
+      newDiscipline: '',
       total_value: 0,
       designer_percentage: 40,
       designer_id: '',
@@ -162,6 +165,7 @@ const PrecificacaoProjetos = () => {
     setFormData({
       project_id: item.project_id,
       discipline_name: item.discipline_name,
+      newDiscipline: '',
       total_value: item.total_value,
       designer_percentage: item.designer_percentage,
       designer_id: item.designer_id || '',
@@ -201,11 +205,16 @@ const PrecificacaoProjetos = () => {
   // Salvar precificacao
   const handleSavePricing = async () => {
     try {
+      // Determinar nome da disciplina (nova ou existente)
+      const disciplineName = formData.discipline_name === '__new__'
+        ? formData.newDiscipline.trim()
+        : formData.discipline_name;
+
       // Validar
-      if (!formData.discipline_name) {
+      if (!disciplineName) {
         toast({
           title: 'Disciplina obrigatoria',
-          description: 'Selecione uma disciplina',
+          description: 'Selecione ou digite uma disciplina',
           variant: 'destructive'
         });
         return;
@@ -222,7 +231,7 @@ const PrecificacaoProjetos = () => {
 
       const dataToSave = {
         project_id: formData.project_id,
-        discipline_name: formData.discipline_name,
+        discipline_name: disciplineName,
         total_value: formData.total_value,
         designer_percentage: formData.designer_percentage,
         designer_id: formData.designer_id || null,
@@ -489,7 +498,7 @@ const PrecificacaoProjetos = () => {
               <Label>Disciplina *</Label>
               <Select
                 value={formData.discipline_name}
-                onValueChange={(value) => setFormData({ ...formData, discipline_name: value })}
+                onValueChange={(value) => setFormData({ ...formData, discipline_name: value, newDiscipline: '' })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a disciplina" />
@@ -500,9 +509,22 @@ const PrecificacaoProjetos = () => {
                       {disc.name}
                     </SelectItem>
                   ))}
+                  <SelectItem value="__new__">+ Nova disciplina</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Campo para nova disciplina */}
+            {formData.discipline_name === '__new__' && (
+              <div className="space-y-2">
+                <Label>Nome da Nova Disciplina *</Label>
+                <Input
+                  value={formData.newDiscipline}
+                  onChange={(e) => setFormData({ ...formData, newDiscipline: e.target.value })}
+                  placeholder="Digite o nome da disciplina"
+                />
+              </div>
+            )}
 
             {/* Valor Total */}
             <div className="space-y-2">
@@ -548,16 +570,16 @@ const PrecificacaoProjetos = () => {
             <div className="space-y-2">
               <Label>Projetista Responsavel</Label>
               <Select
-                value={formData.designer_id}
-                onValueChange={(value) => setFormData({ ...formData, designer_id: value })}
+                value={formData.designer_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, designer_id: value === 'none' ? '' : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o projetista (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nao atribuido</SelectItem>
+                  <SelectItem value="none">Nao atribuido</SelectItem>
                   {profiles
-                    .filter(p => p.role === 'user' || p.role === 'admin')
+                    .filter(p => p.id && (p.role === 'user' || p.role === 'admin'))
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.full_name}
