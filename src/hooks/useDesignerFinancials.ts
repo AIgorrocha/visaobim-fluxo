@@ -20,8 +20,8 @@ export function useDisciplines() {
   const fetchDisciplines = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('disciplines')
+      const { data, error } = await (supabase
+        .from('disciplines') as any)
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
@@ -54,8 +54,8 @@ export function useProjectPricing(projectId?: string) {
   const fetchPricing = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('project_pricing')
+      let query = (supabase
+        .from('project_pricing') as any)
         .select(`
           *,
           profiles:designer_id (full_name),
@@ -89,8 +89,8 @@ export function useProjectPricing(projectId?: string) {
 
   const createPricing = async (data: Omit<ProjectPricing, 'id' | 'created_at' | 'updated_at' | 'designer_value'>) => {
     try {
-      const { data: newPricing, error } = await supabase
-        .from('project_pricing')
+      const { data: newPricing, error } = await (supabase
+        .from('project_pricing') as any)
         .insert([data])
         .select()
         .single();
@@ -110,8 +110,8 @@ export function useProjectPricing(projectId?: string) {
       // Remover campos calculados e virtuais
       const { designer_value, designer_name, project_name, ...updateData } = updates as any;
 
-      const { data, error } = await supabase
-        .from('project_pricing')
+      const { data, error } = await (supabase
+        .from('project_pricing') as any)
         .update(updateData)
         .eq('id', id)
         .select()
@@ -129,8 +129,8 @@ export function useProjectPricing(projectId?: string) {
 
   const deletePricing = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('project_pricing')
+      const { error } = await (supabase
+        .from('project_pricing') as any)
         .delete()
         .eq('id', id);
 
@@ -169,8 +169,8 @@ export function useDesignerPayments(designerId?: string) {
   const fetchPayments = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('designer_payments')
+      let query = (supabase
+        .from('designer_payments') as any)
         .select(`
           *,
           profiles:designer_id (full_name)
@@ -202,8 +202,8 @@ export function useDesignerPayments(designerId?: string) {
 
   const createPayment = async (data: Omit<DesignerPayment, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data: newPayment, error } = await supabase
-        .from('designer_payments')
+      const { data: newPayment, error } = await (supabase
+        .from('designer_payments') as any)
         .insert([data])
         .select()
         .single();
@@ -223,8 +223,8 @@ export function useDesignerPayments(designerId?: string) {
       // Remover campos virtuais
       const { designer_name, ...updateData } = updates as any;
 
-      const { data, error } = await supabase
-        .from('designer_payments')
+      const { data, error } = await (supabase
+        .from('designer_payments') as any)
         .update(updateData)
         .eq('id', id)
         .select()
@@ -242,8 +242,8 @@ export function useDesignerPayments(designerId?: string) {
 
   const deletePayment = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('designer_payments')
+      const { error } = await (supabase
+        .from('designer_payments') as any)
         .delete()
         .eq('id', id);
 
@@ -287,8 +287,8 @@ export function useDesignerFinancialSummary(designerId: string) {
       setLoading(true);
 
       // Buscar pagamentos do projetista
-      const { data: payments, error: paymentsError } = await supabase
-        .from('designer_payments')
+      const { data: payments, error: paymentsError } = await (supabase
+        .from('designer_payments') as any)
         .select('*')
         .eq('designer_id', designerId)
         .neq('status', 'cancelado')
@@ -297,8 +297,8 @@ export function useDesignerFinancialSummary(designerId: string) {
       if (paymentsError) throw paymentsError;
 
       // Buscar valores a receber (precificações)
-      const { data: pricingData, error: pricingError } = await supabase
-        .from('project_pricing')
+      const { data: pricingData, error: pricingError } = await (supabase
+        .from('project_pricing') as any)
         .select(`
           *,
           projects:project_id (name)
@@ -411,8 +411,8 @@ export function useAdminFinancialOverview() {
       setLoading(true);
 
       // Buscar todos os pagamentos
-      const { data: payments, error: paymentsError } = await supabase
-        .from('designer_payments')
+      const { data: payments, error: paymentsError } = await (supabase
+        .from('designer_payments') as any)
         .select(`
           *,
           profiles:designer_id (full_name, email)
@@ -422,8 +422,8 @@ export function useAdminFinancialOverview() {
       if (paymentsError) throw paymentsError;
 
       // Buscar todas as precificações
-      const { data: pricing, error: pricingError } = await supabase
-        .from('project_pricing')
+      const { data: pricing, error: pricingError } = await (supabase
+        .from('project_pricing') as any)
         .select(`
           *,
           profiles:designer_id (full_name),
