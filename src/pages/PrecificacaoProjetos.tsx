@@ -279,7 +279,9 @@ const PrecificacaoProjetos = () => {
 
   // Handlers para gerenciamento de disciplinas
   const handleAddDiscipline = async () => {
-    if (!newDisciplineName.trim()) {
+    const trimmedName = newDisciplineName.trim().toUpperCase();
+
+    if (!trimmedName) {
       toast({
         title: 'Nome obrigatorio',
         description: 'Digite o nome da disciplina',
@@ -288,17 +290,31 @@ const PrecificacaoProjetos = () => {
       return;
     }
 
+    // Verificar se ja existe
+    const exists = disciplines.some(d => d.name.toUpperCase() === trimmedName);
+    if (exists) {
+      toast({
+        title: 'Disciplina ja existe',
+        description: `A disciplina "${trimmedName}" ja esta cadastrada`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      await createDiscipline(newDisciplineName.trim());
+      await createDiscipline(trimmedName);
       setNewDisciplineName('');
       toast({
         title: 'Disciplina criada',
         description: 'A disciplina foi criada com sucesso'
       });
     } catch (error: any) {
+      const message = error.message?.includes('duplicate')
+        ? 'Esta disciplina ja existe no sistema'
+        : error.message;
       toast({
         title: 'Erro ao criar',
-        description: error.message,
+        description: message,
         variant: 'destructive'
       });
     }
@@ -307,17 +323,35 @@ const PrecificacaoProjetos = () => {
   const handleUpdateDiscipline = async () => {
     if (!editingDiscipline || !editingDiscipline.name.trim()) return;
 
+    const trimmedName = editingDiscipline.name.trim().toUpperCase();
+
+    // Verificar se ja existe outra disciplina com esse nome
+    const exists = disciplines.some(d =>
+      d.id !== editingDiscipline.id && d.name.toUpperCase() === trimmedName
+    );
+    if (exists) {
+      toast({
+        title: 'Nome ja existe',
+        description: `Ja existe outra disciplina chamada "${trimmedName}"`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      await updateDiscipline(editingDiscipline.id, { name: editingDiscipline.name.trim() });
+      await updateDiscipline(editingDiscipline.id, { name: trimmedName });
       setEditingDiscipline(null);
       toast({
         title: 'Disciplina atualizada',
         description: 'A disciplina foi atualizada com sucesso'
       });
     } catch (error: any) {
+      const message = error.message?.includes('duplicate')
+        ? 'Este nome ja esta em uso'
+        : error.message;
       toast({
         title: 'Erro ao atualizar',
-        description: error.message,
+        description: message,
         variant: 'destructive'
       });
     }
