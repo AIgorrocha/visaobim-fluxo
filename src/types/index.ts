@@ -155,3 +155,99 @@ export interface Achievement {
   points_earned: number;
   earned_at: string;
 }
+
+// ========================================
+// SISTEMA FINANCEIRO DE PROJETISTAS
+// ========================================
+
+// Disciplinas disponíveis para projetos
+export interface Discipline {
+  id: string;
+  name: string;
+  description?: string;
+  display_order?: number;
+  is_active?: boolean;
+  created_at: string;
+}
+
+// Precificação de projeto por disciplina
+export interface ProjectPricing {
+  id: string;
+  project_id: string;
+  discipline_id?: string;
+  discipline_name: string;
+  total_value: number;
+  designer_percentage: number;
+  designer_value: number; // Valor calculado: total_value * designer_percentage / 100
+  designer_id?: string;
+  amount_paid: number;
+  notes?: string;
+  status: 'pendente' | 'parcial' | 'pago';
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  // Campos virtuais para joins
+  designer_name?: string;
+  project_name?: string;
+}
+
+// Pagamento realizado para projetista
+export interface DesignerPayment {
+  id: string;
+  project_id?: string;
+  project_name?: string;
+  pricing_id?: string;
+  designer_id: string;
+  discipline: string;
+  amount: number;
+  payment_date: string;
+  description?: string;
+  sector: 'privado' | 'publico';
+  invoice_number?: string;
+  contract_reference?: string;
+  status: 'pendente' | 'pago' | 'cancelado';
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  // Campos virtuais para joins
+  designer_name?: string;
+}
+
+// Resumo financeiro do projetista (view)
+export interface DesignerFinancialSummary {
+  designer_id: string;
+  designer_name: string;
+  designer_email: string;
+  total_payments: number;
+  total_received: number;
+  total_pending: number;
+  projects_count: number;
+  last_payment_date?: string;
+}
+
+// Valores a receber do projetista (view)
+export interface DesignerReceivable {
+  designer_id: string;
+  designer_name: string;
+  project_id: string;
+  project_name: string;
+  discipline_name: string;
+  total_value: number;
+  designer_percentage: number;
+  designer_value: number;
+  amount_paid: number;
+  amount_pending: number;
+  status: string;
+}
+
+// Estatísticas do dashboard financeiro
+export interface FinancialDashboardStats {
+  totalReceived: number;
+  totalPending: number;
+  totalPayments: number;
+  projectsCount: number;
+  lastPaymentDate?: string;
+  paymentsByMonth: { month: string; amount: number }[];
+  paymentsByProject: { project_name: string; amount: number }[];
+  paymentsByDiscipline: { discipline: string; amount: number }[];
+}

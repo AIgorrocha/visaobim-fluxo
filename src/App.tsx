@@ -19,6 +19,9 @@ import MinhasTarefas from "./pages/MinhasTarefas";
 import Equipe from "./pages/Equipe";
 import Conquistas from "./pages/Conquistas";
 import Financeiro from "./pages/Financeiro";
+import MeuFinanceiro from "./pages/MeuFinanceiro";
+import PrecificacaoProjetos from "./pages/PrecificacaoProjetos";
+import AdminFinanceiro from "./pages/AdminFinanceiro";
 import Propostas from "./pages/Propostas";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
@@ -76,6 +79,27 @@ const App = () => (
               <ProtectedRoute>
                 <Layout>
                   <Financeiro />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/meu-financeiro" element={
+              <ProtectedRoute>
+                <Layout>
+                  <MeuFinanceiro />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/precificacao" element={
+              <ProtectedRoute adminOnly>
+                <Layout>
+                  <PrecificacaoProjetos />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin-financeiro" element={
+              <ProtectedRoute adminOnly>
+                <Layout>
+                  <AdminFinanceiro />
                 </Layout>
               </ProtectedRoute>
             } />

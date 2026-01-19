@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  CheckSquare, 
-  Users, 
-  DollarSign, 
-  FileText, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  FolderOpen,
+  CheckSquare,
+  Users,
+  DollarSign,
+  FileText,
+  BarChart3,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Wallet,
+  Calculator
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -49,10 +51,22 @@ const menuItems = [
     roles: ['admin', 'user']
   },
   {
-    title: 'Financeiro',
-    url: '/financeiro',
-    icon: DollarSign,
+    title: 'Meu Financeiro',
+    url: '/meu-financeiro',
+    icon: Wallet,
     roles: ['admin', 'user']
+  },
+  {
+    title: 'Precificacao',
+    url: '/precificacao',
+    icon: Calculator,
+    roles: ['admin']
+  },
+  {
+    title: 'Gestao Financeira',
+    url: '/admin-financeiro',
+    icon: DollarSign,
+    roles: ['admin']
   },
   {
     title: 'Propostas',
@@ -60,9 +74,9 @@ const menuItems = [
     icon: FileText,
     roles: ['admin']
   },
-  { title: "Relatórios", url: "/relatorios", icon: BarChart3, roles: ["admin", "user"] },
+  { title: "Relatorios", url: "/relatorios", icon: BarChart3, roles: ["admin", "user"] },
   {
-    title: 'Configurações',
+    title: 'Configuracoes',
     url: '/configuracoes',
     icon: Settings,
     roles: ['admin', 'user']
