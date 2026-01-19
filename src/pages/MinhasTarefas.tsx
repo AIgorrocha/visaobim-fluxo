@@ -636,7 +636,7 @@ const MinhasTarefas = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os Projetos</SelectItem>
-                    {projects.map(project => (
+                    {projects.filter(project => project.id).map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name} - {project.client}</SelectItem>
                     ))}
                   </SelectContent>
@@ -663,7 +663,7 @@ const MinhasTarefas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos Responsáveis</SelectItem>
-                      {profiles.map(profile => (
+                      {profiles.filter(profile => profile.id).map(profile => (
                         <SelectItem key={profile.id} value={profile.id}>
                           {profile.full_name || profile.email}
                         </SelectItem>
