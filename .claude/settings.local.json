@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "Bash(npm:*)",
+      "Bash(dir node_modules)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:maps.googleapis.com)",
+      "Bash(touch:*)",
+      "Bash(rg:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(node:*)",
+      "Bash(mv:*)",
+      "Bash(npx supabase functions deploy:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(rm:*)",
+      "WebFetch(domain:www.visaoprojetosbim.com)",
+      "Bash(npx supabase:*)",
+      "Bash(dir:*)",
+      "Bash(git rm:*)",
+      "Bash(powershell:*)",
+      "Bash(claude-code --version)",
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(git fetch:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_evaluate",
+      "Bash(copy \"c:\\\\Users\\\\igor-\\\\Downloads\\\\Design sem nome \\(4\\).png\" \"C:\\\\PROJETOS GIT\\\\vizao-bim-prime-main\\\\public\\\\assets\\\\images\\\\team\\\\SALOMAO.png\")"
+    ],
+    "deny": [],
+    "additionalDirectories": [
+      "C:\\Users\\igor-\\.config"
+    ]
+  }
+}

@@ -119,7 +119,9 @@ const AdminFinanceiro = () => {
   // Filtros
   const [filterDesigner, setFilterDesigner] = useState<string>('all');
   const [filterSector, setFilterSector] = useState<string>('all');
-  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterPeriod, setFilterPeriod] = useState<string>('all');
+  const [customDateStart, setCustomDateStart] = useState<string>('');
+  const [customDateEnd, setCustomDateEnd] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Form data
@@ -146,18 +148,37 @@ const AdminFinanceiro = () => {
     );
   }
 
-  // Anos unicos
-  const uniqueYears = useMemo(() => {
-    const years = new Set(payments.map(p => p.payment_date.substring(0, 4)));
-    return Array.from(years).sort((a, b) => b.localeCompare(a));
-  }, [payments]);
+  // Calcular data de corte baseado no periodo
+  const getDateCutoff = (period: string): Date | null => {
+    if (period === 'all') return null;
+    const now = new Date();
+    switch (period) {
+      case '30': return new Date(now.setDate(now.getDate() - 30));
+      case '60': return new Date(now.setDate(now.getDate() - 60));
+      case '90': return new Date(now.setDate(now.getDate() - 90));
+      default: return null;
+    }
+  };
 
   // Filtrar pagamentos
   const filteredPayments = useMemo(() => {
     return payments.filter(p => {
       if (filterDesigner !== 'all' && p.designer_id !== filterDesigner) return false;
       if (filterSector !== 'all' && p.sector !== filterSector) return false;
-      if (filterYear !== 'all' && !p.payment_date.startsWith(filterYear)) return false;
+
+      // Filtro de periodo
+      if (filterPeriod !== 'all' && filterPeriod !== 'custom') {
+        const cutoff = getDateCutoff(filterPeriod);
+        if (cutoff && new Date(p.payment_date) < cutoff) return false;
+      }
+
+      // Filtro personalizado
+      if (filterPeriod === 'custom') {
+        const paymentDate = new Date(p.payment_date);
+        if (customDateStart && paymentDate < new Date(customDateStart)) return false;
+        if (customDateEnd && paymentDate > new Date(customDateEnd)) return false;
+      }
+
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const matchProject = p.project_name?.toLowerCase().includes(term);
@@ -167,7 +188,7 @@ const AdminFinanceiro = () => {
       }
       return true;
     });
-  }, [payments, filterDesigner, filterSector, filterYear, searchTerm]);
+  }, [payments, filterDesigner, filterSector, filterPeriod, customDateStart, customDateEnd, searchTerm]);
 
   // Totais
   const totals = useMemo(() => {
@@ -403,18 +424,15 @@ const AdminFinanceiro = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Media por Pagamento</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {filteredPayments.length > 0
-                ? formatCurrency(totals.totalPaid / filteredPayments.filter(p => p.status === 'pago').length || 0)
-                : formatCurrency(0)
-              }
+              {formatCurrency(totals.totalPaid + totals.totalPending)}
             </div>
             <p className="text-xs text-muted-foreground">
-              valor medio
+              {filteredPayments.length} pagamentos
             </p>
           </CardContent>
         </Card>
@@ -475,17 +493,37 @@ const AdminFinanceiro = () => {
                     </SelectContent>
                   </Select>
 
-                  <Select value={filterYear} onValueChange={setFilterYear}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Ano" />
+                  <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Periodo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      {uniqueYears.map(year => (
-                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                      ))}
+                      <SelectItem value="all">Todo periodo</SelectItem>
+                      <SelectItem value="30">Ultimos 30 dias</SelectItem>
+                      <SelectItem value="60">Ultimos 60 dias</SelectItem>
+                      <SelectItem value="90">Ultimos 90 dias</SelectItem>
+                      <SelectItem value="custom">Personalizado</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {filterPeriod === 'custom' && (
+                    <>
+                      <Input
+                        type="date"
+                        value={customDateStart}
+                        onChange={(e) => setCustomDateStart(e.target.value)}
+                        className="w-[140px]"
+                        placeholder="Data inicio"
+                      />
+                      <Input
+                        type="date"
+                        value={customDateEnd}
+                        onChange={(e) => setCustomDateEnd(e.target.value)}
+                        className="w-[140px]"
+                        placeholder="Data fim"
+                      />
+                    </>
+                  )}
                 </div>
 
                 {/* Tabela */}
