@@ -28,6 +28,10 @@ const Propostas = () => {
   const { user, profile } = useAuth();
   const { proposals, updateProposal, deleteProposal, refetchProposals } = useSupabaseData();
 
+  // Verificar se usuario e Igor ou Stael (acesso restrito)
+  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
+  const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('proposal_date');
@@ -40,6 +44,15 @@ const Propostas = () => {
   const [showArchived, setShowArchived] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
+
+  // Bloquear acesso se nao for Igor ou Stael
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <p className="text-muted-foreground">Acesso restrito</p>
+      </div>
+    );
+  }
 
   // Enhanced proposal calculations with follow-up tracking
   const enhancedProposals: ProposalWithActions[] = useMemo(() => {

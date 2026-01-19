@@ -135,11 +135,14 @@ const AdminFinanceiro = () => {
     status: 'pago'
   });
 
-  // Verificar se usuario e admin
-  if (!user || !profile || profile.role !== 'admin') {
+  // Verificar se usuario e Igor ou Stael (acesso restrito)
+  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
+  const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
+
+  if (!hasAccess) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-muted-foreground">Acesso restrito a administradores</p>
+        <p className="text-muted-foreground">Acesso restrito</p>
       </div>
     );
   }

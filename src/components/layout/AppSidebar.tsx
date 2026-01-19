@@ -25,6 +25,9 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
+// Emails com acesso restrito a areas financeiras
+const RESTRICTED_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
+
 const menuItems = [
   {
     title: 'Painel',
@@ -60,19 +63,22 @@ const menuItems = [
     title: 'Precificacao',
     url: '/precificacao',
     icon: Calculator,
-    roles: ['admin']
+    roles: ['admin'],
+    restrictedEmails: RESTRICTED_EMAILS
   },
   {
     title: 'Gestao Financeira',
     url: '/admin-financeiro',
     icon: DollarSign,
-    roles: ['admin']
+    roles: ['admin'],
+    restrictedEmails: RESTRICTED_EMAILS
   },
   {
     title: 'Propostas',
     url: '/propostas',
     icon: FileText,
-    roles: ['admin']
+    roles: ['admin'],
+    restrictedEmails: RESTRICTED_EMAILS
   },
   { title: "Relatorios", url: "/relatorios", icon: BarChart3, roles: ["admin", "user"] },
   {
@@ -96,9 +102,19 @@ export function AppSidebar() {
       : 'hover:bg-accent hover:text-accent-foreground';
   };
 
-  const filteredMenuItems = menuItems.filter(item =>
-    profile?.role && item.roles.includes(profile.role)
-  );
+  const userEmail = profile?.email?.toLowerCase() || '';
+
+  const filteredMenuItems = menuItems.filter(item => {
+    // Verificar se o role tem acesso
+    if (!profile?.role || !item.roles.includes(profile.role)) {
+      return false;
+    }
+    // Se tem restricao de email, verificar se o usuario esta na lista
+    if (item.restrictedEmails && !item.restrictedEmails.includes(userEmail)) {
+      return false;
+    }
+    return true;
+  });
 
 
   return (
