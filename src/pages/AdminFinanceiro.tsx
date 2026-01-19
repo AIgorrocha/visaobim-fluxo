@@ -307,20 +307,29 @@ const AdminFinanceiro = () => {
         if (project) projectName = project.name;
       }
 
-      const dataToSave = {
-        project_id: formData.project_id || null,
-        project_name: projectName || null,
+      // Garantir que project_id seja null se vazio (evitar erro de FK)
+      const projectId = formData.project_id && formData.project_id.trim() !== ''
+        ? formData.project_id
+        : null;
+
+      const dataToSave: any = {
         designer_id: formData.designer_id,
         discipline: formData.discipline,
-        amount: formData.amount,
+        amount: Number(formData.amount),
         payment_date: formData.payment_date,
-        description: formData.description || null,
         sector: formData.sector,
-        invoice_number: formData.invoice_number || null,
-        contract_reference: formData.contract_reference || null,
-        status: formData.status,
-        created_by: user.id
+        status: formData.status
       };
+
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (projectId) dataToSave.project_id = projectId;
+      if (projectName) dataToSave.project_name = projectName;
+      if (formData.description?.trim()) dataToSave.description = formData.description;
+      if (formData.invoice_number?.trim()) dataToSave.invoice_number = formData.invoice_number;
+      if (formData.contract_reference?.trim()) dataToSave.contract_reference = formData.contract_reference;
+      if (user.id) dataToSave.created_by = user.id;
+
+      console.log('Salvando pagamento:', dataToSave);
 
       if (editingPayment) {
         await updatePayment(editingPayment.id, dataToSave);
@@ -329,7 +338,8 @@ const AdminFinanceiro = () => {
           description: 'O pagamento foi atualizado com sucesso'
         });
       } else {
-        await createPayment(dataToSave);
+        const result = await createPayment(dataToSave);
+        console.log('Pagamento criado:', result);
         toast({
           title: 'Pagamento registrado',
           description: 'O pagamento foi registrado com sucesso'
@@ -339,9 +349,10 @@ const AdminFinanceiro = () => {
       setIsModalOpen(false);
       refetch();
     } catch (error: any) {
+      console.error('Erro ao salvar pagamento:', error);
       toast({
         title: 'Erro ao salvar',
-        description: error.message,
+        description: error.message || 'Erro desconhecido ao salvar pagamento',
         variant: 'destructive'
       });
     }
@@ -476,7 +487,7 @@ const AdminFinanceiro = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      {profiles.map(p => (
+                      {profiles.filter(p => p.id).map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -695,7 +706,7 @@ const AdminFinanceiro = () => {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {profiles.map((p) => (
+                    {profiles.filter(p => p.id).map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -725,12 +736,13 @@ const AdminFinanceiro = () => {
             <div className="space-y-2">
               <Label>Projeto (opcional)</Label>
               <Select
-                value={formData.project_id}
+                value={formData.project_id || 'none'}
                 onValueChange={(value) => {
-                  const project = projects.find(p => p.id === value);
+                  const actualValue = value === 'none' ? '' : value;
+                  const project = projects.find(p => p.id === actualValue);
                   setFormData({
                     ...formData,
-                    project_id: value,
+                    project_id: actualValue,
                     project_name: project?.name || ''
                   });
                 }}
@@ -739,8 +751,8 @@ const AdminFinanceiro = () => {
                   <SelectValue placeholder="Selecione um projeto" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
-                  {projects.map((p) => (
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {projects.filter(p => p.id).map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
