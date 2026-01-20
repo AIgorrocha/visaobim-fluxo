@@ -8,6 +8,7 @@ import {
   DesignerReceivable,
   FinancialDashboardStats
 } from '@/types';
+import { findMatchingPayments } from '@/utils/financialMatching';
 
 // ========================================
 // HOOK PARA DISCIPLINAS
@@ -375,9 +376,44 @@ export function useDesignerFinancialSummary(designerId: string) {
         p.status === 'pago' ? sum + Number(p.amount) : sum, 0
       ) || 0;
 
-      const totalPending = pricingData?.reduce((sum, p) =>
-        sum + (Number(p.designer_value || 0) - Number(p.amount_paid || 0)), 0
-      ) || 0;
+      // Montar valores a receber usando matching por similaridade
+      // Isso permite vincular pagamentos mesmo quando os nomes são diferentes
+      // Ex: "DRF-PV" + "ESTRUTURAL" deve casar com "AGENCIA DA RECEITA FEDERAL" + "SUPERESTRUTURAS"
+      const receivablesList: DesignerReceivable[] = (pricingData || [])
+        .map((p: any) => {
+          const projectName = p.projects?.name || '';
+
+          // Usar função de matching por similaridade
+          const amountPaidFromPayments = findMatchingPayments(
+            payments || [],
+            {
+              designer_id: p.designer_id,
+              project_name: projectName,
+              discipline_name: p.discipline_name
+            }
+          );
+
+          const designerValue = Number(p.designer_value || 0);
+          const amountPending = Math.max(0, designerValue - amountPaidFromPayments);
+
+          return {
+            designer_id: p.designer_id,
+            designer_name: '',
+            project_id: p.project_id,
+            project_name: projectName,
+            discipline_name: p.discipline_name,
+            total_value: Number(p.total_value),
+            designer_percentage: Number(p.designer_percentage),
+            designer_value: designerValue,
+            amount_paid: amountPaidFromPayments,
+            amount_pending: amountPending,
+            status: amountPending === 0 ? 'pago' : amountPaidFromPayments > 0 ? 'parcial' : 'pendente'
+          };
+        })
+        .filter((p: DesignerReceivable) => p.amount_pending > 0); // Só mostrar se ainda tem a receber
+
+      // Calcular total pendente baseado nos receivables calculados
+      const totalPending = receivablesList.reduce((sum, p) => sum + p.amount_pending, 0);
 
       // Agrupar por mês
       const paymentsByMonth: { [key: string]: number } = {};
@@ -404,23 +440,6 @@ export function useDesignerFinancialSummary(designerId: string) {
           paymentsByDiscipline[p.discipline] = (paymentsByDiscipline[p.discipline] || 0) + Number(p.amount);
         }
       });
-
-      // Montar valores a receber
-      const receivablesList: DesignerReceivable[] = (pricingData || [])
-        .filter(p => (Number(p.designer_value || 0) - Number(p.amount_paid || 0)) > 0)
-        .map((p: any) => ({
-          designer_id: p.designer_id,
-          designer_name: '',
-          project_id: p.project_id,
-          project_name: p.projects?.name || '',
-          discipline_name: p.discipline_name,
-          total_value: Number(p.total_value),
-          designer_percentage: Number(p.designer_percentage),
-          designer_value: Number(p.designer_value),
-          amount_paid: Number(p.amount_paid || 0),
-          amount_pending: Number(p.designer_value || 0) - Number(p.amount_paid || 0),
-          status: p.status
-        }));
 
       // Projetos únicos
       const uniqueProjects = new Set(payments?.map(p => p.project_id).filter(Boolean));
@@ -535,11 +554,25 @@ export function useAdminFinancialOverview() {
         }
       });
 
-      // Adicionar valores a receber
+      // Adicionar valores a receber usando matching por similaridade
       pricing?.forEach((p: any) => {
         const id = p.designer_id;
         if (id && designerMap[id]) {
-          designerMap[id].total_pending += Number(p.designer_value || 0) - Number(p.amount_paid || 0);
+          const projectName = p.projects?.name || '';
+
+          // Usar função de matching por similaridade
+          const amountPaid = findMatchingPayments(
+            payments || [],
+            {
+              designer_id: id,
+              project_name: projectName,
+              discipline_name: p.discipline_name
+            }
+          );
+
+          const designerValue = Number(p.designer_value || 0);
+          const pending = Math.max(0, designerValue - amountPaid);
+          designerMap[id].total_pending += pending;
         }
       });
 

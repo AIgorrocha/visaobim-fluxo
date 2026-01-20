@@ -115,14 +115,25 @@ const PrecificacaoProjetos = () => {
     );
   }
 
-  // Filtrar projetos pela busca
+  // Filtrar e ordenar projetos (mais recentes primeiro)
   const filteredProjects = useMemo(() => {
-    if (!searchTerm) return projects;
-    const term = searchTerm.toLowerCase();
-    return projects.filter(p =>
-      p.name.toLowerCase().includes(term) ||
-      p.client.toLowerCase().includes(term)
-    );
+    let filtered = projects;
+
+    // Filtrar por busca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.client.toLowerCase().includes(term)
+      );
+    }
+
+    // Ordenar do mais recente pro mais antigo (por data de criação)
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA; // Mais recente primeiro
+    });
   }, [projects, searchTerm]);
 
   // Precificacoes do projeto selecionado
