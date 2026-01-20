@@ -181,7 +181,9 @@ export function areDisciplinesEquivalent(disc1: string, disc2: string): boolean 
 
 /**
  * Encontra pagamentos que correspondem a uma precificação
- * Usa matching por similaridade de projeto e disciplina
+ * IMPORTANTE: Match é feito por PROJETISTA + PROJETO (ignorando disciplina)
+ * Isso porque um projetista pode ter várias disciplinas no mesmo projeto
+ * e os pagamentos são feitos para o projetista, não para a disciplina específica
  */
 export function findMatchingPayments(
   payments: Array<{
@@ -206,17 +208,45 @@ export function findMatchingPayments(
     // Apenas pagamentos confirmados
     if (payment.status !== 'pago') continue;
 
-    // Match de projeto (por similaridade)
+    // Match de projeto (por similaridade) - IGNORA DISCIPLINA
     const projectMatch = payment.project_name
       ? areProjectsEquivalent(payment.project_name, pricing.project_name)
       : false;
 
-    if (!projectMatch) continue;
+    if (projectMatch) {
+      totalPaid += Number(payment.amount);
+    }
+  }
 
-    // Match de disciplina (por similaridade)
-    const disciplineMatch = areDisciplinesEquivalent(payment.discipline, pricing.discipline_name);
+  return totalPaid;
 
-    if (disciplineMatch) {
+}
+
+/**
+ * Calcula o total pago para um projetista em um projeto específico
+ * Ignora disciplina - soma todos os pagamentos do projetista naquele projeto
+ */
+export function getTotalPaidByDesignerProject(
+  payments: Array<{
+    designer_id: string;
+    project_name?: string;
+    amount: number;
+    status: string;
+  }>,
+  designerId: string,
+  projectName: string
+): number {
+  let totalPaid = 0;
+
+  for (const payment of payments) {
+    if (payment.designer_id !== designerId) continue;
+    if (payment.status !== 'pago') continue;
+
+    const projectMatch = payment.project_name
+      ? areProjectsEquivalent(payment.project_name, projectName)
+      : false;
+
+    if (projectMatch) {
       totalPaid += Number(payment.amount);
     }
   }
