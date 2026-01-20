@@ -666,14 +666,18 @@ const PrecificacaoProjetos = () => {
               <Label>Porcentagem do Projetista (%)</Label>
               <Input
                 type="number"
-                step="1"
-                min="0"
-                max="100"
+                step={1}
+                min={0}
+                max={100}
                 value={formData.designer_percentage}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  designer_percentage: parseFloat(e.target.value) || 40
-                })}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setFormData({
+                    ...formData,
+                    designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                  });
+                }}
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
               />
             </div>
 
