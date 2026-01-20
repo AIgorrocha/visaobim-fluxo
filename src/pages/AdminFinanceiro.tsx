@@ -67,6 +67,7 @@ import {
 } from '@/hooks/useDesignerFinancials';
 import { useContractOverview } from '@/hooks/useContractFinancials';
 import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
+import { ContractDetailModal } from '@/components/ContractDetailModal';
 import { DesignerPayment } from '@/types';
 
 // Formatar valores em BRL
@@ -142,6 +143,8 @@ const AdminFinanceiro = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<DesignerPayment | null>(null);
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [isContractDetailOpen, setIsContractDetailOpen] = useState(false);
 
   // Filtros
   const [filterDesigner, setFilterDesigner] = useState<string>('all');
@@ -747,7 +750,14 @@ const AdminFinanceiro = () => {
                         {filteredPublicContracts.map((contract) => {
                           const saldo = contract.total_received - contract.total_paid_designers - contract.total_expenses;
                           return (
-                            <TableRow key={contract.project_id}>
+                            <TableRow
+                              key={contract.project_id}
+                              className="cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => {
+                                setSelectedContractId(contract.project_id);
+                                setIsContractDetailOpen(true);
+                              }}
+                            >
                               <TableCell className="font-medium">{contract.project_name}</TableCell>
                               <TableCell>
                                 <Badge variant={
@@ -844,7 +854,14 @@ const AdminFinanceiro = () => {
                         {filteredPrivateContracts.map((contract) => {
                           const saldo = contract.total_received - contract.total_paid_designers - contract.total_expenses;
                           return (
-                            <TableRow key={contract.project_id}>
+                            <TableRow
+                              key={contract.project_id}
+                              className="cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => {
+                                setSelectedContractId(contract.project_id);
+                                setIsContractDetailOpen(true);
+                              }}
+                            >
                               <TableCell className="font-medium">{contract.project_name}</TableCell>
                               <TableCell>
                                 <Badge variant={
@@ -1449,7 +1466,6 @@ const AdminFinanceiro = () => {
                   )}
                 </CardContent>
               </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </motion.div>
@@ -1654,6 +1670,13 @@ const AdminFinanceiro = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de Detalhes do Contrato */}
+      <ContractDetailModal
+        projectId={selectedContractId}
+        open={isContractDetailOpen}
+        onOpenChange={setIsContractDetailOpen}
+      />
     </div>
   );
 };
