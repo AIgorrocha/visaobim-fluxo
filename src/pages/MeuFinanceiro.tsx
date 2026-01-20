@@ -280,7 +280,7 @@ const MeuFinanceiro = () => {
                         <TableHead>Projeto</TableHead>
                         <TableHead>Disciplina</TableHead>
                         <TableHead className="text-right">Valor Total</TableHead>
-                        <TableHead className="text-right">Sua Parte (40%)</TableHead>
+                        <TableHead className="text-right">Seu Valor</TableHead>
                         <TableHead className="text-right">Ja Pago</TableHead>
                         <TableHead className="text-right">A Receber</TableHead>
                       </TableRow>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useProjects, useTasks, useProposals, useProfiles } from '@/hooks/useSupabaseData';
 import { useTaskRestrictions, TaskRestriction } from '@/hooks/useTaskRestrictions';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { useDisciplines, useProjectPricing, useDesignerPayments } from '@/hooks/useDesignerFinancials';
 
 interface SupabaseDataContextType {
   // Profiles
@@ -51,6 +52,21 @@ interface SupabaseDataContextType {
   deleteTaskRestriction: any;
   updateTaskRestriction: any;
   refetchTaskRestrictions: any;
+
+  // Financial Data - Disciplines
+  disciplines: any[];
+  disciplinesLoading: boolean;
+  refetchDisciplines: any;
+
+  // Financial Data - Pricing
+  pricing: any[];
+  pricingLoading: boolean;
+  refetchPricing: any;
+
+  // Financial Data - Payments
+  payments: any[];
+  paymentsLoading: boolean;
+  refetchPayments: any;
 
   // Sincronização global
   refetchAllData: () => Promise<void>;
@@ -110,6 +126,25 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     refetch: refetchTaskRestrictions
   } = useTaskRestrictions();
 
+  // Financial hooks - sincronizados globalmente
+  const {
+    disciplines,
+    loading: disciplinesLoading,
+    refetch: refetchDisciplines
+  } = useDisciplines();
+
+  const {
+    pricing,
+    loading: pricingLoading,
+    refetch: refetchPricing
+  } = useProjectPricing();
+
+  const {
+    payments,
+    loading: paymentsLoading,
+    refetch: refetchPayments
+  } = useDesignerPayments();
+
   // Set up real-time sync to refetch all data when changes occur
   const handleRealtimeRefetch = () => {
     console.log('🔄 Refetching all data due to real-time change');
@@ -118,6 +153,10 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     refetchTasks();
     refetchProposals();
     refetchTaskRestrictions();
+    // Financial data - agora sincronizado em tempo real
+    refetchDisciplines();
+    refetchPricing();
+    refetchPayments();
   };
 
   useRealtimeSync(handleRealtimeRefetch);
@@ -130,7 +169,11 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
       refetchProjects(),
       refetchTasks(),
       refetchProposals(),
-      refetchTaskRestrictions()
+      refetchTaskRestrictions(),
+      // Financial data
+      refetchDisciplines(),
+      refetchPricing(),
+      refetchPayments()
     ]);
     console.log('✅ Sincronização completa!');
   };
@@ -183,6 +226,21 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     deleteTaskRestriction,
     updateTaskRestriction,
     refetchTaskRestrictions,
+
+    // Financial Data - Disciplines
+    disciplines,
+    disciplinesLoading,
+    refetchDisciplines,
+
+    // Financial Data - Pricing
+    pricing,
+    pricingLoading,
+    refetchPricing,
+
+    // Financial Data - Payments
+    payments,
+    paymentsLoading,
+    refetchPayments,
 
     // Sync
     refetchAllData

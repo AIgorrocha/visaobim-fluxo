@@ -39,6 +39,19 @@ export function useRealtimeSync(onDataChange?: () => void) {
         console.log('📡 Achievements change detected:', payload);
         onDataChange();
       })
+      // Tabelas financeiras - agora sincronizadas em tempo real
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'designer_payments' }, (payload) => {
+        console.log('📡 Designer payments change detected:', payload);
+        onDataChange();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'project_pricing' }, (payload) => {
+        console.log('📡 Project pricing change detected:', payload);
+        onDataChange();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disciplines' }, (payload) => {
+        console.log('📡 Disciplines change detected:', payload);
+        onDataChange();
+      })
       .subscribe();
 
     return () => {
