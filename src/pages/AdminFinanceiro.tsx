@@ -66,6 +66,7 @@ import {
   useProjectPricing
 } from '@/hooks/useDesignerFinancials';
 import { useContractOverview } from '@/hooks/useContractFinancials';
+import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
 import { DesignerPayment } from '@/types';
 
 // Formatar valores em BRL
@@ -121,6 +122,13 @@ const AdminFinanceiro = () => {
     summary: contractSummary,
     loading: contractsLoading
   } = useContractOverview();
+  const {
+    expenses: companyExpenses,
+    publicExpenses: publicCompanyExpenses,
+    privateExpenses: privateCompanyExpenses,
+    summary: expensesSummary,
+    loading: expensesLoading
+  } = useCompanyExpenses();
   const { toast } = useToast();
 
   // Precificações não atribuídas (sem projetista)
@@ -489,6 +497,7 @@ const AdminFinanceiro = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="despesas">Despesas</TabsTrigger>
           </TabsList>
 
           {/* Tab Visão Geral de Contratos */}
@@ -1041,6 +1050,173 @@ const AdminFinanceiro = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tab Despesas da Empresa */}
+          <TabsContent value="despesas">
+            {/* Cards de Resumo das Despesas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Publico</CardTitle>
+                  <DollarSign className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">
+                    {formatCurrency(expensesSummary.totalPublico)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {expensesSummary.countPublico} despesas
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-orange-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Privado</CardTitle>
+                  <DollarSign className="h-4 w-4 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(expensesSummary.totalPrivado)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {expensesSummary.countPrivado} despesas
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(expensesSummary.totalGeral)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {expensesSummary.countPublico + expensesSummary.countPrivado} despesas totais
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Despesas por Categoria */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Despesas por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {expensesSummary.byCategory.length === 0 ? (
+                  <p className="text-muted-foreground">Nenhuma despesa cadastrada</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {expensesSummary.byCategory.slice(0, 6).map((cat) => (
+                      <div key={cat.category} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{cat.category}</p>
+                          <p className="text-xs text-muted-foreground">{cat.count} registros</p>
+                        </div>
+                        <span className="font-bold">{formatCurrency(cat.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tabelas de Despesas Separadas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Despesas Públicas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-red-600">Despesas Setor Publico</CardTitle>
+                  <CardDescription>{publicCompanyExpenses.length} registros</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {expensesLoading ? (
+                    <p>Carregando...</p>
+                  ) : publicCompanyExpenses.length === 0 ? (
+                    <p className="text-muted-foreground">Nenhuma despesa publica</p>
+                  ) : (
+                    <div className="max-h-[400px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Descricao</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {publicCompanyExpenses.slice(0, 50).map((expense) => (
+                            <TableRow key={expense.id}>
+                              <TableCell>{formatDate(expense.expense_date)}</TableCell>
+                              <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{expense.category || 'Outros'}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-red-600 font-medium">
+                                {formatCurrency(expense.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      {publicCompanyExpenses.length > 50 && (
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          Mostrando 50 de {publicCompanyExpenses.length} despesas
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Despesas Privadas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-orange-600">Despesas Setor Privado</CardTitle>
+                  <CardDescription>{privateCompanyExpenses.length} registros</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {expensesLoading ? (
+                    <p>Carregando...</p>
+                  ) : privateCompanyExpenses.length === 0 ? (
+                    <p className="text-muted-foreground">Nenhuma despesa privada</p>
+                  ) : (
+                    <div className="max-h-[400px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Descricao</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {privateCompanyExpenses.map((expense) => (
+                            <TableRow key={expense.id}>
+                              <TableCell>{formatDate(expense.expense_date)}</TableCell>
+                              <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{expense.category || 'Outros'}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-orange-600 font-medium">
+                                {formatCurrency(expense.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </motion.div>
