@@ -14,6 +14,7 @@ export function useProfiles() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .neq('is_active', false)
         .order('created_at', { ascending: false });
 
       if (error) {
