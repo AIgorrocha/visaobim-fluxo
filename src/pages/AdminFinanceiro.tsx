@@ -430,7 +430,8 @@ const AdminFinanceiro = () => {
 
   // Filtrar contratos por status, tipo e seleção
   const filteredContracts = useMemo(() => {
-    let filtered = allContracts;
+    // Sempre excluir EM_ESPERA (contratos que ainda não iniciaram)
+    let filtered = allContracts.filter(c => c.status !== 'EM_ESPERA');
 
     // Filtro por status (multi-seleção)
     if (filterContractStatus.length > 0 && !filterContractStatus.includes('all')) {
@@ -624,7 +625,6 @@ const AdminFinanceiro = () => {
                   { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
                   { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
                   { value: 'PARALISADO', label: 'Paralisado' },
-                  { value: 'EM_ESPERA', label: 'Em Espera' },
                   { value: 'CONCLUIDO', label: 'Concluido' }
                 ].map(status => (
                   <div key={status.value} className="flex items-center space-x-1">

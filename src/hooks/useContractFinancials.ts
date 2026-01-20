@@ -136,7 +136,8 @@ export function useContractOverview() {
     if (!projects || projects.length === 0) return [];
 
     return projects
-      .filter(p => !p.is_archived && p.project_value && p.project_value > 0)
+      // Excluir arquivados, sem valor e EM_ESPERA (ainda não iniciaram)
+      .filter(p => !p.is_archived && p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA')
       .map(project => {
         // Total recebido do cliente (soma das receitas do contrato)
         const projectIncome = income.filter(i => i.project_id === project.id);
