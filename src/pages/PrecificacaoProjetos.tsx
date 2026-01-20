@@ -71,6 +71,7 @@ interface PricingFormData {
   newDiscipline: string;
   total_value: number;
   designer_percentage: number;
+  majoracao: number;
   designer_id: string;
   notes: string;
 }
@@ -95,6 +96,7 @@ const PrecificacaoProjetos = () => {
     newDiscipline: '',
     total_value: 0,
     designer_percentage: 40,
+    majoracao: 0,
     designer_id: '',
     notes: ''
   });
@@ -172,6 +174,7 @@ const PrecificacaoProjetos = () => {
       newDiscipline: '',
       total_value: 0,
       designer_percentage: 40,
+      majoracao: 0,
       designer_id: '',
       notes: ''
     });
@@ -187,6 +190,7 @@ const PrecificacaoProjetos = () => {
       newDiscipline: '',
       total_value: item.total_value,
       designer_percentage: item.designer_percentage,
+      majoracao: (item as any).majoracao || 0,
       designer_id: item.designer_id || '',
       notes: item.notes || ''
     });
@@ -253,6 +257,7 @@ const PrecificacaoProjetos = () => {
         discipline_name: disciplineName,
         total_value: formData.total_value,
         designer_percentage: formData.designer_percentage,
+        majoracao: formData.majoracao || 0,
         designer_id: formData.designer_id || null,
         notes: formData.notes || null,
         amount_paid: 0,
@@ -285,8 +290,9 @@ const PrecificacaoProjetos = () => {
     }
   };
 
-  // Calcular valor do projetista
-  const calculatedDesignerValue = (formData.total_value * formData.designer_percentage) / 100;
+  // Calcular valor do projetista (porcentagem + majoração)
+  const baseDesignerValue = (formData.total_value * formData.designer_percentage) / 100;
+  const calculatedDesignerValue = baseDesignerValue + (formData.majoracao || 0);
 
   // Handlers para gerenciamento de disciplinas
   const handleAddDiscipline = async () => {
@@ -671,12 +677,36 @@ const PrecificacaoProjetos = () => {
               />
             </div>
 
+            {/* Majoração (opcional) */}
+            <div className="space-y-2">
+              <Label>Majoracao (R$) - Opcional</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.majoracao || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  majoracao: parseFloat(e.target.value) || 0
+                })}
+                placeholder="0,00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Valor extra a adicionar ao calculo do projetista
+              </p>
+            </div>
+
             {/* Valor Calculado */}
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Valor do Projetista (calculado)</p>
+              <p className="text-sm text-muted-foreground">Valor do Projetista (calculado + majoracao)</p>
               <p className="text-xl font-bold text-green-600">
                 {formatCurrency(calculatedDesignerValue)}
               </p>
+              {formData.majoracao > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Base: {formatCurrency(baseDesignerValue)} + Majoracao: {formatCurrency(formData.majoracao)}
+                </p>
+              )}
             </div>
 
             {/* Projetista Responsavel */}
