@@ -42,8 +42,8 @@ export const useUserData = (userId?: string) => {
   
   // Estatísticas de projetos
   const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
-  const completedProjects = userProjects.filter(p => 
-    p.status === 'CONCLUIDO' || p.status === 'FINALIZADO'
+  const completedProjects = userProjects.filter(p =>
+    p.status === 'CONCLUIDO'
   ).length;
 
   // Estatísticas de tarefas

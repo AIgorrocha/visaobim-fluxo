@@ -65,6 +65,7 @@ import {
   useAdminFinancialOverview,
   useProjectPricing
 } from '@/hooks/useDesignerFinancials';
+import { useContractOverview } from '@/hooks/useContractFinancials';
 import { DesignerPayment } from '@/types';
 
 // Formatar valores em BRL
@@ -113,6 +114,13 @@ const AdminFinanceiro = () => {
     updatePricing,
     refetch: refetchPricing
   } = useProjectPricing();
+  const {
+    contracts,
+    publicContracts,
+    privateContracts,
+    summary: contractSummary,
+    loading: contractsLoading
+  } = useContractOverview();
   const { toast } = useToast();
 
   // Precificações não atribuídas (sem projetista)
@@ -121,7 +129,7 @@ const AdminFinanceiro = () => {
   }, [allPricing]);
 
   // Estados
-  const [activeTab, setActiveTab] = useState('pagamentos');
+  const [activeTab, setActiveTab] = useState('visao-geral');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<DesignerPayment | null>(null);
@@ -470,6 +478,7 @@ const AdminFinanceiro = () => {
       >
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="visao-geral">Visao Geral</TabsTrigger>
             <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
             <TabsTrigger value="projetistas">Por Projetista</TabsTrigger>
             <TabsTrigger value="nao-atribuidas" className="relative">
@@ -481,6 +490,281 @@ const AdminFinanceiro = () => {
               )}
             </TabsTrigger>
           </TabsList>
+
+          {/* Tab Visão Geral de Contratos */}
+          <TabsContent value="visao-geral">
+            {/* Cards de Resumo dos Contratos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Contratos</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(contractSummary.totalContractValue)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {contracts.length} contratos cadastrados
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Recebido</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(contractSummary.totalReceived)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {contractSummary.totalContractValue > 0
+                      ? `${((contractSummary.totalReceived / contractSummary.totalContractValue) * 100).toFixed(1)}% do total`
+                      : '0% do total'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-yellow-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+                  <Clock className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {formatCurrency(contractSummary.totalToReceive)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    de {contracts.filter(c => c.amount_to_receive > 0).length} contratos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Margem Bruta</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${contractSummary.estimatedMargin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                    {formatCurrency(contractSummary.estimatedMargin)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recebido - Pago Projetistas
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Cards de Projetistas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pago aos Projetistas</CardTitle>
+                  <Users className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">
+                    {formatCurrency(contractSummary.totalPaidDesigners)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    total de pagamentos realizados
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-orange-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">A Pagar Projetistas</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(contractSummary.totalToPayDesigners)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    baseado nas precificacoes
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Tabela de Contratos Públicos */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Badge variant="default">Publico</Badge>
+                  Contratos Publicos
+                </CardTitle>
+                <CardDescription>
+                  {publicContracts.length} contratos | Total: {formatCurrency(publicContracts.reduce((s, c) => s + c.contract_value, 0))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {contractsLoading ? (
+                  <p className="text-center py-4 text-muted-foreground">Carregando...</p>
+                ) : publicContracts.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato publico</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Projeto</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Valor Contrato</TableHead>
+                          <TableHead className="text-right">Recebido</TableHead>
+                          <TableHead className="text-right">A Receber</TableHead>
+                          <TableHead className="text-right">Pago Projetistas</TableHead>
+                          <TableHead className="text-right">Margem</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {publicContracts.map((contract) => (
+                          <TableRow key={contract.project_id}>
+                            <TableCell className="font-medium">{contract.project_name}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                contract.status === 'CONCLUIDO' ? 'default' :
+                                contract.status === 'EM_ANDAMENTO' ? 'secondary' :
+                                'outline'
+                              }>
+                                {contract.status.replace(/_/g, ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(contract.contract_value)}
+                            </TableCell>
+                            <TableCell className="text-right text-green-600">
+                              {formatCurrency(contract.total_received)}
+                            </TableCell>
+                            <TableCell className="text-right text-yellow-600">
+                              {formatCurrency(contract.amount_to_receive)}
+                            </TableCell>
+                            <TableCell className="text-right text-red-600">
+                              {formatCurrency(contract.total_paid_designers)}
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold ${contract.profit_margin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                              {formatCurrency(contract.profit_margin)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Linha de Total */}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell>TOTAL PUBLICO</TableCell>
+                          <TableCell></TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.contract_value, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_received, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-yellow-600">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-purple-600">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.profit_margin, 0))}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tabela de Contratos Privados */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Badge variant="secondary">Privado</Badge>
+                  Contratos Privados
+                </CardTitle>
+                <CardDescription>
+                  {privateContracts.length} contratos | Total: {formatCurrency(privateContracts.reduce((s, c) => s + c.contract_value, 0))}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {contractsLoading ? (
+                  <p className="text-center py-4 text-muted-foreground">Carregando...</p>
+                ) : privateContracts.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato privado</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Projeto</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Valor Contrato</TableHead>
+                          <TableHead className="text-right">Recebido</TableHead>
+                          <TableHead className="text-right">A Receber</TableHead>
+                          <TableHead className="text-right">Pago Projetistas</TableHead>
+                          <TableHead className="text-right">Margem</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {privateContracts.map((contract) => (
+                          <TableRow key={contract.project_id}>
+                            <TableCell className="font-medium">{contract.project_name}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                contract.status === 'CONCLUIDO' ? 'default' :
+                                contract.status === 'EM_ANDAMENTO' ? 'secondary' :
+                                'outline'
+                              }>
+                                {contract.status.replace(/_/g, ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(contract.contract_value)}
+                            </TableCell>
+                            <TableCell className="text-right text-green-600">
+                              {formatCurrency(contract.total_received)}
+                            </TableCell>
+                            <TableCell className="text-right text-yellow-600">
+                              {formatCurrency(contract.amount_to_receive)}
+                            </TableCell>
+                            <TableCell className="text-right text-red-600">
+                              {formatCurrency(contract.total_paid_designers)}
+                            </TableCell>
+                            <TableCell className={`text-right font-semibold ${contract.profit_margin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                              {formatCurrency(contract.profit_margin)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Linha de Total */}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell>TOTAL PRIVADO</TableCell>
+                          <TableCell></TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.contract_value, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_received, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-yellow-600">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-purple-600">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.profit_margin, 0))}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Tab Pagamentos */}
           <TabsContent value="pagamentos">

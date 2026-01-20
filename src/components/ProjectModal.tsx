@@ -185,7 +185,6 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
-                  <SelectItem value="FINALIZADO">Finalizado</SelectItem>
                   <SelectItem value="CONCLUIDO">Concluído</SelectItem>
                   <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
                   <SelectItem value="PARALISADO">Paralisado</SelectItem>
