@@ -31,6 +31,9 @@ const PROJECT_ALIASES: { [key: string]: string[] } = {
   // CELESC - Tubarão
   'CELESC_TUBARAO': ['CELESC-RS', 'CELESC RS', 'AGENCIA DE TUBARAO', 'TUBARAO', 'CELESC TUBARAO'],
 
+  // TALISMA - Escola Antonio Carneiro
+  'TALISMA-ESCOLA': ['TALISMA', 'ANTONIO CARNEIRO', 'EEEFM ANTONIO CARNEIRO', 'ESCOLA ANTONIO CARNEIRO'],
+
   // Adicione mais mapeamentos aqui conforme necessário
 };
 
