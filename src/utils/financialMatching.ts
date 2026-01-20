@@ -34,6 +34,9 @@ const PROJECT_ALIASES: { [key: string]: string[] } = {
   // TALISMA - Escola Antonio Carneiro
   'TALISMA-ESCOLA': ['TALISMA', 'ANTONIO CARNEIRO', 'EEEFM ANTONIO CARNEIRO', 'ESCOLA ANTONIO CARNEIRO'],
 
+  // CAMPUS CURITIBA = UNESPAR-ELE
+  'CAMPUS CURITIBA': ['UNESPAR-ELE', 'UNESPAR ELE', 'UNESPAR'],
+
   // Adicione mais mapeamentos aqui conforme necessário
 };
 
@@ -125,7 +128,7 @@ export function calculateSimilarity(str1: string, str2: string): number {
 
 /**
  * Verifica se dois nomes de projetos são equivalentes
- * Usa mapeamento de aliases e similaridade
+ * Usa mapeamento de aliases - SEM similaridade automática para evitar matches errados
  */
 export function areProjectsEquivalent(project1: string, project2: string): boolean {
   const n1 = normalizeString(project1);
@@ -134,23 +137,40 @@ export function areProjectsEquivalent(project1: string, project2: string): boole
   // Match exato
   if (n1 === n2) return true;
 
-  // Um contém o outro
-  if (n1.includes(n2) || n2.includes(n1)) return true;
+  // Um contém o outro - APENAS se ambos tiverem mais de 5 caracteres
+  // Evita matches errados com nomes curtos
+  if (n1.length > 5 && n2.length > 5) {
+    if (n1.includes(n2) || n2.includes(n1)) return true;
+  }
 
-  // Verificar aliases
+  // Verificar aliases - match mais rigoroso
   for (const [mainName, aliases] of Object.entries(PROJECT_ALIASES)) {
     const normalizedMain = normalizeString(mainName);
     const normalizedAliases = aliases.map(normalizeString);
+    const allVariations = [normalizedMain, ...normalizedAliases];
 
-    const match1 = n1 === normalizedMain || normalizedAliases.some(a => n1.includes(a) || a.includes(n1));
-    const match2 = n2 === normalizedMain || normalizedAliases.some(a => n2.includes(a) || a.includes(n2));
+    // Verificar se n1 é igual ou contém uma variação (com tamanho mínimo)
+    const match1 = allVariations.some(v => {
+      if (n1 === v) return true;
+      // Só aceita "contém" se a variação tiver mais de 5 caracteres
+      if (v.length > 5 && (n1.includes(v) || v.includes(n1))) return true;
+      return false;
+    });
+
+    // Verificar se n2 é igual ou contém uma variação (com tamanho mínimo)
+    const match2 = allVariations.some(v => {
+      if (n2 === v) return true;
+      // Só aceita "contém" se a variação tiver mais de 5 caracteres
+      if (v.length > 5 && (n2.includes(v) || v.includes(n2))) return true;
+      return false;
+    });
 
     if (match1 && match2) return true;
   }
 
-  // Similaridade por palavras-chave
-  const similarity = calculateSimilarity(project1, project2);
-  return similarity >= 0.5; // 50% de similaridade
+  // REMOVIDO: Similaridade por palavras-chave causava matches errados
+  // Se precisar de match por similaridade, adicione o projeto ao PROJECT_ALIASES
+  return false;
 }
 
 /**
