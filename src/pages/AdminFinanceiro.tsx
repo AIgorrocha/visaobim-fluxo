@@ -603,7 +603,7 @@ const AdminFinanceiro = () => {
 
               {/* Filtro por Status (Multi-seleção) */}
               <div className="flex flex-wrap gap-3 items-center">
-                <Label className="text-sm">Status:</Label>
+                <Label className="text-sm">Status: <span className="text-xs text-muted-foreground font-normal">(selecione vários)</span></Label>
                 {[
                   { value: 'all', label: 'Todos' },
                   { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
@@ -924,7 +924,7 @@ const AdminFinanceiro = () => {
                               <TableCell className="text-right text-purple-600">
                                 {formatCurrency(contract.total_expenses)}
                               </TableCell>
-                              <TableCell className={`text-right font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                              <TableCell className={`text-right font-bold whitespace-nowrap ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 {formatCurrency(saldo)}
                               </TableCell>
                             </TableRow>
@@ -1033,7 +1033,7 @@ const AdminFinanceiro = () => {
                               <TableCell className="text-right text-purple-600">
                                 {formatCurrency(contract.total_expenses)}
                               </TableCell>
-                              <TableCell className={`text-right font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                              <TableCell className={`text-right font-bold whitespace-nowrap ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 {formatCurrency(saldo)}
                               </TableCell>
                             </TableRow>
@@ -2071,7 +2071,7 @@ const AdminFinanceiro = () => {
                           <TableCell className="text-right text-green-600">{formatCurrency(c.total_received)}</TableCell>
                           <TableCell className="text-right text-red-600">{formatCurrency(c.total_paid_designers)}</TableCell>
                           <TableCell className="text-right text-purple-600">{formatCurrency(c.total_expenses)}</TableCell>
-                          <TableCell className={`text-right font-semibold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <TableCell className={`text-right font-semibold whitespace-nowrap ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                             {formatCurrency(saldo)}
                           </TableCell>
                         </TableRow>
