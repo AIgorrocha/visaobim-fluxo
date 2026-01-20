@@ -116,6 +116,7 @@ const AdminFinanceiro = () => {
 
   // Filtros
   const [filterDesigner, setFilterDesigner] = useState<string>('all');
+  const [filterProject, setFilterProject] = useState<string>('all');
   const [filterSector, setFilterSector] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
   const [customDateStart, setCustomDateStart] = useState<string>('');
@@ -163,6 +164,7 @@ const AdminFinanceiro = () => {
   const filteredPayments = useMemo(() => {
     return payments.filter(p => {
       if (filterDesigner !== 'all' && p.designer_id !== filterDesigner) return false;
+      if (filterProject !== 'all' && p.project_id !== filterProject) return false;
       if (filterSector !== 'all' && p.sector !== filterSector) return false;
 
       // Filtro de periodo
@@ -187,7 +189,7 @@ const AdminFinanceiro = () => {
       }
       return true;
     });
-  }, [payments, filterDesigner, filterSector, filterPeriod, customDateStart, customDateEnd, searchTerm]);
+  }, [payments, filterDesigner, filterProject, filterSector, filterPeriod, customDateStart, customDateEnd, searchTerm]);
 
   // Totais
   const totals = useMemo(() => {
@@ -487,6 +489,18 @@ const AdminFinanceiro = () => {
                       <SelectItem value="all">Todos</SelectItem>
                       {profiles.filter(p => p.id).map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterProject} onValueChange={setFilterProject}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Projeto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos projetos</SelectItem>
+                      {projects.filter(p => p.id).map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
