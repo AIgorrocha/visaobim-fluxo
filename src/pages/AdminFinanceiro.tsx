@@ -567,8 +567,8 @@ const AdminFinanceiro = () => {
               </Card>
             </div>
 
-            {/* Card de Pago aos Projetistas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Cards de Custos */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="border-l-4 border-l-red-500">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pago aos Projetistas</CardTitle>
@@ -580,6 +580,36 @@ const AdminFinanceiro = () => {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     total de pagamentos realizados
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Contratos</CardTitle>
+                  <DollarSign className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(contractSummary.totalExpenses_contratos || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    custos vinculados a projetos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-gray-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Despesas Empresa</CardTitle>
+                  <DollarSign className="h-4 w-4 text-gray-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-600">
+                    {formatCurrency(contractSummary.totalExpenses_empresa || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    custos gerais (GERAL)
                   </p>
                 </CardContent>
               </Card>
@@ -612,6 +642,7 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">Recebido</TableHead>
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
+                          <TableHead className="text-right">Despesas</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -639,6 +670,9 @@ const AdminFinanceiro = () => {
                             <TableCell className="text-right text-red-600">
                               {formatCurrency(contract.total_paid_designers)}
                             </TableCell>
+                            <TableCell className="text-right text-purple-600">
+                              {formatCurrency(contract.total_expenses)}
+                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
@@ -656,6 +690,9 @@ const AdminFinanceiro = () => {
                           </TableCell>
                           <TableCell className="text-right text-red-600">
                             {formatCurrency(publicContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-purple-600">
+                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_expenses, 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -692,6 +729,7 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">Recebido</TableHead>
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
+                          <TableHead className="text-right">Despesas</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -719,6 +757,9 @@ const AdminFinanceiro = () => {
                             <TableCell className="text-right text-red-600">
                               {formatCurrency(contract.total_paid_designers)}
                             </TableCell>
+                            <TableCell className="text-right text-purple-600">
+                              {formatCurrency(contract.total_expenses)}
+                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
@@ -736,6 +777,9 @@ const AdminFinanceiro = () => {
                           </TableCell>
                           <TableCell className="text-right text-red-600">
                             {formatCurrency(privateContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-purple-600">
+                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_expenses, 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -1102,20 +1146,20 @@ const AdminFinanceiro = () => {
               </Card>
             </div>
 
-            {/* Despesas por Categoria */}
+            {/* Despesas por Centro de Custo */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Despesas por Categoria</CardTitle>
+                <CardTitle>Despesas por Centro de Custo</CardTitle>
               </CardHeader>
               <CardContent>
-                {expensesSummary.byCategory.length === 0 ? (
+                {expensesSummary.byCostCenter.length === 0 ? (
                   <p className="text-muted-foreground">Nenhuma despesa cadastrada</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {expensesSummary.byCategory.slice(0, 6).map((cat) => (
-                      <div key={cat.category} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    {expensesSummary.byCostCenter.slice(0, 6).map((cat) => (
+                      <div key={cat.cost_center} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div>
-                          <p className="font-medium">{cat.category}</p>
+                          <p className="font-medium">{cat.cost_center}</p>
                           <p className="text-xs text-muted-foreground">{cat.count} registros</p>
                         </div>
                         <span className="font-bold">{formatCurrency(cat.total)}</span>
@@ -1140,36 +1184,35 @@ const AdminFinanceiro = () => {
                   ) : publicCompanyExpenses.length === 0 ? (
                     <p className="text-muted-foreground">Nenhuma despesa publica</p>
                   ) : (
-                    <div className="max-h-[400px] overflow-y-auto">
+                    <div className="max-h-[600px] overflow-y-auto border rounded-lg">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background">
                           <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Descricao</TableHead>
-                            <TableHead>Categoria</TableHead>
+                            <TableHead>Contrato</TableHead>
+                            <TableHead>Centro de Custo</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {publicCompanyExpenses.slice(0, 50).map((expense) => (
+                          {publicCompanyExpenses.map((expense) => (
                             <TableRow key={expense.id}>
-                              <TableCell>{formatDate(expense.expense_date)}</TableCell>
-                              <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
+                              <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
+                              <TableCell className="max-w-[250px]">{expense.description}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">{expense.category || 'Outros'}</Badge>
+                                <Badge variant="secondary">{expense.project_name || 'GERAL'}</Badge>
                               </TableCell>
-                              <TableCell className="text-right text-red-600 font-medium">
+                              <TableCell>
+                                <Badge variant="outline">{expense.cost_center || 'Outros'}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-red-600 font-medium whitespace-nowrap">
                                 {formatCurrency(expense.amount)}
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
-                      {publicCompanyExpenses.length > 50 && (
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          Mostrando 50 de {publicCompanyExpenses.length} despesas
-                        </p>
-                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1187,25 +1230,29 @@ const AdminFinanceiro = () => {
                   ) : privateCompanyExpenses.length === 0 ? (
                     <p className="text-muted-foreground">Nenhuma despesa privada</p>
                   ) : (
-                    <div className="max-h-[400px] overflow-y-auto">
+                    <div className="max-h-[600px] overflow-y-auto border rounded-lg">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background">
                           <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Descricao</TableHead>
-                            <TableHead>Categoria</TableHead>
+                            <TableHead>Contrato</TableHead>
+                            <TableHead>Centro de Custo</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {privateCompanyExpenses.map((expense) => (
                             <TableRow key={expense.id}>
-                              <TableCell>{formatDate(expense.expense_date)}</TableCell>
-                              <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
+                              <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
+                              <TableCell className="max-w-[250px]">{expense.description}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">{expense.category || 'Outros'}</Badge>
+                                <Badge variant="secondary">{expense.project_name || 'GERAL'}</Badge>
                               </TableCell>
-                              <TableCell className="text-right text-orange-600 font-medium">
+                              <TableCell>
+                                <Badge variant="outline">{expense.cost_center || 'Outros'}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-orange-600 font-medium whitespace-nowrap">
                                 {formatCurrency(expense.amount)}
                               </TableCell>
                             </TableRow>

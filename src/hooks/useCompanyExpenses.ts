@@ -6,11 +6,12 @@ export interface CompanyExpense {
   description: string;
   amount: number;
   expense_date: string;
-  category: string;
+  cost_center: string;
+  contract_name: string;
   sector: 'publico' | 'privado';
   project_id?: string;
   project_name?: string;
-  notes?: string;
+  responsible?: string;
   created_at: string;
 }
 
@@ -18,9 +19,12 @@ export interface ExpenseSummary {
   totalPublico: number;
   totalPrivado: number;
   totalGeral: number;
+  totalGeral_empresa: number; // Despesas sem projeto (GERAL)
+  totalGeral_contratos: number; // Despesas vinculadas a contratos
   countPublico: number;
   countPrivado: number;
-  byCategory: { category: string; total: number; count: number }[];
+  byCostCenter: { cost_center: string; total: number; count: number }[];
+  byContract: { contract_name: string; project_id: string | null; total: number; count: number }[];
   byMonth: { month: string; publico: number; privado: number }[];
 }
 
@@ -71,19 +75,41 @@ export function useCompanyExpenses() {
     const totalPublico = publicExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const totalPrivado = privateExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
-    // Agrupar por categoria
-    const categoryMap: { [key: string]: { total: number; count: number } } = {};
+    // Despesas da empresa (GERAL) vs vinculadas a contratos
+    const empresaExpenses = expenses.filter(e => e.contract_name === 'GERAL' || !e.project_id);
+    const contratoExpenses = expenses.filter(e => e.contract_name !== 'GERAL' && e.project_id);
+
+    const totalGeral_empresa = empresaExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const totalGeral_contratos = contratoExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // Agrupar por centro de custo
+    const costCenterMap: { [key: string]: { total: number; count: number } } = {};
     expenses.forEach(e => {
-      const cat = e.category || 'Outros';
-      if (!categoryMap[cat]) {
-        categoryMap[cat] = { total: 0, count: 0 };
+      const cc = e.cost_center || 'Outros';
+      if (!costCenterMap[cc]) {
+        costCenterMap[cc] = { total: 0, count: 0 };
       }
-      categoryMap[cat].total += Number(e.amount);
-      categoryMap[cat].count += 1;
+      costCenterMap[cc].total += Number(e.amount);
+      costCenterMap[cc].count += 1;
     });
 
-    const byCategory = Object.entries(categoryMap)
-      .map(([category, data]) => ({ category, ...data }))
+    const byCostCenter = Object.entries(costCenterMap)
+      .map(([cost_center, data]) => ({ cost_center, ...data }))
+      .sort((a, b) => b.total - a.total);
+
+    // Agrupar por contrato
+    const contractMap: { [key: string]: { project_id: string | null; total: number; count: number } } = {};
+    expenses.forEach(e => {
+      const contract = e.contract_name || 'GERAL';
+      if (!contractMap[contract]) {
+        contractMap[contract] = { project_id: e.project_id || null, total: 0, count: 0 };
+      }
+      contractMap[contract].total += Number(e.amount);
+      contractMap[contract].count += 1;
+    });
+
+    const byContract = Object.entries(contractMap)
+      .map(([contract_name, data]) => ({ contract_name, ...data }))
       .sort((a, b) => b.total - a.total);
 
     // Agrupar por mês
@@ -108,9 +134,12 @@ export function useCompanyExpenses() {
       totalPublico,
       totalPrivado,
       totalGeral: totalPublico + totalPrivado,
+      totalGeral_empresa,
+      totalGeral_contratos,
       countPublico: publicExpenses.length,
       countPrivado: privateExpenses.length,
-      byCategory,
+      byCostCenter,
+      byContract,
       byMonth
     };
   }, [expenses]);
@@ -126,6 +155,18 @@ export function useCompanyExpenses() {
     [expenses]
   );
 
+  // Obter despesas por projeto
+  const getExpensesByProject = useCallback((projectId: string) => {
+    return expenses.filter(e => e.project_id === projectId);
+  }, [expenses]);
+
+  // Obter total de despesas por projeto
+  const getTotalExpensesByProject = useCallback((projectId: string) => {
+    return expenses
+      .filter(e => e.project_id === projectId)
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  }, [expenses]);
+
   return {
     expenses,
     publicExpenses,
@@ -133,6 +174,8 @@ export function useCompanyExpenses() {
     summary,
     loading,
     error,
-    refetch: fetchExpenses
+    refetch: fetchExpenses,
+    getExpensesByProject,
+    getTotalExpensesByProject
   };
 }

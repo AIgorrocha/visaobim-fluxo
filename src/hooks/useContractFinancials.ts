@@ -12,6 +12,17 @@ export interface ContractIncome {
   created_at: string;
 }
 
+export interface CompanyExpenseData {
+  id: string;
+  project_id: string | null;
+  amount: number;
+  expense_date: string;
+  description: string;
+  cost_center: string;
+  contract_name: string;
+  sector: string;
+}
+
 export interface ContractOverview {
   project_id: string;
   project_name: string;
@@ -23,6 +34,7 @@ export interface ContractOverview {
   amount_to_receive: number;
   total_paid_designers: number;
   amount_to_pay_designers: number;
+  total_expenses: number; // Despesas do contrato
   profit_margin: number;
   contract_end?: string;
 }
@@ -33,6 +45,9 @@ export interface ContractSummary {
   totalToReceive: number;
   totalPaidDesigners: number;
   totalToPayDesigners: number;
+  totalExpenses: number;
+  totalExpenses_empresa: number; // Despesas GERAL
+  totalExpenses_contratos: number; // Despesas vinculadas
   estimatedMargin: number;
   contractsInProgress: number;
   contractsCompleted: number;
@@ -77,12 +92,44 @@ export function useContractIncome() {
 }
 
 /**
+ * Hook para buscar despesas da empresa
+ */
+export function useCompanyExpensesData() {
+  const [expenses, setExpenses] = useState<CompanyExpenseData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await (supabase
+        .from('company_expenses') as any)
+        .select('*')
+        .order('expense_date', { ascending: false });
+
+      if (error) throw error;
+      setExpenses(data || []);
+    } catch (err: any) {
+      console.error('Erro ao buscar despesas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  return { expenses, loading, refetch: fetchExpenses };
+}
+
+/**
  * Hook para visão geral dos contratos
- * Combina dados de projetos, receitas e pagamentos a projetistas
+ * Combina dados de projetos, receitas, pagamentos a projetistas e despesas
  */
 export function useContractOverview() {
   const { projects, payments, pricing } = useSupabaseData();
   const { income, loading: incomeLoading } = useContractIncome();
+  const { expenses, loading: expensesLoading } = useCompanyExpensesData();
 
   // Calcular visão geral de cada contrato
   const contractsOverview = useMemo<ContractOverview[]>(() => {
@@ -109,12 +156,16 @@ export function useContractOverview() {
         );
         const amountToPayDesigners = Math.max(0, totalDesignerValue - totalPaidDesigners);
 
+        // Total de despesas do contrato
+        const projectExpenses = expenses.filter(e => e.project_id === project.id);
+        const totalExpenses = projectExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
         // Valor do contrato e a receber
         const contractValue = Number(project.project_value) || 0;
         const amountToReceive = Math.max(0, contractValue - totalReceived);
 
-        // Margem estimada (recebido - pago aos projetistas)
-        const profitMargin = totalReceived - totalPaidDesigners;
+        // Margem estimada (recebido - pago aos projetistas - despesas do contrato)
+        const profitMargin = totalReceived - totalPaidDesigners - totalExpenses;
 
         return {
           project_id: project.id,
@@ -127,12 +178,13 @@ export function useContractOverview() {
           amount_to_receive: amountToReceive,
           total_paid_designers: totalPaidDesigners,
           amount_to_pay_designers: amountToPayDesigners,
+          total_expenses: totalExpenses,
           profit_margin: profitMargin,
           contract_end: project.contract_end
         };
       })
       .sort((a, b) => b.contract_value - a.contract_value); // Ordenar por valor
-  }, [projects, income, payments, pricing]);
+  }, [projects, income, payments, pricing, expenses]);
 
   // Calcular resumo geral
   const summary = useMemo<ContractSummary>(() => {
@@ -146,17 +198,29 @@ export function useContractOverview() {
     const totalPaidDesigners = contractsOverview.reduce((sum, c) => sum + c.total_paid_designers, 0);
     const totalToPayDesigners = contractsOverview.reduce((sum, c) => sum + c.amount_to_pay_designers, 0);
 
+    // Despesas vinculadas a contratos
+    const totalExpenses_contratos = contractsOverview.reduce((sum, c) => sum + c.total_expenses, 0);
+
+    // Despesas da empresa (GERAL - sem projeto vinculado)
+    const empresaExpenses = expenses.filter(e => !e.project_id || e.contract_name === 'GERAL');
+    const totalExpenses_empresa = empresaExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const totalExpenses = totalExpenses_contratos + totalExpenses_empresa;
+
     return {
       totalContractValue,
       totalReceived,
       totalToReceive,
       totalPaidDesigners,
       totalToPayDesigners,
-      estimatedMargin: totalReceived - totalPaidDesigners,
+      totalExpenses,
+      totalExpenses_empresa,
+      totalExpenses_contratos,
+      estimatedMargin: totalReceived - totalPaidDesigners - totalExpenses_contratos,
       contractsInProgress: activeContracts.length,
       contractsCompleted: contractsOverview.filter(c => c.status === 'CONCLUIDO').length
     };
-  }, [contractsOverview]);
+  }, [contractsOverview, expenses]);
 
   // Separar por tipo
   const publicContracts = useMemo(() =>
@@ -174,6 +238,7 @@ export function useContractOverview() {
     publicContracts,
     privateContracts,
     summary,
-    loading: incomeLoading
+    expenses,
+    loading: incomeLoading || expensesLoading
   };
 }
