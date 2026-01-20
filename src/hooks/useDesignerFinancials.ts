@@ -264,6 +264,71 @@ export function useDesignerPayments(designerId?: string) {
     }
   }, [designerId]);
 
+  // Função para sincronizar amount_paid na precificação após operações de pagamento
+  const syncAmountPaidWithPricing = async (projectId: string, designerId: string) => {
+    try {
+      // Calcular total pago DIRETAMENTE para este projetista neste projeto
+      const { data: directPayments, error: directError } = await (supabase
+        .from('designer_payments') as any)
+        .select('amount')
+        .eq('project_id', projectId)
+        .eq('designer_id', designerId)
+        .eq('status', 'pago');
+
+      if (directError) throw directError;
+
+      // Calcular pagamentos a estagiários que tem este projetista como supervisor
+      // Isso permite que pagamentos ao Brenilson contem como custo do Bessa
+      const { data: supervisedPayments, error: supervisedError } = await (supabase
+        .from('designer_payments') as any)
+        .select('amount')
+        .eq('project_id', projectId)
+        .eq('supervisor_id', designerId)
+        .eq('status', 'pago');
+
+      if (supervisedError) throw supervisedError;
+
+      const directTotal = (directPayments || []).reduce(
+        (sum: number, p: { amount: string | number }) => sum + Number(p.amount || 0),
+        0
+      );
+
+      const supervisedTotal = (supervisedPayments || []).reduce(
+        (sum: number, p: { amount: string | number }) => sum + Number(p.amount || 0),
+        0
+      );
+
+      const totalPaid = directTotal + supervisedTotal;
+
+      // Buscar precificações deste projetista neste projeto
+      const { data: pricingData, error: pricingError } = await (supabase
+        .from('project_pricing') as any)
+        .select('id, designer_value')
+        .eq('project_id', projectId)
+        .eq('designer_id', designerId);
+
+      if (pricingError) throw pricingError;
+
+      // Atualizar amount_paid e status em cada precificação
+      for (const pricing of (pricingData || [])) {
+        const designerValue = Number(pricing.designer_value || 0);
+        const newStatus = totalPaid >= designerValue ? 'pago' : totalPaid > 0 ? 'parcial' : 'pendente';
+
+        await (supabase
+          .from('project_pricing') as any)
+          .update({
+            amount_paid: totalPaid,
+            status: newStatus
+          })
+          .eq('id', pricing.id);
+      }
+
+      console.log(`Sincronizado: projeto=${projectId}, designer=${designerId}, total_pago=${totalPaid}`);
+    } catch (err: any) {
+      console.error('Erro ao sincronizar amount_paid:', err.message);
+    }
+  };
+
   const createPayment = async (data: Omit<DesignerPayment, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data: newPayment, error } = await (supabase
@@ -275,6 +340,19 @@ export function useDesignerPayments(designerId?: string) {
       if (error) throw error;
 
       setPayments(prev => [newPayment as DesignerPayment, ...prev]);
+
+      // Sincronizar amount_paid na precificação
+      if (data.project_id && data.status === 'pago') {
+        // Sincronizar o projetista direto
+        if (data.designer_id) {
+          await syncAmountPaidWithPricing(data.project_id, data.designer_id);
+        }
+        // Se tem supervisor, também sincronizar o supervisor (pagamento de estagiário conta como custo do supervisor)
+        if ((data as any).supervisor_id) {
+          await syncAmountPaidWithPricing(data.project_id, (data as any).supervisor_id);
+        }
+      }
+
       return newPayment;
     } catch (err: any) {
       console.error('Erro ao criar pagamento:', err.message);
@@ -284,6 +362,9 @@ export function useDesignerPayments(designerId?: string) {
 
   const updatePayment = async (id: string, updates: Partial<DesignerPayment>) => {
     try {
+      // Buscar dados atuais do pagamento para saber project_id e designer_id
+      const currentPayment = payments.find(p => p.id === id);
+
       // Remover campos virtuais
       const { designer_name, ...updateData } = updates as any;
 
@@ -297,6 +378,23 @@ export function useDesignerPayments(designerId?: string) {
       if (error) throw error;
 
       setPayments(prev => prev.map(p => p.id === id ? data as DesignerPayment : p));
+
+      // Sincronizar amount_paid na precificação
+      const projectId = updates.project_id || currentPayment?.project_id;
+      const designerId = updates.designer_id || currentPayment?.designer_id;
+      const supervisorId = (updates as any).supervisor_id || (currentPayment as any)?.supervisor_id;
+
+      if (projectId) {
+        // Sincronizar o projetista direto
+        if (designerId) {
+          await syncAmountPaidWithPricing(projectId, designerId);
+        }
+        // Se tem supervisor, também sincronizar o supervisor
+        if (supervisorId) {
+          await syncAmountPaidWithPricing(projectId, supervisorId);
+        }
+      }
+
       return data;
     } catch (err: any) {
       console.error('Erro ao atualizar pagamento:', err.message);
@@ -306,6 +404,9 @@ export function useDesignerPayments(designerId?: string) {
 
   const deletePayment = async (id: string) => {
     try {
+      // Buscar dados do pagamento antes de deletar para sincronizar depois
+      const paymentToDelete = payments.find(p => p.id === id);
+
       const { error } = await (supabase
         .from('designer_payments') as any)
         .delete()
@@ -314,6 +415,18 @@ export function useDesignerPayments(designerId?: string) {
       if (error) throw error;
 
       setPayments(prev => prev.filter(p => p.id !== id));
+
+      // Sincronizar amount_paid na precificação após deletar
+      if (paymentToDelete?.project_id) {
+        // Sincronizar o projetista direto
+        if (paymentToDelete.designer_id) {
+          await syncAmountPaidWithPricing(paymentToDelete.project_id, paymentToDelete.designer_id);
+        }
+        // Se tinha supervisor, também sincronizar o supervisor
+        if ((paymentToDelete as any).supervisor_id) {
+          await syncAmountPaidWithPricing(paymentToDelete.project_id, (paymentToDelete as any).supervisor_id);
+        }
+      }
     } catch (err: any) {
       console.error('Erro ao deletar pagamento:', err.message);
       throw err;

@@ -209,8 +209,11 @@ export interface DesignerPayment {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  // ID do supervisor - quando preenchido, este pagamento de estagiário é somado ao custo do supervisor
+  supervisor_id?: string;
   // Campos virtuais para joins
   designer_name?: string;
+  supervisor_name?: string;
 }
 
 // Resumo financeiro do projetista (view)
