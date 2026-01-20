@@ -93,7 +93,7 @@ interface PaymentFormData {
   payment_date: string;
   description: string;
   sector: 'privado' | 'publico';
-  status: 'pendente' | 'pago' | 'cancelado';
+  status: 'pago' | 'cancelado';
 }
 
 const AdminFinanceiro = () => {
@@ -1774,14 +1774,13 @@ const AdminFinanceiro = () => {
                 <Label>Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value: 'pendente' | 'pago' | 'cancelado') => setFormData({ ...formData, status: value })}
+                  onValueChange={(value: 'pago' | 'cancelado') => setFormData({ ...formData, status: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pago">Pago</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
                     <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
