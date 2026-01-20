@@ -537,7 +537,6 @@ const PrecificacaoProjetos = () => {
                         <TableHead className="text-right">Valor Total</TableHead>
                         <TableHead className="text-right">%</TableHead>
                         <TableHead className="text-right">Valor Projetista</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Acoes</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -560,18 +559,6 @@ const PrecificacaoProjetos = () => {
                             </TableCell>
                             <TableCell className="text-right font-semibold text-green-600">
                               {formatCurrency(item.designer_value)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  item.status === 'pago' ? 'default' :
-                                  item.status === 'parcial' ? 'secondary' : 'outline'
-                                }
-                                className={item.status === 'pago' ? 'bg-green-500' : ''}
-                              >
-                                {item.status === 'pago' ? 'Pago' :
-                                 item.status === 'parcial' ? 'Parcial' : 'Pendente'}
-                              </Badge>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
