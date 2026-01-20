@@ -411,17 +411,47 @@ export function useDesignerFinancialSummary(designerId: string) {
       });
 
       // Agora calcular o pendente por projeto
-      const receivablesList: DesignerReceivable[] = Object.values(pricingByProject)
+      // Primeiro, agrupar precificações por projeto incluindo amount_paid do banco
+      const pricingByProjectWithAmountPaid: { [projectId: string]: {
+        project_id: string;
+        project_name: string;
+        disciplines: Array<{ name: string; total_value: number; designer_value: number; percentage: number; amount_paid: number }>;
+        total_designer_value: number;
+        total_amount_paid: number;
+      }} = {};
+
+      (pricingData || []).forEach((p: any) => {
+        const projectId = p.project_id;
+        const projectName = p.projects?.name || '';
+
+        if (!pricingByProjectWithAmountPaid[projectId]) {
+          pricingByProjectWithAmountPaid[projectId] = {
+            project_id: projectId,
+            project_name: projectName,
+            disciplines: [],
+            total_designer_value: 0,
+            total_amount_paid: 0
+          };
+        }
+
+        pricingByProjectWithAmountPaid[projectId].disciplines.push({
+          name: p.discipline_name,
+          total_value: Number(p.total_value),
+          designer_value: Number(p.designer_value || 0),
+          percentage: Number(p.designer_percentage),
+          amount_paid: Number(p.amount_paid || 0)
+        });
+        pricingByProjectWithAmountPaid[projectId].total_designer_value += Number(p.designer_value || 0);
+        pricingByProjectWithAmountPaid[projectId].total_amount_paid += Number(p.amount_paid || 0);
+      });
+
+      const receivablesList: DesignerReceivable[] = Object.values(pricingByProjectWithAmountPaid)
         .map((projectData) => {
-          // Total pago para este projetista neste projeto (ignora disciplina)
-          const amountPaidFromPayments = getTotalPaidByDesignerProject(
-            payments || [],
-            designerId,
-            projectData.project_name
-          );
+          // Usar amount_paid do banco em vez de calcular dinamicamente
+          const amountPaidFromBank = projectData.total_amount_paid;
 
           const totalDesignerValue = projectData.total_designer_value;
-          const amountPending = Math.max(0, totalDesignerValue - amountPaidFromPayments);
+          const amountPending = Math.max(0, totalDesignerValue - amountPaidFromBank);
 
           // Listar todas as disciplinas do projeto
           const disciplineNames = projectData.disciplines.map(d => d.name).join(', ');
@@ -435,9 +465,9 @@ export function useDesignerFinancialSummary(designerId: string) {
             total_value: projectData.disciplines.reduce((sum, d) => sum + d.total_value, 0),
             designer_percentage: projectData.disciplines[0]?.percentage || 0,
             designer_value: totalDesignerValue,
-            amount_paid: amountPaidFromPayments,
+            amount_paid: amountPaidFromBank,
             amount_pending: amountPending,
-            status: amountPending === 0 ? 'pago' : amountPaidFromPayments > 0 ? 'parcial' : 'pendente'
+            status: amountPending === 0 ? 'pago' : amountPaidFromBank > 0 ? 'parcial' : 'pendente'
           };
         })
         .filter((p: DesignerReceivable) => p.amount_pending > 0); // Só mostrar se ainda tem a receber
@@ -585,11 +615,12 @@ export function useAdminFinancialOverview() {
       });
 
       // Adicionar valores a receber AGRUPADOS POR PROJETO
-      // Primeiro, agrupar precificações por (designer_id, project_id)
+      // Usar amount_paid do banco em vez de calcular dinamicamente
       const pricingByDesignerProject: { [key: string]: {
         designer_id: string;
         project_name: string;
         total_designer_value: number;
+        total_amount_paid: number;
       }} = {};
 
       pricing?.forEach((p: any) => {
@@ -602,23 +633,19 @@ export function useAdminFinancialOverview() {
           pricingByDesignerProject[key] = {
             designer_id: designerId,
             project_name: projectName,
-            total_designer_value: 0
+            total_designer_value: 0,
+            total_amount_paid: 0
           };
         }
         pricingByDesignerProject[key].total_designer_value += Number(p.designer_value || 0);
+        pricingByDesignerProject[key].total_amount_paid += Number(p.amount_paid || 0);
       });
 
-      // Calcular pendente por projeto (não por disciplina)
+      // Calcular pendente por projeto usando amount_paid do banco
       Object.values(pricingByDesignerProject).forEach((projectData) => {
         const id = projectData.designer_id;
         if (id && designerMap[id]) {
-          const amountPaid = getTotalPaidByDesignerProject(
-            payments || [],
-            id,
-            projectData.project_name
-          );
-
-          const pending = Math.max(0, projectData.total_designer_value - amountPaid);
+          const pending = Math.max(0, projectData.total_designer_value - projectData.total_amount_paid);
           designerMap[id].total_pending += pending;
         }
       });
