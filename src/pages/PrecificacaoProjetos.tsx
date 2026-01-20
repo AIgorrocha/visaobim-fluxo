@@ -86,6 +86,7 @@ const PrecificacaoProjetos = () => {
   // Estados
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'privado' | 'publico'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingPricing, setEditingPricing] = useState<ProjectPricing | null>(null);
@@ -121,6 +122,11 @@ const PrecificacaoProjetos = () => {
   const filteredProjects = useMemo(() => {
     let filtered = projects;
 
+    // Filtrar por tipo (privado/publico)
+    if (filterType !== 'all') {
+      filtered = filtered.filter(p => p.type === filterType);
+    }
+
     // Filtrar por busca
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -136,7 +142,7 @@ const PrecificacaoProjetos = () => {
       const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA; // Mais recente primeiro
     });
-  }, [projects, searchTerm]);
+  }, [projects, searchTerm, filterType]);
 
   // Precificacoes do projeto selecionado
   const projectPricing = useMemo(() => {
@@ -431,15 +437,30 @@ const PrecificacaoProjetos = () => {
               <CardDescription>Selecione um projeto para precificar</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Busca */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar projeto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+              {/* Filtros */}
+              <div className="space-y-2 mb-4">
+                {/* Busca */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar projeto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Filtro Tipo */}
+                <Select value={filterType} onValueChange={(value: 'all' | 'privado' | 'publico') => setFilterType(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de projeto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="publico">Publico</SelectItem>
+                    <SelectItem value="privado">Privado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Lista */}
