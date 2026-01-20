@@ -532,21 +532,6 @@ const AdminFinanceiro = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendente</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {formatCurrency(totals.totalPending)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {filteredPayments.filter(p => p.status === 'pendente').length} pendentes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Projetistas Ativos</CardTitle>
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
