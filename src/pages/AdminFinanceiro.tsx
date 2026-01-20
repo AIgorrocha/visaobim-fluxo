@@ -12,7 +12,9 @@ import {
   X,
   Filter,
   Download,
-  Search
+  Search,
+  AlertTriangle,
+  UserPlus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +62,8 @@ import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import {
   useDisciplines,
   useDesignerPayments,
-  useAdminFinancialOverview
+  useAdminFinancialOverview,
+  useProjectPricing
 } from '@/hooks/useDesignerFinancials';
 import { DesignerPayment } from '@/types';
 
@@ -105,7 +108,17 @@ const AdminFinanceiro = () => {
     summaryByDesigner,
     loading: overviewLoading
   } = useAdminFinancialOverview();
+  const {
+    pricing: allPricing,
+    updatePricing,
+    refetch: refetchPricing
+  } = useProjectPricing();
   const { toast } = useToast();
+
+  // Precificações não atribuídas (sem projetista)
+  const unassignedPricing = useMemo(() => {
+    return allPricing.filter(p => !p.designer_id);
+  }, [allPricing]);
 
   // Estados
   const [activeTab, setActiveTab] = useState('pagamentos');
@@ -459,6 +472,14 @@ const AdminFinanceiro = () => {
           <TabsList>
             <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
             <TabsTrigger value="projetistas">Por Projetista</TabsTrigger>
+            <TabsTrigger value="nao-atribuidas" className="relative">
+              Nao Atribuidas
+              {unassignedPricing.length > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {unassignedPricing.length}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab Pagamentos */}
@@ -678,6 +699,85 @@ const AdminFinanceiro = () => {
                               ? formatDate(item.last_payment_date)
                               : '-'
                             }
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Não Atribuídas */}
+          <TabsContent value="nao-atribuidas">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  <CardTitle>Precificacoes Nao Atribuidas</CardTitle>
+                </div>
+                <CardDescription>
+                  Disciplinas precificadas sem projetista designado. Atribua um projetista para que apareca no financeiro dele.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {unassignedPricing.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <UserPlus className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <p className="text-lg font-medium text-green-600">Tudo certo!</p>
+                    <p>Todas as precificacoes tem projetista atribuido.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Projeto</TableHead>
+                        <TableHead>Disciplina</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-right">Valor Projetista</TableHead>
+                        <TableHead>Atribuir Projetista</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {unassignedPricing.map((item) => (
+                        <TableRow key={item.id} className="bg-yellow-50">
+                          <TableCell className="font-medium">{item.project_name || 'Sem projeto'}</TableCell>
+                          <TableCell>{item.discipline_name}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(Number(item.total_value))}</TableCell>
+                          <TableCell className="text-right font-semibold text-blue-600">
+                            {formatCurrency(Number(item.designer_value))}
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              onValueChange={async (designerId) => {
+                                try {
+                                  await updatePricing(item.id, { designer_id: designerId });
+                                  await refetchPricing();
+                                  toast({
+                                    title: 'Projetista atribuido!',
+                                    description: `Disciplina ${item.discipline_name} atribuida com sucesso.`,
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: 'Erro',
+                                    description: 'Nao foi possivel atribuir o projetista.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Selecionar..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {profiles.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.full_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                         </TableRow>
                       ))}
