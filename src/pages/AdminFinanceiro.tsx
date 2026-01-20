@@ -57,6 +57,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import {
@@ -151,7 +152,7 @@ const AdminFinanceiro = () => {
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterSector, setFilterSector] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
-  const [filterContractStatus, setFilterContractStatus] = useState<string>('EM_ANDAMENTO'); // Filtro de status para Visão Geral
+  const [filterContractStatus, setFilterContractStatus] = useState<string[]>(['EM_ANDAMENTO']); // Filtro de status para Visão Geral (multi-seleção)
   const [filterContractType, setFilterContractType] = useState<string>('all'); // Filtro por tipo (publico/privado)
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]); // Multi-seleção de contratos
   const [cardDetailType, setCardDetailType] = useState<string | null>(null); // Tipo de card a detalhar
@@ -431,9 +432,9 @@ const AdminFinanceiro = () => {
   const filteredContracts = useMemo(() => {
     let filtered = allContracts;
 
-    // Filtro por status
-    if (filterContractStatus !== 'all') {
-      filtered = filtered.filter(c => c.status === filterContractStatus);
+    // Filtro por status (multi-seleção)
+    if (filterContractStatus.length > 0 && !filterContractStatus.includes('all')) {
+      filtered = filtered.filter(c => filterContractStatus.includes(c.status));
     }
 
     // Filtro por tipo (público/privado)
@@ -614,30 +615,59 @@ const AdminFinanceiro = () => {
                 </SelectContent>
               </Select>
 
-              {/* Filtro por Status */}
-              <Select value={filterContractStatus} onValueChange={setFilterContractStatus}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
-                  <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
-                  <SelectItem value="AGUARDANDO_APROVACAO">Aguardando Aprovacao</SelectItem>
-                  <SelectItem value="PARALISADO">Paralisado</SelectItem>
-                  <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
-                  <SelectItem value="CONCLUIDO">Concluido</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Filtro por Status (Multi-seleção) */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <Label className="text-sm">Status:</Label>
+                {[
+                  { value: 'all', label: 'Todos' },
+                  { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
+                  { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
+                  { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
+                  { value: 'PARALISADO', label: 'Paralisado' },
+                  { value: 'EM_ESPERA', label: 'Em Espera' },
+                  { value: 'CONCLUIDO', label: 'Concluido' }
+                ].map(status => (
+                  <div key={status.value} className="flex items-center space-x-1">
+                    <Checkbox
+                      id={`status-${status.value}`}
+                      checked={status.value === 'all'
+                        ? filterContractStatus.includes('all')
+                        : filterContractStatus.includes(status.value)}
+                      onCheckedChange={(checked) => {
+                        if (status.value === 'all') {
+                          setFilterContractStatus(checked ? ['all'] : []);
+                        } else {
+                          if (checked) {
+                            // Remove 'all' se estava selecionado e adiciona o novo status
+                            setFilterContractStatus(prev =>
+                              [...prev.filter(s => s !== 'all'), status.value]
+                            );
+                          } else {
+                            setFilterContractStatus(prev =>
+                              prev.filter(s => s !== status.value)
+                            );
+                          }
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`status-${status.value}`}
+                      className="text-xs cursor-pointer select-none"
+                    >
+                      {status.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
 
               {/* Limpar Filtros */}
-              {(filterContractType !== 'all' || filterContractStatus !== 'EM_ANDAMENTO' || selectedContracts.length > 0) && (
+              {(filterContractType !== 'all' || (filterContractStatus.length !== 1 || filterContractStatus[0] !== 'EM_ANDAMENTO') || selectedContracts.length > 0) && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     setFilterContractType('all');
-                    setFilterContractStatus('EM_ANDAMENTO');
+                    setFilterContractStatus(['EM_ANDAMENTO']);
                     setSelectedContracts([]);
                   }}
                 >
@@ -658,7 +688,7 @@ const AdminFinanceiro = () => {
               </Label>
               <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto p-2 bg-muted/20 rounded-lg">
                 {allContracts
-                  .filter(c => filterContractStatus === 'all' || c.status === filterContractStatus)
+                  .filter(c => filterContractStatus.includes('all') || filterContractStatus.length === 0 || filterContractStatus.includes(c.status))
                   .filter(c => filterContractType === 'all' || c.type === filterContractType)
                   .map(contract => (
                   <Badge
@@ -879,7 +909,12 @@ const AdminFinanceiro = () => {
                                 setIsContractDetailOpen(true);
                               }}
                             >
-                              <TableCell className="font-medium">{contract.project_name}</TableCell>
+                              <TableCell className="font-medium">
+                                <div>{contract.project_name}</div>
+                                {contract.client && (
+                                  <div className="text-xs text-muted-foreground">{contract.client}</div>
+                                )}
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={
                                   contract.status === 'CONCLUIDO' ? 'default' :
@@ -983,7 +1018,12 @@ const AdminFinanceiro = () => {
                                 setIsContractDetailOpen(true);
                               }}
                             >
-                              <TableCell className="font-medium">{contract.project_name}</TableCell>
+                              <TableCell className="font-medium">
+                                <div>{contract.project_name}</div>
+                                {contract.client && (
+                                  <div className="text-xs text-muted-foreground">{contract.client}</div>
+                                )}
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={
                                   contract.status === 'CONCLUIDO' ? 'default' :
