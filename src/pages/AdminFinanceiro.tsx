@@ -148,6 +148,11 @@ const AdminFinanceiro = () => {
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterSector, setFilterSector] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
+  const [filterContractStatus, setFilterContractStatus] = useState<string>('EM_ANDAMENTO'); // Filtro de status para Visão Geral
+  // Filtros de Despesas
+  const [filterExpenseCostCenter, setFilterExpenseCostCenter] = useState<string>('all');
+  const [filterExpenseContract, setFilterExpenseContract] = useState<string>('all');
+  const [filterExpenseSector, setFilterExpenseSector] = useState<string>('all');
   const [customDateStart, setCustomDateStart] = useState<string>('');
   const [customDateEnd, setCustomDateEnd] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -387,6 +392,58 @@ const AdminFinanceiro = () => {
     }
   };
 
+  // Filtrar despesas
+  const filteredExpenses = useMemo(() => {
+    let filtered = companyExpenses;
+    if (filterExpenseCostCenter !== 'all') {
+      filtered = filtered.filter(e => e.cost_center === filterExpenseCostCenter);
+    }
+    if (filterExpenseContract !== 'all') {
+      filtered = filtered.filter(e => e.contract_name === filterExpenseContract);
+    }
+    if (filterExpenseSector !== 'all') {
+      filtered = filtered.filter(e => e.sector === filterExpenseSector);
+    }
+    return filtered;
+  }, [companyExpenses, filterExpenseCostCenter, filterExpenseContract, filterExpenseSector]);
+
+  const filteredPublicExpenses = useMemo(() => filteredExpenses.filter(e => e.sector === 'publico'), [filteredExpenses]);
+  const filteredPrivateExpenses = useMemo(() => filteredExpenses.filter(e => e.sector === 'privado'), [filteredExpenses]);
+
+  const filteredExpensesSummary = useMemo(() => ({
+    totalPublico: filteredPublicExpenses.reduce((s, e) => s + Number(e.amount), 0),
+    totalPrivado: filteredPrivateExpenses.reduce((s, e) => s + Number(e.amount), 0),
+    totalGeral: filteredExpenses.reduce((s, e) => s + Number(e.amount), 0),
+    countPublico: filteredPublicExpenses.length,
+    countPrivado: filteredPrivateExpenses.length
+  }), [filteredExpenses, filteredPublicExpenses, filteredPrivateExpenses]);
+
+  // Filtrar contratos por status para Visão Geral
+  const filteredPublicContracts = useMemo(() => {
+    if (filterContractStatus === 'all') return publicContracts;
+    return publicContracts.filter(c => c.status === filterContractStatus);
+  }, [publicContracts, filterContractStatus]);
+
+  const filteredPrivateContracts = useMemo(() => {
+    if (filterContractStatus === 'all') return privateContracts;
+    return privateContracts.filter(c => c.status === filterContractStatus);
+  }, [privateContracts, filterContractStatus]);
+
+  // Resumo filtrado
+  const filteredContractSummary = useMemo(() => {
+    const allFiltered = [...filteredPublicContracts, ...filteredPrivateContracts];
+    return {
+      totalContractValue: allFiltered.reduce((s, c) => s + c.contract_value, 0),
+      totalReceived: allFiltered.reduce((s, c) => s + c.total_received, 0),
+      totalToReceive: allFiltered.reduce((s, c) => s + c.amount_to_receive, 0),
+      totalPaidDesigners: allFiltered.reduce((s, c) => s + c.total_paid_designers, 0),
+      totalToPayDesigners: allFiltered.reduce((s, c) => s + c.amount_to_pay_designers, 0),
+      totalExpenses_contratos: allFiltered.reduce((s, c) => s + c.total_expenses, 0),
+      totalExpenses_empresa: contractSummary.totalExpenses_empresa || 0,
+      count: allFiltered.length
+    };
+  }, [filteredPublicContracts, filteredPrivateContracts, contractSummary]);
+
   const loading = paymentsLoading || overviewLoading;
 
   return (
@@ -502,8 +559,30 @@ const AdminFinanceiro = () => {
 
           {/* Tab Visão Geral de Contratos */}
           <TabsContent value="visao-geral">
-            {/* Cards de Resumo dos Contratos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Filtro por Status */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+              <Label className="font-semibold">Filtrar por Status:</Label>
+              <Select value={filterContractStatus} onValueChange={setFilterContractStatus}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="EM_ANDAMENTO">Em Andamento</SelectItem>
+                  <SelectItem value="AGUARDANDO_PAGAMENTO">Aguardando Pagamento</SelectItem>
+                  <SelectItem value="AGUARDANDO_APROVACAO">Aguardando Aprovacao</SelectItem>
+                  <SelectItem value="PARALISADO">Paralisado</SelectItem>
+                  <SelectItem value="EM_ESPERA">Em Espera</SelectItem>
+                  <SelectItem value="CONCLUIDO">Concluido</SelectItem>
+                </SelectContent>
+              </Select>
+              <Badge variant="outline" className="ml-auto">
+                {filteredContractSummary.count} contratos
+              </Badge>
+            </div>
+
+            {/* Cards de Resumo dos Contratos - Usando dados filtrados */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               <Card className="border-l-4 border-l-blue-500">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Contratos</CardTitle>
@@ -511,10 +590,10 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(contractSummary.totalContractValue)}
+                    {formatCurrency(filteredContractSummary.totalContractValue)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {contracts.length} contratos cadastrados
+                    {filteredContractSummary.count} contratos
                   </p>
                 </CardContent>
               </Card>
@@ -526,11 +605,11 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(contractSummary.totalReceived)}
+                    {formatCurrency(filteredContractSummary.totalReceived)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {contractSummary.totalContractValue > 0
-                      ? `${((contractSummary.totalReceived / contractSummary.totalContractValue) * 100).toFixed(1)}% do total`
+                    {filteredContractSummary.totalContractValue > 0
+                      ? `${((filteredContractSummary.totalReceived / filteredContractSummary.totalContractValue) * 100).toFixed(1)}% do total`
                       : '0% do total'}
                   </p>
                 </CardContent>
@@ -543,10 +622,10 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">
-                    {formatCurrency(contractSummary.totalToReceive)}
+                    {formatCurrency(filteredContractSummary.totalToReceive)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    de {contracts.filter(c => c.amount_to_receive > 0).length} contratos
+                    de contratos filtrados
                   </p>
                 </CardContent>
               </Card>
@@ -558,10 +637,28 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(contractSummary.totalToPayDesigners)}
+                    {formatCurrency(filteredContractSummary.totalToPayDesigners)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     baseado nas precificacoes
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-emerald-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Saldo (Lucro)</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${
+                    (filteredContractSummary.totalReceived - filteredContractSummary.totalPaidDesigners - filteredContractSummary.totalExpenses_contratos) >= 0
+                      ? 'text-emerald-600' : 'text-red-600'
+                  }`}>
+                    {formatCurrency(filteredContractSummary.totalReceived - filteredContractSummary.totalPaidDesigners - filteredContractSummary.totalExpenses_contratos)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recebido - Pago - Despesas
                   </p>
                 </CardContent>
               </Card>
@@ -576,7 +673,7 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(contractSummary.totalPaidDesigners)}
+                    {formatCurrency(filteredContractSummary.totalPaidDesigners)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     total de pagamentos realizados
@@ -591,7 +688,7 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(contractSummary.totalExpenses_contratos || 0)}
+                    {formatCurrency(filteredContractSummary.totalExpenses_contratos || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     custos vinculados a projetos
@@ -606,7 +703,7 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-600">
-                    {formatCurrency(contractSummary.totalExpenses_empresa || 0)}
+                    {formatCurrency(filteredContractSummary.totalExpenses_empresa || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     custos gerais (GERAL)
@@ -623,14 +720,14 @@ const AdminFinanceiro = () => {
                   Contratos Publicos
                 </CardTitle>
                 <CardDescription>
-                  {publicContracts.length} contratos | Total: {formatCurrency(publicContracts.reduce((s, c) => s + c.contract_value, 0))}
+                  {filteredPublicContracts.length} contratos | Total: {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.contract_value, 0))}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {contractsLoading ? (
                   <p className="text-center py-4 text-muted-foreground">Carregando...</p>
-                ) : publicContracts.length === 0 ? (
-                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato publico</p>
+                ) : filteredPublicContracts.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato publico com este status</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -643,56 +740,66 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
                           <TableHead className="text-right">Despesas</TableHead>
+                          <TableHead className="text-right">Saldo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {publicContracts.map((contract) => (
-                          <TableRow key={contract.project_id}>
-                            <TableCell className="font-medium">{contract.project_name}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                contract.status === 'CONCLUIDO' ? 'default' :
-                                contract.status === 'EM_ANDAMENTO' ? 'secondary' :
-                                'outline'
-                              }>
-                                {contract.status.replace(/_/g, ' ')}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrency(contract.contract_value)}
-                            </TableCell>
-                            <TableCell className="text-right text-green-600">
-                              {formatCurrency(contract.total_received)}
-                            </TableCell>
-                            <TableCell className="text-right text-yellow-600">
-                              {formatCurrency(contract.amount_to_receive)}
-                            </TableCell>
-                            <TableCell className="text-right text-red-600">
-                              {formatCurrency(contract.total_paid_designers)}
-                            </TableCell>
-                            <TableCell className="text-right text-purple-600">
-                              {formatCurrency(contract.total_expenses)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {filteredPublicContracts.map((contract) => {
+                          const saldo = contract.total_received - contract.total_paid_designers - contract.total_expenses;
+                          return (
+                            <TableRow key={contract.project_id}>
+                              <TableCell className="font-medium">{contract.project_name}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  contract.status === 'CONCLUIDO' ? 'default' :
+                                  contract.status === 'EM_ANDAMENTO' ? 'secondary' :
+                                  'outline'
+                                }>
+                                  {contract.status.replace(/_/g, ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {formatCurrency(contract.contract_value)}
+                              </TableCell>
+                              <TableCell className="text-right text-green-600">
+                                {formatCurrency(contract.total_received)}
+                              </TableCell>
+                              <TableCell className="text-right text-yellow-600">
+                                {formatCurrency(contract.amount_to_receive)}
+                              </TableCell>
+                              <TableCell className="text-right text-red-600">
+                                {formatCurrency(contract.total_paid_designers)}
+                              </TableCell>
+                              <TableCell className="text-right text-purple-600">
+                                {formatCurrency(contract.total_expenses)}
+                              </TableCell>
+                              <TableCell className={`text-right font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {formatCurrency(saldo)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                         {/* Linha de Total */}
                         <TableRow className="bg-muted/50 font-bold">
                           <TableCell>TOTAL PUBLICO</TableCell>
                           <TableCell></TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.contract_value, 0))}
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.contract_value, 0))}
                           </TableCell>
                           <TableCell className="text-right text-green-600">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_received, 0))}
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.total_received, 0))}
                           </TableCell>
                           <TableCell className="text-right text-yellow-600">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
                           </TableCell>
                           <TableCell className="text-right text-red-600">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
                           </TableCell>
                           <TableCell className="text-right text-purple-600">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.total_expenses, 0))}
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + c.total_expenses, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-emerald-600">
+                            {formatCurrency(filteredPublicContracts.reduce((s, c) => s + (c.total_received - c.total_paid_designers - c.total_expenses), 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -710,14 +817,14 @@ const AdminFinanceiro = () => {
                   Contratos Privados
                 </CardTitle>
                 <CardDescription>
-                  {privateContracts.length} contratos | Total: {formatCurrency(privateContracts.reduce((s, c) => s + c.contract_value, 0))}
+                  {filteredPrivateContracts.length} contratos | Total: {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.contract_value, 0))}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {contractsLoading ? (
                   <p className="text-center py-4 text-muted-foreground">Carregando...</p>
-                ) : privateContracts.length === 0 ? (
-                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato privado</p>
+                ) : filteredPrivateContracts.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">Nenhum contrato privado com este status</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -730,56 +837,66 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
                           <TableHead className="text-right">Despesas</TableHead>
+                          <TableHead className="text-right">Saldo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {privateContracts.map((contract) => (
-                          <TableRow key={contract.project_id}>
-                            <TableCell className="font-medium">{contract.project_name}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                contract.status === 'CONCLUIDO' ? 'default' :
-                                contract.status === 'EM_ANDAMENTO' ? 'secondary' :
-                                'outline'
-                              }>
-                                {contract.status.replace(/_/g, ' ')}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrency(contract.contract_value)}
-                            </TableCell>
-                            <TableCell className="text-right text-green-600">
-                              {formatCurrency(contract.total_received)}
-                            </TableCell>
-                            <TableCell className="text-right text-yellow-600">
-                              {formatCurrency(contract.amount_to_receive)}
-                            </TableCell>
-                            <TableCell className="text-right text-red-600">
-                              {formatCurrency(contract.total_paid_designers)}
-                            </TableCell>
-                            <TableCell className="text-right text-purple-600">
-                              {formatCurrency(contract.total_expenses)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {filteredPrivateContracts.map((contract) => {
+                          const saldo = contract.total_received - contract.total_paid_designers - contract.total_expenses;
+                          return (
+                            <TableRow key={contract.project_id}>
+                              <TableCell className="font-medium">{contract.project_name}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  contract.status === 'CONCLUIDO' ? 'default' :
+                                  contract.status === 'EM_ANDAMENTO' ? 'secondary' :
+                                  'outline'
+                                }>
+                                  {contract.status.replace(/_/g, ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {formatCurrency(contract.contract_value)}
+                              </TableCell>
+                              <TableCell className="text-right text-green-600">
+                                {formatCurrency(contract.total_received)}
+                              </TableCell>
+                              <TableCell className="text-right text-yellow-600">
+                                {formatCurrency(contract.amount_to_receive)}
+                              </TableCell>
+                              <TableCell className="text-right text-red-600">
+                                {formatCurrency(contract.total_paid_designers)}
+                              </TableCell>
+                              <TableCell className="text-right text-purple-600">
+                                {formatCurrency(contract.total_expenses)}
+                              </TableCell>
+                              <TableCell className={`text-right font-bold ${saldo >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {formatCurrency(saldo)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                         {/* Linha de Total */}
                         <TableRow className="bg-muted/50 font-bold">
                           <TableCell>TOTAL PRIVADO</TableCell>
                           <TableCell></TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.contract_value, 0))}
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.contract_value, 0))}
                           </TableCell>
                           <TableCell className="text-right text-green-600">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_received, 0))}
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.total_received, 0))}
                           </TableCell>
                           <TableCell className="text-right text-yellow-600">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.amount_to_receive, 0))}
                           </TableCell>
                           <TableCell className="text-right text-red-600">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
                           </TableCell>
                           <TableCell className="text-right text-purple-600">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.total_expenses, 0))}
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + c.total_expenses, 0))}
+                          </TableCell>
+                          <TableCell className="text-right text-emerald-600">
+                            {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + (c.total_received - c.total_paid_designers - c.total_expenses), 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -1098,6 +1215,68 @@ const AdminFinanceiro = () => {
 
           {/* Tab Despesas da Empresa */}
           <TabsContent value="despesas">
+            {/* Filtros de Despesas */}
+            <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+              <Label className="font-semibold">Filtros:</Label>
+              <Select value={filterExpenseSector} onValueChange={setFilterExpenseSector}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Setores</SelectItem>
+                  <SelectItem value="publico">Publico</SelectItem>
+                  <SelectItem value="privado">Privado</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterExpenseCostCenter} onValueChange={setFilterExpenseCostCenter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Centro de Custo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Centros de Custo</SelectItem>
+                  {expensesSummary.byCostCenter.map((cc) => (
+                    <SelectItem key={cc.cost_center} value={cc.cost_center}>
+                      {cc.cost_center} ({cc.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterExpenseContract} onValueChange={setFilterExpenseContract}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Contrato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Contratos</SelectItem>
+                  {expensesSummary.byContract.map((c) => (
+                    <SelectItem key={c.contract_name} value={c.contract_name}>
+                      {c.contract_name} ({c.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(filterExpenseCostCenter !== 'all' || filterExpenseContract !== 'all' || filterExpenseSector !== 'all') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFilterExpenseCostCenter('all');
+                    setFilterExpenseContract('all');
+                    setFilterExpenseSector('all');
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar Filtros
+                </Button>
+              )}
+
+              <Badge variant="outline" className="ml-auto">
+                {filteredExpenses.length} despesas | {formatCurrency(filteredExpensesSummary.totalGeral)}
+              </Badge>
+            </div>
+
             {/* Cards de Resumo das Despesas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="border-l-4 border-l-red-500">
@@ -1107,10 +1286,10 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600">
-                    {formatCurrency(expensesSummary.totalPublico)}
+                    {formatCurrency(filteredExpensesSummary.totalPublico)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {expensesSummary.countPublico} despesas
+                    {filteredExpensesSummary.countPublico} despesas
                   </p>
                 </CardContent>
               </Card>
@@ -1122,10 +1301,10 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(expensesSummary.totalPrivado)}
+                    {formatCurrency(filteredExpensesSummary.totalPrivado)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {expensesSummary.countPrivado} despesas
+                    {filteredExpensesSummary.countPrivado} despesas
                   </p>
                 </CardContent>
               </Card>
@@ -1137,129 +1316,136 @@ const AdminFinanceiro = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(expensesSummary.totalGeral)}
+                    {formatCurrency(filteredExpensesSummary.totalGeral)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {expensesSummary.countPublico + expensesSummary.countPrivado} despesas totais
+                    {filteredExpensesSummary.countPublico + filteredExpensesSummary.countPrivado} despesas totais
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Despesas por Centro de Custo */}
+            {/* Despesas por Centro de Custo - Clicável */}
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Despesas por Centro de Custo</CardTitle>
+                <CardTitle>Despesas por Centro de Custo (clique para filtrar)</CardTitle>
               </CardHeader>
               <CardContent>
                 {expensesSummary.byCostCenter.length === 0 ? (
                   <p className="text-muted-foreground">Nenhuma despesa cadastrada</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {expensesSummary.byCostCenter.slice(0, 6).map((cat) => (
-                      <div key={cat.cost_center} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    {expensesSummary.byCostCenter.map((cat) => (
+                      <button
+                        key={cat.cost_center}
+                        onClick={() => setFilterExpenseCostCenter(
+                          filterExpenseCostCenter === cat.cost_center ? 'all' : cat.cost_center
+                        )}
+                        className={`flex justify-between items-center p-3 rounded-lg transition-colors cursor-pointer text-left w-full ${
+                          filterExpenseCostCenter === cat.cost_center
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
                         <div>
                           <p className="font-medium">{cat.cost_center}</p>
-                          <p className="text-xs text-muted-foreground">{cat.count} registros</p>
+                          <p className={`text-xs ${filterExpenseCostCenter === cat.cost_center ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                            {cat.count} registros
+                          </p>
                         </div>
                         <span className="font-bold">{formatCurrency(cat.total)}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Tabelas de Despesas Separadas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Despesas Públicas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-red-600">Despesas Setor Publico</CardTitle>
-                  <CardDescription>{publicCompanyExpenses.length} registros</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {expensesLoading ? (
-                    <p>Carregando...</p>
-                  ) : publicCompanyExpenses.length === 0 ? (
-                    <p className="text-muted-foreground">Nenhuma despesa publica</p>
-                  ) : (
-                    <div className="max-h-[600px] overflow-y-auto border rounded-lg">
-                      <Table>
-                        <TableHeader className="sticky top-0 bg-background">
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Descricao</TableHead>
-                            <TableHead>Contrato</TableHead>
-                            <TableHead>Centro de Custo</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
+            {/* Tabela Única de Despesas Filtradas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {filterExpenseSector === 'publico' ? 'Despesas Setor Público' :
+                   filterExpenseSector === 'privado' ? 'Despesas Setor Privado' :
+                   'Todas as Despesas'}
+                </CardTitle>
+                <CardDescription>{filteredExpenses.length} registros</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {expensesLoading ? (
+                  <p>Carregando...</p>
+                ) : filteredExpenses.length === 0 ? (
+                  <p className="text-muted-foreground">Nenhuma despesa com os filtros selecionados</p>
+                ) : (
+                  <div className="max-h-[600px] overflow-y-auto border rounded-lg">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Descricao</TableHead>
+                          <TableHead>Setor</TableHead>
+                          <TableHead>Contrato</TableHead>
+                          <TableHead>Centro de Custo</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredExpenses.map((expense) => (
+                          <TableRow key={expense.id}>
+                            <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
+                            <TableCell className="max-w-[250px]">{expense.description}</TableCell>
+                            <TableCell>
+                              <Badge variant={expense.sector === 'publico' ? 'default' : 'secondary'}>
+                                {expense.sector === 'publico' ? 'Publico' : 'Privado'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setFilterExpenseContract(
+                                  filterExpenseContract === expense.contract_name ? 'all' : expense.contract_name
+                                )}
+                                className="cursor-pointer"
+                              >
+                                <Badge
+                                  variant={filterExpenseContract === expense.contract_name ? 'default' : 'secondary'}
+                                  className="hover:opacity-80"
+                                >
+                                  {expense.project_name || expense.contract_name || 'GERAL'}
+                                </Badge>
+                              </button>
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setFilterExpenseCostCenter(
+                                  filterExpenseCostCenter === expense.cost_center ? 'all' : expense.cost_center
+                                )}
+                                className="cursor-pointer"
+                              >
+                                <Badge
+                                  variant={filterExpenseCostCenter === expense.cost_center ? 'default' : 'outline'}
+                                  className="hover:opacity-80"
+                                >
+                                  {expense.cost_center || 'Outros'}
+                                </Badge>
+                              </button>
+                            </TableCell>
+                            <TableCell className={`text-right font-medium whitespace-nowrap ${
+                              expense.sector === 'publico' ? 'text-red-600' : 'text-orange-600'
+                            }`}>
+                              {formatCurrency(expense.amount)}
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {publicCompanyExpenses.map((expense) => (
-                            <TableRow key={expense.id}>
-                              <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
-                              <TableCell className="max-w-[250px]">{expense.description}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary">{expense.project_name || 'GERAL'}</Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{expense.cost_center || 'Outros'}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right text-red-600 font-medium whitespace-nowrap">
-                                {formatCurrency(expense.amount)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Despesas Privadas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-orange-600">Despesas Setor Privado</CardTitle>
-                  <CardDescription>{privateCompanyExpenses.length} registros</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {expensesLoading ? (
-                    <p>Carregando...</p>
-                  ) : privateCompanyExpenses.length === 0 ? (
-                    <p className="text-muted-foreground">Nenhuma despesa privada</p>
-                  ) : (
-                    <div className="max-h-[600px] overflow-y-auto border rounded-lg">
-                      <Table>
-                        <TableHeader className="sticky top-0 bg-background">
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Descricao</TableHead>
-                            <TableHead>Contrato</TableHead>
-                            <TableHead>Centro de Custo</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {privateCompanyExpenses.map((expense) => (
-                            <TableRow key={expense.id}>
-                              <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
-                              <TableCell className="max-w-[250px]">{expense.description}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary">{expense.project_name || 'GERAL'}</Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{expense.cost_center || 'Outros'}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right text-orange-600 font-medium whitespace-nowrap">
-                                {formatCurrency(expense.amount)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                        ))}
+                        {/* Linha de Total */}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={5}>TOTAL</TableCell>
+                          <TableCell className="text-right text-purple-600">
+                            {formatCurrency(filteredExpensesSummary.totalGeral)}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                   )}
                 </CardContent>
               </Card>
