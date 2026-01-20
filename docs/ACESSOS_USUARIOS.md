@@ -1,7 +1,7 @@
 # Acessos ao Sistema VisaoBIM Fluxo
 
 ## URL de Acesso
-https://visaobim-fluxo.netlify.app
+https://visaobim.lovable.app
 
 ---
 
@@ -38,7 +38,7 @@ Olá Edilson!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: edilson@visaobim.com
 Senha: edilson@2025
 ```
@@ -49,7 +49,7 @@ Olá Bessa!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: bessa@visaobim.com
 Senha: bessa@2025
 ```
@@ -60,7 +60,7 @@ Olá Eloisy!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: eloisy@visaobim.com
 Senha: eloisy@2025
 ```
@@ -71,7 +71,7 @@ Olá Gustavo!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: gustavo@visaobim.com
 Senha: gustavo@2025
 ```
@@ -82,7 +82,7 @@ Olá Leonardo!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: leonardo@visaobim.com
 Senha: leonardo@2025
 ```
@@ -93,7 +93,7 @@ Olá Nara!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: nara@visaobim.com
 Senha: nara@2025
 ```
@@ -104,7 +104,7 @@ Olá Nicolas!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: nicolas@visaobim.com
 Senha: nicolas@2025
 ```
@@ -115,7 +115,7 @@ Olá Pedro!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: pedro@visaobim.com
 Senha: pedro@2025
 ```
@@ -126,7 +126,7 @@ Olá Rondinelly!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: rondinelly@visaobim.com
 Senha: rondinelly@2025
 ```
@@ -137,7 +137,7 @@ Olá Thiago!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: thiago@visaobim.com
 Senha: thiago@2025
 ```
@@ -148,7 +148,7 @@ Olá!
 
 Seu acesso ao sistema VisaoBIM Fluxo:
 
-URL: https://visaobim-fluxo.netlify.app
+URL: https://visaobim.lovable.app
 Email: externo@visaobim.com
 Senha: externo@2025
 ```
