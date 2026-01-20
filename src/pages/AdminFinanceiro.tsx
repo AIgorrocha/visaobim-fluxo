@@ -542,23 +542,23 @@ const AdminFinanceiro = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-purple-500">
+              <Card className="border-l-4 border-l-orange-500">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Margem Bruta</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-purple-500" />
+                  <CardTitle className="text-sm font-medium">A Pagar Projetistas</CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${contractSummary.estimatedMargin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                    {formatCurrency(contractSummary.estimatedMargin)}
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(contractSummary.totalToPayDesigners)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Recebido - Pago Projetistas
+                    baseado nas precificacoes
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Cards de Projetistas */}
+            {/* Card de Pago aos Projetistas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <Card className="border-l-4 border-l-red-500">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -571,21 +571,6 @@ const AdminFinanceiro = () => {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     total de pagamentos realizados
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-orange-500">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">A Pagar Projetistas</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(contractSummary.totalToPayDesigners)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    baseado nas precificacoes
                   </p>
                 </CardContent>
               </Card>
@@ -618,7 +603,6 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">Recebido</TableHead>
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
-                          <TableHead className="text-right">Margem</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -646,9 +630,6 @@ const AdminFinanceiro = () => {
                             <TableCell className="text-right text-red-600">
                               {formatCurrency(contract.total_paid_designers)}
                             </TableCell>
-                            <TableCell className={`text-right font-semibold ${contract.profit_margin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                              {formatCurrency(contract.profit_margin)}
-                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
@@ -666,9 +647,6 @@ const AdminFinanceiro = () => {
                           </TableCell>
                           <TableCell className="text-right text-red-600">
                             {formatCurrency(publicContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
-                          </TableCell>
-                          <TableCell className="text-right text-purple-600">
-                            {formatCurrency(publicContracts.reduce((s, c) => s + c.profit_margin, 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -705,7 +683,6 @@ const AdminFinanceiro = () => {
                           <TableHead className="text-right">Recebido</TableHead>
                           <TableHead className="text-right">A Receber</TableHead>
                           <TableHead className="text-right">Pago Projetistas</TableHead>
-                          <TableHead className="text-right">Margem</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -733,9 +710,6 @@ const AdminFinanceiro = () => {
                             <TableCell className="text-right text-red-600">
                               {formatCurrency(contract.total_paid_designers)}
                             </TableCell>
-                            <TableCell className={`text-right font-semibold ${contract.profit_margin >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                              {formatCurrency(contract.profit_margin)}
-                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
@@ -753,9 +727,6 @@ const AdminFinanceiro = () => {
                           </TableCell>
                           <TableCell className="text-right text-red-600">
                             {formatCurrency(privateContracts.reduce((s, c) => s + c.total_paid_designers, 0))}
-                          </TableCell>
-                          <TableCell className="text-right text-purple-600">
-                            {formatCurrency(privateContracts.reduce((s, c) => s + c.profit_margin, 0))}
                           </TableCell>
                         </TableRow>
                       </TableBody>
