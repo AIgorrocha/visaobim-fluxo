@@ -37,6 +37,9 @@ const PROJECT_ALIASES: { [key: string]: string[] } = {
   // CAMPUS CURITIBA = UNESPAR-ELE
   'CAMPUS CURITIBA': ['UNESPAR-ELE', 'UNESPAR ELE', 'UNESPAR'],
 
+  // SERVFAZ-AGROPARQUE
+  'SERVFAZ-AGROPARQUE': ['SERVFAZ', 'AGROPARQUE', 'SERVFAZ AGROPARQUE', 'AGROPARQUESERVFAZ'],
+
   // Adicione mais mapeamentos aqui conforme necessário
 };
 
