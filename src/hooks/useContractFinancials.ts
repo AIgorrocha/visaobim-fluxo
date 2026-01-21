@@ -64,13 +64,13 @@ export function useContractIncome() {
   const fetchIncome = async () => {
     try {
       setLoading(true);
-      const { data, error } = await (supabase
-        .from('contract_income') as any)
+      const { data, error } = await supabase
+        .from('contract_income')
         .select('*')
         .order('income_date', { ascending: false });
 
       if (error) throw error;
-      setIncome((data || []) as ContractIncome[]);
+      setIncome(data || []);
     } catch (err: any) {
       console.error('Erro ao buscar receitas:', err);
       setError(err.message);
@@ -335,8 +335,8 @@ export function useContractDetails(projectId: string | null) {
       if (expensesError) throw expensesError;
 
       // Buscar receitas (income) do contrato
-      const { data: incomeData, error: incomeError } = await (supabase
-        .from('contract_income') as any)
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('contract_income')
         .select('id, amount, income_date, description, income_type')
         .eq('project_id', id)
         .order('income_date', { ascending: false });
@@ -409,7 +409,7 @@ export function useContractDetails(projectId: string | null) {
         project_id: projectData.id,
         project_name: projectData.name,
         client: projectData.client,
-        type: projectData.type as 'privado' | 'publico',
+        type: projectData.type,
         status: projectData.status,
         contract_value: contractValue,
         total_received: totalReceived,
