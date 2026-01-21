@@ -66,9 +66,16 @@ import {
   useAdminFinancialOverview,
   useProjectPricing
 } from '@/hooks/useDesignerFinancials';
-import { useContractOverview } from '@/hooks/useContractFinancials';
+import { useContractOverview, useContractIncome } from '@/hooks/useContractFinancials';
 import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
 import { ContractDetailModal } from '@/components/ContractDetailModal';
+import {
+  RevenueByTypeChart,
+  SectorComparisonChart,
+  ExpensesByCenterChart,
+  TopDesignersChart,
+  CashFlowChart
+} from '@/components/charts';
 import { DesignerPayment } from '@/types';
 
 // Formatar valores em BRL
@@ -124,6 +131,7 @@ const AdminFinanceiro = () => {
     summary: contractSummary,
     loading: contractsLoading
   } = useContractOverview();
+  const { income: contractIncome } = useContractIncome();
   const {
     expenses: companyExpenses,
     publicExpenses: publicCompanyExpenses,
@@ -476,6 +484,55 @@ const AdminFinanceiro = () => {
     };
   }, [filteredContracts, contractSummary]);
 
+  // Dados para gráficos
+  const revenueByTypeData = useMemo(() => {
+    const grouped: Record<string, number> = {};
+    contractIncome.forEach(income => {
+      const type = income.income_type || 'outro';
+      grouped[type] = (grouped[type] || 0) + Number(income.amount);
+    });
+    return Object.entries(grouped).map(([type, value]) => ({ type, value }));
+  }, [contractIncome]);
+
+  const expensesByCenterData = useMemo(() => {
+    const grouped: Record<string, number> = {};
+    companyExpenses.forEach(expense => {
+      const center = expense.cost_center || 'Outros';
+      grouped[center] = (grouped[center] || 0) + Number(expense.amount);
+    });
+    return Object.entries(grouped).map(([center, value]) => ({ center, value }));
+  }, [companyExpenses]);
+
+  const topDesignersData = useMemo(() => {
+    return summaryByDesigner.map(d => ({
+      name: d.designer_name,
+      total: d.total_received
+    }));
+  }, [summaryByDesigner]);
+
+  const sectorComparisonData = useMemo(() => {
+    const publicData = {
+      contractValue: filteredPublicContracts.reduce((s, c) => s + c.contract_value, 0),
+      received: filteredPublicContracts.reduce((s, c) => s + c.total_received, 0),
+      expenses: filteredPublicContracts.reduce((s, c) => s + c.total_expenses, 0),
+      profit: filteredPublicContracts.reduce((s, c) => s + (c.total_received - c.total_paid_designers - c.total_expenses), 0)
+    };
+    const privateData = {
+      contractValue: filteredPrivateContracts.reduce((s, c) => s + c.contract_value, 0),
+      received: filteredPrivateContracts.reduce((s, c) => s + c.total_received, 0),
+      expenses: filteredPrivateContracts.reduce((s, c) => s + c.total_expenses, 0),
+      profit: filteredPrivateContracts.reduce((s, c) => s + (c.total_received - c.total_paid_designers - c.total_expenses), 0)
+    };
+    return { publicData, privateData };
+  }, [filteredPublicContracts, filteredPrivateContracts]);
+
+  const cashFlowData = useMemo(() => ({
+    received: filteredContractSummary.totalReceived,
+    paidDesigners: filteredContractSummary.totalPaidDesigners,
+    expenses: filteredContractSummary.totalExpenses_contratos,
+    balance: filteredContractSummary.totalReceived - filteredContractSummary.totalPaidDesigners - filteredContractSummary.totalExpenses_contratos
+  }), [filteredContractSummary]);
+
   // Toggle seleção de contrato (para multi-seleção)
   const toggleContractSelection = (projectId: string) => {
     setSelectedContracts(prev =>
@@ -694,6 +751,29 @@ const AdminFinanceiro = () => {
                   {selectedContracts.length} contrato(s) selecionado(s)
                 </p>
               )}
+            </div>
+
+            {/* Dashboards Visuais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <SectorComparisonChart
+                publicData={sectorComparisonData.publicData}
+                privateData={sectorComparisonData.privateData}
+              />
+              <CashFlowChart
+                received={cashFlowData.received}
+                paidDesigners={cashFlowData.paidDesigners}
+                expenses={cashFlowData.expenses}
+                balance={cashFlowData.balance}
+              />
+              <TopDesignersChart data={topDesignersData} />
+              <RevenueByTypeChart
+                data={revenueByTypeData}
+                total={revenueByTypeData.reduce((s, d) => s + d.value, 0)}
+              />
+              <ExpensesByCenterChart
+                data={expensesByCenterData}
+                total={expensesByCenterData.reduce((s, d) => s + d.value, 0)}
+              />
             </div>
 
             {/* Cards de Resumo dos Contratos - Usando dados filtrados */}
