@@ -478,7 +478,7 @@ export function useDesignerFinancialSummary(designerId: string) {
         .from('project_pricing') as any)
         .select(`
           *,
-          projects:project_id (name)
+          projects:project_id (name, client)
         `)
         .eq('designer_id', designerId);
 
@@ -504,11 +504,13 @@ export function useDesignerFinancialSummary(designerId: string) {
       (pricingData || []).forEach((p: any) => {
         const projectId = p.project_id;
         const projectName = p.projects?.name || '';
+        const clientName = p.projects?.client || '';
+        const displayName = clientName ? `${projectName} - ${clientName}` : projectName;
 
         if (!pricingByProject[projectId]) {
           pricingByProject[projectId] = {
             project_id: projectId,
-            project_name: projectName,
+            project_name: displayName,
             disciplines: [],
             total_designer_value: 0
           };
@@ -536,11 +538,13 @@ export function useDesignerFinancialSummary(designerId: string) {
       (pricingData || []).forEach((p: any) => {
         const projectId = p.project_id;
         const projectName = p.projects?.name || '';
+        const clientName = p.projects?.client || '';
+        const displayName = clientName ? `${projectName} - ${clientName}` : projectName;
 
         if (!pricingByProjectWithAmountPaid[projectId]) {
           pricingByProjectWithAmountPaid[projectId] = {
             project_id: projectId,
-            project_name: projectName,
+            project_name: displayName,
             disciplines: [],
             total_designer_value: 0,
             total_amount_paid: 0
