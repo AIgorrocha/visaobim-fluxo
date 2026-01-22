@@ -93,7 +93,7 @@ interface PaymentFormData {
   payment_date: string;
   description: string;
   sector: 'privado' | 'publico';
-  status: 'pago' | 'cancelado';
+  status: 'pago' | 'pendente' | 'cancelado';
 }
 
 const AdminFinanceiro = () => {

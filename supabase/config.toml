@@ -15,3 +15,6 @@ major_version = 15
 
 [functions.create-users]
 verify_jwt = false
+
+[functions.appsheet-lancamento-pub]
+verify_jwt = false
