@@ -46,6 +46,12 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'IRIS-REFORCO': '7638c70a-7a2b-4608-b7b0-b198edb584dd',
   'BRENO-CASA': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
   'BRENO': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
+  // REFORÇO COLEGIO - SOP (aliases)
+  'SOP-REFORÇO': '80deac2b-928f-4177-ab77-984d76944b06',
+  'SOP-REFORCO': '80deac2b-928f-4177-ab77-984d76944b06',
+  'REFORÇO COLEGIO': '80deac2b-928f-4177-ab77-984d76944b06',
+  'REFORCO COLEGIO': '80deac2b-928f-4177-ab77-984d76944b06',
+  'REFORÇO COLEGIO - SOP': '80deac2b-928f-4177-ab77-984d76944b06',
 };
 
 // Mapeamento de projetistas (nome -> designer_id)
