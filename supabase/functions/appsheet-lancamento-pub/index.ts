@@ -26,6 +26,17 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'IBC-RJ': null,
   'CIAP-SP': null,
   'CMB-SP': null,
+  // Novos aliases adicionados
+  'FHEMIG-BH': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
+  'FHEMIG': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
+  'SANTA MARIA-RS': '5d68fb6e-1e5f-4d3d-9fd6-e5bcef8c3ca6',
+  'SANTA MARIA': '5d68fb6e-1e5f-4d3d-9fd6-e5bcef8c3ca6',
+  'SEPOL-RJ': 'db9e101e-2460-4d0f-9483-4537ba16fb63',
+  'SEPOL': 'db9e101e-2460-4d0f-9483-4537ba16fb63',
+  'CIDPOL': 'db9e101e-2460-4d0f-9483-4537ba16fb63',
+  'IRIS-REFORCO': '7638c70a-7a2b-4608-b7b0-b198edb584dd',
+  'BRENO-CASA': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
+  'BRENO': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
 };
 
 // Mapeamento de projetistas (nome -> designer_id)
