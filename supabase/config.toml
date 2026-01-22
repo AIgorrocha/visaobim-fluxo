@@ -19,5 +19,5 @@ verify_jwt = false
 [functions.appsheet-lancamento-pub]
 verify_jwt = false
 
-[functions.appsheet-lancamento-priv]
+[functions.appsheet-lancamento-pvt]
 verify_jwt = false
