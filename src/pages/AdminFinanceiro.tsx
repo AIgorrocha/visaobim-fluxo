@@ -1856,7 +1856,7 @@ const AdminFinanceiro = () => {
                 ) : filteredExpenses.length === 0 ? (
                   <p className="text-muted-foreground">Nenhuma despesa com os filtros selecionados</p>
                 ) : (
-                  <div className="max-h-[600px] overflow-y-auto border rounded-lg">
+                  <div className="overflow-x-auto border rounded-lg">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background">
                         <TableRow>
