@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.appsheet-lancamento-pub]
 verify_jwt = false
+
+[functions.appsheet-lancamento-priv]
+verify_jwt = false
