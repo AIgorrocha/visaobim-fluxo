@@ -168,6 +168,9 @@ const AdminFinanceiro = () => {
   const [filterIncomeType, setFilterIncomeType] = useState<string>('all');
   const [filterIncomeProject, setFilterIncomeProject] = useState<string>('all');
   const [filterIncomeSector, setFilterIncomeSector] = useState<string>('all');
+  const [expensesExpanded, setExpensesExpanded] = useState<boolean>(false);
+  const [incomeExpanded, setIncomeExpanded] = useState<boolean>(false);
+  const INITIAL_ROWS_LIMIT = 20; // Mostrar 20 primeiras, depois expandir
   const [customDateStart, setCustomDateStart] = useState<string>('');
   const [customDateEnd, setCustomDateEnd] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1143,74 +1146,17 @@ const AdminFinanceiro = () => {
 
           {/* Tab Receitas */}
           <TabsContent value="receitas">
-            {/* Cards de Resumo de Receitas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card
-                className={`border-l-4 border-l-blue-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'medicao' ? 'ring-2 ring-blue-500' : ''}`}
-                onClick={() => setFilterIncomeType(filterIncomeType === 'medicao' ? 'all' : 'medicao')}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Medições</CardTitle>
-                  <FileCheck className="h-4 w-4 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(incomeSummary.medicoes.total)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {incomeSummary.medicoes.count} lançamentos
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={`border-l-4 border-l-green-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'parcela' ? 'ring-2 ring-green-500' : ''}`}
-                onClick={() => setFilterIncomeType(filterIncomeType === 'parcela' ? 'all' : 'parcela')}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Parcelas</CardTitle>
-                  <Calendar className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(incomeSummary.parcelas.total)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {incomeSummary.parcelas.count} lançamentos
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={`border-l-4 border-l-purple-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'entrada' ? 'ring-2 ring-purple-500' : ''}`}
-                onClick={() => setFilterIncomeType(filterIncomeType === 'entrada' ? 'all' : 'entrada')}
-              >
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Entradas</CardTitle>
-                  <ArrowUpRight className="h-4 w-4 text-purple-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(incomeSummary.entradas.total)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {incomeSummary.entradas.count} lançamentos
-                  </p>
-                </CardContent>
-              </Card>
-
+            {/* Card de Total de Receitas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="border-l-4 border-l-emerald-500">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total de Receitas</CardTitle>
                   <DollarSign className="h-4 w-4 text-emerald-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-emerald-600">
                     {formatCurrency(incomeSummary.total)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {incomeSummary.count} lançamentos no total
-                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -1218,20 +1164,6 @@ const AdminFinanceiro = () => {
             {/* Filtros de Receitas */}
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
               <Label className="font-semibold">Filtros:</Label>
-
-              {/* Filtro por Tipo */}
-              <Select value={filterIncomeType} onValueChange={setFilterIncomeType}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Tipos</SelectItem>
-                  <SelectItem value="medicao">Medição</SelectItem>
-                  <SelectItem value="parcela">Parcela</SelectItem>
-                  <SelectItem value="entrada">Entrada</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
 
               {/* Filtro por Projeto */}
               <Select value={filterIncomeProject} onValueChange={setFilterIncomeProject}>
@@ -1259,12 +1191,11 @@ const AdminFinanceiro = () => {
               </Select>
 
               {/* Limpar Filtros */}
-              {(filterIncomeType !== 'all' || filterIncomeProject !== 'all' || filterIncomeSector !== 'all') && (
+              {(filterIncomeProject !== 'all' || filterIncomeSector !== 'all') && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setFilterIncomeType('all');
                     setFilterIncomeProject('all');
                     setFilterIncomeSector('all');
                   }}
@@ -1275,19 +1206,14 @@ const AdminFinanceiro = () => {
               )}
 
               <Badge variant="outline" className="ml-auto">
-                {incomeSummary.count} registros | {formatCurrency(incomeSummary.total)}
+                {formatCurrency(incomeSummary.total)}
               </Badge>
             </div>
 
             {/* Tabela de Receitas */}
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {filterIncomeType === 'medicao' ? 'Medições' :
-                   filterIncomeType === 'parcela' ? 'Parcelas' :
-                   filterIncomeType === 'entrada' ? 'Entradas' :
-                   'Todas as Receitas'}
-                </CardTitle>
+                <CardTitle>Todas as Receitas</CardTitle>
                 <CardDescription>
                   Histórico de recebimentos e entradas financeiras
                 </CardDescription>
@@ -1296,20 +1222,19 @@ const AdminFinanceiro = () => {
                 {incomeSummary.items.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">Nenhuma receita encontrada com os filtros selecionados</p>
                 ) : (
-                  <div className="max-h-[600px] overflow-y-auto border rounded-lg">
+                  <div className="overflow-x-auto border rounded-lg">
                     <Table>
                       <TableHeader className="sticky top-0 bg-background">
                         <TableRow>
                           <TableHead>Data</TableHead>
                           <TableHead>Projeto</TableHead>
-                          <TableHead>Tipo</TableHead>
                           <TableHead>Descrição</TableHead>
                           <TableHead>Setor</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {incomeSummary.items.map((income) => (
+                        {(incomeExpanded ? incomeSummary.items : incomeSummary.items.slice(0, INITIAL_ROWS_LIMIT)).map((income) => (
                           <TableRow key={income.id}>
                             <TableCell className="whitespace-nowrap">{formatDate(income.income_date)}</TableCell>
                             <TableCell>
@@ -1324,29 +1249,6 @@ const AdminFinanceiro = () => {
                                   className="hover:opacity-80"
                                 >
                                   {income.project_name}
-                                </Badge>
-                              </button>
-                            </TableCell>
-                            <TableCell>
-                              <button
-                                onClick={() => setFilterIncomeType(
-                                  filterIncomeType === income.income_type ? 'all' : (income.income_type || 'outro')
-                                )}
-                                className="cursor-pointer"
-                              >
-                                <Badge
-                                  variant={filterIncomeType === income.income_type ? 'default' : 'outline'}
-                                  className={`hover:opacity-80 ${
-                                    income.income_type === 'medicao' ? 'border-blue-500 text-blue-600' :
-                                    income.income_type === 'parcela' ? 'border-green-500 text-green-600' :
-                                    income.income_type === 'entrada' ? 'border-purple-500 text-purple-600' :
-                                    'border-gray-500 text-gray-600'
-                                  }`}
-                                >
-                                  {income.income_type === 'medicao' ? 'Medição' :
-                                   income.income_type === 'parcela' ? 'Parcela' :
-                                   income.income_type === 'entrada' ? 'Entrada' :
-                                   income.income_type || 'Outro'}
                                 </Badge>
                               </button>
                             </TableCell>
@@ -1373,13 +1275,26 @@ const AdminFinanceiro = () => {
                         ))}
                         {/* Linha de Total */}
                         <TableRow className="bg-muted/50 font-bold">
-                          <TableCell colSpan={5}>TOTAL</TableCell>
+                          <TableCell colSpan={4}>TOTAL</TableCell>
                           <TableCell className="text-right text-emerald-600">
                             {formatCurrency(incomeSummary.total)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
+                  </div>
+                )}
+                {/* Botão Expandir/Recolher Receitas */}
+                {incomeSummary.items.length > INITIAL_ROWS_LIMIT && (
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIncomeExpanded(!incomeExpanded)}
+                    >
+                      {incomeExpanded
+                        ? `Mostrar menos (${INITIAL_ROWS_LIMIT} itens)`
+                        : `Mostrar todos (${incomeSummary.items.length} itens)`}
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -1869,7 +1784,7 @@ const AdminFinanceiro = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.map((expense) => (
+                        {(expensesExpanded ? filteredExpenses : filteredExpenses.slice(0, INITIAL_ROWS_LIMIT)).map((expense) => (
                           <TableRow key={expense.id}>
                             <TableCell className="whitespace-nowrap">{formatDate(expense.expense_date)}</TableCell>
                             <TableCell className="max-w-[250px]">{expense.description}</TableCell>
@@ -1926,6 +1841,19 @@ const AdminFinanceiro = () => {
                     </Table>
                   </div>
                   )}
+                {/* Botão Expandir/Recolher */}
+                {filteredExpenses.length > INITIAL_ROWS_LIMIT && (
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setExpensesExpanded(!expensesExpanded)}
+                    >
+                      {expensesExpanded
+                        ? `Mostrar menos (${INITIAL_ROWS_LIMIT} itens)`
+                        : `Mostrar todos (${filteredExpenses.length} itens)`}
+                    </Button>
+                  </div>
+                )}
                 </CardContent>
               </Card>
           </TabsContent>
