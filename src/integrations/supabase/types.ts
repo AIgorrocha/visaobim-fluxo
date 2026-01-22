@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      company_expenses: {
+        Row: {
+          amount: number
+          contract_name: string | null
+          cost_center: string
+          created_at: string | null
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          project_id: string | null
+          responsible: string | null
+          sector: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          contract_name?: string | null
+          cost_center: string
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          expense_date: string
+          id?: string
+          project_id?: string | null
+          responsible?: string | null
+          sector?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          contract_name?: string | null
+          cost_center?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          project_id?: string | null
+          responsible?: string | null
+          sector?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "designer_receivables"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "company_expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_leads: {
         Row: {
           area: string | null
@@ -65,6 +125,57 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_income: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          income_date: string
+          income_type: string | null
+          project_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          income_date: string
+          income_type?: string | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          income_date?: string
+          income_type?: string | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_income_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "designer_receivables"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "contract_income_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       designer_payments: {
         Row: {
           amount: number
@@ -82,6 +193,7 @@ export type Database = {
           project_name: string | null
           sector: string | null
           status: string | null
+          supervisor_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -100,6 +212,7 @@ export type Database = {
           project_name?: string | null
           sector?: string | null
           status?: string | null
+          supervisor_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -118,6 +231,7 @@ export type Database = {
           project_name?: string | null
           sector?: string | null
           status?: string | null
+          supervisor_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -154,6 +268,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "designer_payments_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -544,6 +665,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_active: boolean | null
           role: string
           updated_at: string | null
         }
@@ -553,6 +675,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          is_active?: boolean | null
           role?: string
           updated_at?: string | null
         }
@@ -562,6 +685,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_active?: boolean | null
           role?: string
           updated_at?: string | null
         }
@@ -578,6 +702,7 @@ export type Database = {
           discipline_id: string | null
           discipline_name: string
           id: string
+          majoracao: number | null
           notes: string | null
           project_id: string
           status: string | null
@@ -594,6 +719,7 @@ export type Database = {
           discipline_id?: string | null
           discipline_name: string
           id?: string
+          majoracao?: number | null
           notes?: string | null
           project_id: string
           status?: string | null
@@ -610,6 +736,7 @@ export type Database = {
           discipline_id?: string | null
           discipline_name?: string
           id?: string
+          majoracao?: number | null
           notes?: string | null
           project_id?: string
           status?: string | null
@@ -1010,6 +1137,48 @@ export type Database = {
           },
         ]
       }
+      unmatched_entries: {
+        Row: {
+          created_at: string | null
+          entry_id: string
+          field_type: string
+          id: string
+          original_value: string
+          resolved_at: string | null
+          resolved_value: string | null
+          sector: string | null
+          source_table: string
+          status: string | null
+          suggested_matches: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          entry_id: string
+          field_type: string
+          id?: string
+          original_value: string
+          resolved_at?: string | null
+          resolved_value?: string | null
+          sector?: string | null
+          source_table: string
+          status?: string | null
+          suggested_matches?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          entry_id?: string
+          field_type?: string
+          id?: string
+          original_value?: string
+          resolved_at?: string | null
+          resolved_value?: string | null
+          sector?: string | null
+          source_table?: string
+          status?: string | null
+          suggested_matches?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       designer_financial_summary: {
@@ -1185,9 +1354,22 @@ export type Database = {
     Functions: {
       budget_request_handler: { Args: { payload: Json }; Returns: Json }
       calculate_user_level: { Args: { user_points: number }; Returns: number }
+      check_rls_inconsistencies: {
+        Args: never
+        Returns: {
+          client_name: string
+          designer_id: string
+          designer_name: string
+          inconsistency_type: string
+          project_id: string
+          project_name: string
+        }[]
+      }
       cleanup_old_activity_logs: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
       contact_lead_handler: { Args: { payload: Json }; Returns: Json }
+      fix_payment_project_names: { Args: never; Returns: number }
+      fix_rls_inconsistencies: { Args: never; Returns: number }
       generate_transaction_fingerprint: {
         Args: {
           p_amount: number
