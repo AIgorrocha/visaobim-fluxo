@@ -84,6 +84,42 @@ Inseridas 21 medicoes faltantes do setor publico:
 
 ---
 
+### 5. Simplificacao da Interface de Receitas
+
+**Alteracoes:**
+- Removida coluna "Tipo" da tabela de receitas
+- Removidos cards de Medicoes/Parcelas/Entradas (ficou so Total)
+- Removido contador de registros do badge
+- Tabelas de receitas e despesas agora sao expansiveis (mostra 20 primeiros, botao para ver todos)
+
+---
+
+### 6. Correcao RLS - Projetos por Projetista
+
+**Problema:** Projetistas podiam ver projetos que criaram, mesmo sem estar nos responsaveis.
+
+**Solucao:** Simplificada a politica RLS para SELECT:
+```sql
+-- Removidas 3 politicas conflitantes e criada uma unica
+CREATE POLICY "projects_select_policy" ON projects
+FOR SELECT
+USING (
+  auth.role() = 'authenticated'
+  AND (
+    get_user_role_simple() = 'admin'  -- Admin ve tudo
+    OR
+    (auth.uid())::text = ANY (responsible_ids)  -- Projetista so ve onde e responsavel
+  )
+);
+```
+
+**Resultado:**
+- Admin ve todos os projetos
+- Projetista so ve projetos onde esta em `responsible_ids`
+- Removida regra `created_by` que permitia ver projetos criados
+
+---
+
 ## Resumo Final
 
 | Item | Status |
@@ -92,6 +128,8 @@ Inseridas 21 medicoes faltantes do setor publico:
 | 4 projetos publicos criados | Concluido |
 | 21 medicoes inseridas (R$ 567k) | Concluido |
 | Limite scroll despesas removido | Concluido |
+| Interface receitas simplificada | Concluido |
+| RLS projetos por projetista | Corrigido |
 
 ---
 
