@@ -23,10 +23,19 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'SPRF-AL': '60a49d27-05d9-4e60-aa18-accffc94cca1',
   'SPF-RO': '04e09afb-8b45-4ab8-b6ff-8e57dd0ed0b5',
   'UNESPAR-ELE': 'ae4caf7d-730c-4d22-991d-0a255bfeb695',
-  'IBC-RJ': null,
-  'CIAP-SP': null,
+  // Projetos finalizados
+  'IBC-RJ': '46195969-2413-4782-8753-0002fd633655',
+  'IBC': '46195969-2413-4782-8753-0002fd633655',
+  'CIAP-SP': '0083d03a-01f4-4d35-bb8e-e8501a17109e',
+  'CIAP': '0083d03a-01f4-4d35-bb8e-e8501a17109e',
   'CMB-SP': null,
-  // Novos aliases adicionados
+  'ZOOTECNIA-USP': '91a2dfd8-d0e1-4bb0-8b0d-f9d43ac0d3a3',
+  'ZOOTECNIA': '91a2dfd8-d0e1-4bb0-8b0d-f9d43ac0d3a3',
+  'UNESPAR-EST.MET': '9de6e94a-bce4-4ab5-9923-1081d0a9eba1',
+  'UNESPAR-EST': '9de6e94a-bce4-4ab5-9923-1081d0a9eba1',
+  'CARVALHO-PORTAL DA ALEGRIA': 'b940baaf-1bab-481d-925a-98d2479bf334',
+  'CARVALHO-PORTAL': 'b940baaf-1bab-481d-925a-98d2479bf334',
+  // Outros aliases
   'FHEMIG-BH': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
   'FHEMIG': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
   'SANTA MARIA-RS': '5d68fb6e-1e5f-4d3d-9fd6-e5bcef8c3ca6',
