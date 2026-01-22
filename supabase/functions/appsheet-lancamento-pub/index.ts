@@ -169,6 +169,33 @@ Deno.serve(async (req) => {
     if (tipoUpper === 'DESPESA' && centroCustoUpper === 'PROJETISTA') {
       console.log('💰 Inserindo pagamento de projetista...');
       
+      // Buscar precificação existente para vincular automaticamente
+      let pricingId: string | null = null;
+      let pricingRecord: { id: string; discipline_name: string; designer_value: number; amount_paid: number } | null = null;
+      
+      if (projectId && designerId) {
+        const { data: pricings } = await supabase
+          .from('project_pricing')
+          .select('id, discipline_name, designer_value, amount_paid')
+          .eq('project_id', projectId)
+          .eq('designer_id', designerId)
+          .order('created_at', { ascending: true });
+
+        if (pricings && pricings.length > 0) {
+          // Prioriza precificação com disciplina igual ou similar
+          const disciplineUpper = (Disciplina || '').toUpperCase().trim();
+          pricingRecord = pricings.find((p: any) => {
+            const pricingDisc = (p.discipline_name || '').toUpperCase();
+            return pricingDisc.includes(disciplineUpper) || disciplineUpper.includes(pricingDisc);
+          }) || pricings[0];
+          
+          pricingId = pricingRecord.id;
+          console.log(`🔗 Precificação encontrada: ${pricingId} (${pricingRecord.discipline_name})`);
+        } else {
+          console.log('⚠️ Nenhuma precificação encontrada para vincular');
+        }
+      }
+      
       const { data, error } = await supabase
         .from('designer_payments')
         .insert({
@@ -180,14 +207,35 @@ Deno.serve(async (req) => {
           payment_date: parsedDate,
           description: Descricao || ID_Lancamento,
           sector: 'publico',
-          status: 'pago'
+          status: 'pago',
+          pricing_id: pricingId
         })
         .select()
         .single();
 
       if (error) throw error;
-      result = { type: 'designer_payment', data };
+      result = { type: 'designer_payment', data, pricing_linked: !!pricingId };
       console.log('✅ Pagamento de projetista inserido:', data.id);
+      
+      // Atualizar amount_paid na precificação após inserir pagamento
+      if (pricingId && pricingRecord) {
+        const newAmountPaid = (pricingRecord.amount_paid || 0) + parsedAmount;
+        const newStatus = newAmountPaid >= pricingRecord.designer_value ? 'pago' : 'parcial';
+        
+        const { error: updateError } = await supabase
+          .from('project_pricing')
+          .update({ 
+            amount_paid: Math.min(newAmountPaid, pricingRecord.designer_value),
+            status: newStatus 
+          })
+          .eq('id', pricingId);
+          
+        if (updateError) {
+          console.error('⚠️ Erro ao atualizar precificação:', updateError);
+        } else {
+          console.log(`📊 Precificação atualizada: amount_paid=${newAmountPaid.toFixed(2)}, status=${newStatus}`);
+        }
+      }
     }
     // RECEITA + PAGAMENTO ou MEDICAO = Receita do contrato
     else if (tipoUpper === 'RECEITA' && (centroCustoUpper === 'PAGAMENTO' || centroCustoUpper === 'MEDICAO')) {
