@@ -14,7 +14,10 @@ import {
   Download,
   Search,
   AlertTriangle,
-  UserPlus
+  UserPlus,
+  FileCheck,
+  Calendar,
+  ArrowUpRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -161,6 +164,10 @@ const AdminFinanceiro = () => {
   const [filterExpenseCostCenter, setFilterExpenseCostCenter] = useState<string>('all');
   const [filterExpenseContract, setFilterExpenseContract] = useState<string>('all');
   const [filterExpenseSector, setFilterExpenseSector] = useState<string>('all');
+  // Filtros de Receitas
+  const [filterIncomeType, setFilterIncomeType] = useState<string>('all');
+  const [filterIncomeProject, setFilterIncomeProject] = useState<string>('all');
+  const [filterIncomeSector, setFilterIncomeSector] = useState<string>('all');
   const [customDateStart, setCustomDateStart] = useState<string>('');
   const [customDateEnd, setCustomDateEnd] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -245,6 +252,61 @@ const AdminFinanceiro = () => {
 
     return { totalPaid, totalPending };
   }, [filteredPayments]);
+
+  // Dados enriquecidos de receitas (com nome do projeto)
+  const enrichedIncome = useMemo(() => {
+    return contractIncome.map(inc => {
+      const project = projects.find(p => p.id === inc.project_id);
+      return {
+        ...inc,
+        project_name: project?.name || 'N/A',
+        sector: project?.type || 'privado'
+      };
+    });
+  }, [contractIncome, projects]);
+
+  // Filtrar e calcular resumo de receitas
+  const incomeSummary = useMemo(() => {
+    const filtered = enrichedIncome.filter(inc => {
+      if (filterIncomeType !== 'all' && inc.income_type !== filterIncomeType) return false;
+      if (filterIncomeProject !== 'all' && inc.project_id !== filterIncomeProject) return false;
+      if (filterIncomeSector !== 'all' && inc.sector !== filterIncomeSector) return false;
+      return true;
+    }).sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime());
+
+    const medicoes = filtered.filter(i => i.income_type === 'medicao');
+    const parcelas = filtered.filter(i => i.income_type === 'parcela');
+    const entradas = filtered.filter(i => i.income_type === 'entrada');
+    const outros = filtered.filter(i => !['medicao', 'parcela', 'entrada'].includes(i.income_type || ''));
+
+    return {
+      total: filtered.reduce((sum, inc) => sum + Number(inc.amount), 0),
+      medicoes: {
+        total: medicoes.reduce((s, i) => s + Number(i.amount), 0),
+        count: medicoes.length
+      },
+      parcelas: {
+        total: parcelas.reduce((s, i) => s + Number(i.amount), 0),
+        count: parcelas.length
+      },
+      entradas: {
+        total: entradas.reduce((s, i) => s + Number(i.amount), 0),
+        count: entradas.length
+      },
+      outros: {
+        total: outros.reduce((s, i) => s + Number(i.amount), 0),
+        count: outros.length
+      },
+      count: filtered.length,
+      items: filtered
+    };
+  }, [enrichedIncome, filterIncomeType, filterIncomeProject, filterIncomeSector]);
+
+  // Projetos com receitas (para filtro)
+  const projectsWithIncome = useMemo(() => {
+    const projectIds = [...new Set(contractIncome.map(i => i.project_id).filter(Boolean))];
+    return projects.filter(p => projectIds.includes(p.id));
+  }, [contractIncome, projects]);
 
   // Abrir modal para novo pagamento
   const handleAddPayment = () => {
@@ -569,8 +631,16 @@ const AdminFinanceiro = () => {
         transition={{ duration: 0.5, delay: 0.2 }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="visao-geral">Visao Geral</TabsTrigger>
+            <TabsTrigger value="receitas" className="relative">
+              Receitas
+              {contractIncome.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5 flex items-center justify-center text-xs">
+                  {contractIncome.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
             <TabsTrigger value="projetistas">Por Projetista</TabsTrigger>
             <TabsTrigger value="nao-atribuidas" className="relative">
@@ -1061,6 +1131,251 @@ const AdminFinanceiro = () => {
                           </TableCell>
                           <TableCell className="text-right text-emerald-600">
                             {formatCurrency(filteredPrivateContracts.reduce((s, c) => s + (c.total_received - c.total_paid_designers - c.total_expenses), 0))}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Receitas */}
+          <TabsContent value="receitas">
+            {/* Cards de Resumo de Receitas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card
+                className={`border-l-4 border-l-blue-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'medicao' ? 'ring-2 ring-blue-500' : ''}`}
+                onClick={() => setFilterIncomeType(filterIncomeType === 'medicao' ? 'all' : 'medicao')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Medições</CardTitle>
+                  <FileCheck className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(incomeSummary.medicoes.total)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {incomeSummary.medicoes.count} lançamentos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className={`border-l-4 border-l-green-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'parcela' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setFilterIncomeType(filterIncomeType === 'parcela' ? 'all' : 'parcela')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Parcelas</CardTitle>
+                  <Calendar className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(incomeSummary.parcelas.total)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {incomeSummary.parcelas.count} lançamentos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className={`border-l-4 border-l-purple-500 cursor-pointer transition-shadow hover:shadow-lg ${filterIncomeType === 'entrada' ? 'ring-2 ring-purple-500' : ''}`}
+                onClick={() => setFilterIncomeType(filterIncomeType === 'entrada' ? 'all' : 'entrada')}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Entradas</CardTitle>
+                  <ArrowUpRight className="h-4 w-4 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(incomeSummary.entradas.total)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {incomeSummary.entradas.count} lançamentos
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-emerald-500">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Geral</CardTitle>
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {formatCurrency(incomeSummary.total)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {incomeSummary.count} lançamentos no total
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Filtros de Receitas */}
+            <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
+              <Label className="font-semibold">Filtros:</Label>
+
+              {/* Filtro por Tipo */}
+              <Select value={filterIncomeType} onValueChange={setFilterIncomeType}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  <SelectItem value="medicao">Medição</SelectItem>
+                  <SelectItem value="parcela">Parcela</SelectItem>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Filtro por Projeto */}
+              <Select value={filterIncomeProject} onValueChange={setFilterIncomeProject}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Projetos</SelectItem>
+                  {projectsWithIncome.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filtro por Setor */}
+              <Select value={filterIncomeSector} onValueChange={setFilterIncomeSector}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="publico">Público</SelectItem>
+                  <SelectItem value="privado">Privado</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Limpar Filtros */}
+              {(filterIncomeType !== 'all' || filterIncomeProject !== 'all' || filterIncomeSector !== 'all') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFilterIncomeType('all');
+                    setFilterIncomeProject('all');
+                    setFilterIncomeSector('all');
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar
+                </Button>
+              )}
+
+              <Badge variant="outline" className="ml-auto">
+                {incomeSummary.count} registros | {formatCurrency(incomeSummary.total)}
+              </Badge>
+            </div>
+
+            {/* Tabela de Receitas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {filterIncomeType === 'medicao' ? 'Medições' :
+                   filterIncomeType === 'parcela' ? 'Parcelas' :
+                   filterIncomeType === 'entrada' ? 'Entradas' :
+                   'Todas as Receitas'}
+                </CardTitle>
+                <CardDescription>
+                  Histórico de recebimentos e entradas financeiras
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {incomeSummary.items.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">Nenhuma receita encontrada com os filtros selecionados</p>
+                ) : (
+                  <div className="max-h-[600px] overflow-y-auto border rounded-lg">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background">
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Projeto</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Setor</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {incomeSummary.items.map((income) => (
+                          <TableRow key={income.id}>
+                            <TableCell className="whitespace-nowrap">{formatDate(income.income_date)}</TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setFilterIncomeProject(
+                                  filterIncomeProject === income.project_id ? 'all' : income.project_id
+                                )}
+                                className="cursor-pointer"
+                              >
+                                <Badge
+                                  variant={filterIncomeProject === income.project_id ? 'default' : 'secondary'}
+                                  className="hover:opacity-80"
+                                >
+                                  {income.project_name}
+                                </Badge>
+                              </button>
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setFilterIncomeType(
+                                  filterIncomeType === income.income_type ? 'all' : (income.income_type || 'outro')
+                                )}
+                                className="cursor-pointer"
+                              >
+                                <Badge
+                                  variant={filterIncomeType === income.income_type ? 'default' : 'outline'}
+                                  className={`hover:opacity-80 ${
+                                    income.income_type === 'medicao' ? 'border-blue-500 text-blue-600' :
+                                    income.income_type === 'parcela' ? 'border-green-500 text-green-600' :
+                                    income.income_type === 'entrada' ? 'border-purple-500 text-purple-600' :
+                                    'border-gray-500 text-gray-600'
+                                  }`}
+                                >
+                                  {income.income_type === 'medicao' ? 'Medição' :
+                                   income.income_type === 'parcela' ? 'Parcela' :
+                                   income.income_type === 'entrada' ? 'Entrada' :
+                                   income.income_type || 'Outro'}
+                                </Badge>
+                              </button>
+                            </TableCell>
+                            <TableCell className="max-w-[250px]">{income.description || '-'}</TableCell>
+                            <TableCell>
+                              <button
+                                onClick={() => setFilterIncomeSector(
+                                  filterIncomeSector === income.sector ? 'all' : income.sector
+                                )}
+                                className="cursor-pointer"
+                              >
+                                <Badge
+                                  variant={income.sector === 'publico' ? 'default' : 'secondary'}
+                                  className="hover:opacity-80"
+                                >
+                                  {income.sector === 'publico' ? 'Público' : 'Privado'}
+                                </Badge>
+                              </button>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-green-600 whitespace-nowrap">
+                              {formatCurrency(income.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Linha de Total */}
+                        <TableRow className="bg-muted/50 font-bold">
+                          <TableCell colSpan={5}>TOTAL</TableCell>
+                          <TableCell className="text-right text-emerald-600">
+                            {formatCurrency(incomeSummary.total)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
