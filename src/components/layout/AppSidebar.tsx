@@ -26,7 +26,9 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // Emails com acesso restrito a areas financeiras
-const RESTRICTED_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
+const RESTRICTED_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com', 'edilson@visaobim.com'];
+// Emails com acesso à Gestão Financeira (admin completo) - apenas Igor e Stael
+const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
 
 const menuItems = [
   {
@@ -71,7 +73,7 @@ const menuItems = [
     url: '/admin-financeiro',
     icon: DollarSign,
     roles: ['admin'],
-    restrictedEmails: RESTRICTED_EMAILS
+    restrictedEmails: ADMIN_FINANCIAL_EMAILS
   },
   {
     title: 'Propostas',

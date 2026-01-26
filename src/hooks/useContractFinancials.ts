@@ -56,6 +56,14 @@ export interface ContractSummary {
 /**
  * Hook para buscar receitas de contratos (medições, parcelas, etc.)
  */
+export interface ContractIncomeInput {
+  project_id: string;
+  amount: number;
+  income_date: string;
+  description?: string;
+  income_type: 'medicao' | 'entrada' | 'parcela' | 'outro';
+}
+
 export function useContractIncome() {
   const [income, setIncome] = useState<ContractIncome[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +87,53 @@ export function useContractIncome() {
     }
   };
 
+  const createIncome = async (data: ContractIncomeInput) => {
+    try {
+      const { error } = await (supabase
+        .from('contract_income') as any)
+        .insert([data]);
+
+      if (error) throw error;
+      await fetchIncome();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao criar receita:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const updateIncome = async (id: string, data: Partial<ContractIncomeInput>) => {
+    try {
+      const { error } = await (supabase
+        .from('contract_income') as any)
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchIncome();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao atualizar receita:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const deleteIncome = async (id: string) => {
+    try {
+      const { error } = await (supabase
+        .from('contract_income') as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchIncome();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao deletar receita:', err);
+      return { success: false, error: err.message };
+    }
+  };
+
   useEffect(() => {
     fetchIncome();
   }, []);
@@ -87,7 +142,10 @@ export function useContractIncome() {
     income,
     loading,
     error,
-    refetch: fetchIncome
+    refetch: fetchIncome,
+    createIncome,
+    updateIncome,
+    deleteIncome
   };
 }
 

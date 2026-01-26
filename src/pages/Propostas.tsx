@@ -28,8 +28,8 @@ const Propostas = () => {
   const { user, profile } = useAuth();
   const { proposals, updateProposal, deleteProposal, refetchProposals } = useSupabaseData();
 
-  // Verificar se usuario e Igor ou Stael (acesso restrito)
-  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
+  // Verificar se usuario e Igor, Stael ou Edilson (acesso restrito)
+  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com', 'edilson@visaobim.com'];
   const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
 
   const [searchTerm, setSearchTerm] = useState('');

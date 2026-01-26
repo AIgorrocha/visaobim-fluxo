@@ -28,11 +28,18 @@ const MinhasTarefas = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [projectFilter, setProjectFilter] = useState<string>('todos');
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('todos');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<string>('todos');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('todos');
   const [deadlineFilter, setDeadlineFilter] = useState<string>('todos');
   const [restrictionFilter, setRestrictionFilter] = useState<string>('todos');
   const [showCompleted, setShowCompleted] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+
+  // Projetos filtrados pelo status do projeto (para o select de projetos)
+  const filteredProjectsByStatus = projects.filter(p => {
+    if (projectStatusFilter === 'todos') return true;
+    return p.status === projectStatusFilter;
+  });
 
   if (!user) return null;
 
@@ -102,7 +109,13 @@ const MinhasTarefas = () => {
       return project?.type === projectTypeFilter;
     })();
 
-    
+    // Filtro por status do projeto (EM_ANDAMENTO, CONCLUIDO, etc.)
+    const matchesProjectStatus = projectStatusFilter === 'todos' || (() => {
+      const project = projects.find(p => p.id === task.project_id);
+      return project?.status === projectStatusFilter;
+    })();
+
+
 
     const matchesResponsible = responsibleFilter === 'todos' ||
       (Array.isArray(task.assigned_to) ? task.assigned_to.includes(responsibleFilter) : task.assigned_to === responsibleFilter);
@@ -162,7 +175,7 @@ const MinhasTarefas = () => {
     const matchesCompletedFilter = showCompleted || task.status !== 'CONCLUIDA';
     const matchesArchivedFilter = showArchived ? true : !task.is_archived;
 
-    return matchesSearch && matchesProject && matchesProjectType && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
+    return matchesSearch && matchesProject && matchesProjectType && matchesProjectStatus && matchesResponsible && matchesDeadline && matchesRestriction && matchesCompletedFilter && matchesArchivedFilter;
   }).sort((a, b) => {
     // Tarefas sem prazo ficam no início
     if (!a.due_date && !b.due_date) return 0;
@@ -635,8 +648,12 @@ const MinhasTarefas = () => {
                     <SelectValue placeholder="Projeto" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todos">Todos os Projetos</SelectItem>
-                    {projects.filter(project => project.id).map(project => (
+                    <SelectItem value="todos">
+                      {projectStatusFilter !== 'todos'
+                        ? `Todos (${filteredProjectsByStatus.length} projetos)`
+                        : 'Todos os Projetos'}
+                    </SelectItem>
+                    {filteredProjectsByStatus.filter(project => project.id).map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name} - {project.client}</SelectItem>
                     ))}
                   </SelectContent>
@@ -650,6 +667,24 @@ const MinhasTarefas = () => {
                     <SelectItem value="todos">Todos os Tipos</SelectItem>
                     <SelectItem value="publico">🏛️ Públicos</SelectItem>
                     <SelectItem value="privado">🔒 Privados</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={projectStatusFilter} onValueChange={(value) => {
+                  setProjectStatusFilter(value);
+                  setProjectFilter('todos'); // Resetar filtro de projeto ao mudar status
+                }}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Status Projeto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Status</SelectItem>
+                    <SelectItem value="EM_ANDAMENTO">🔵 Em Andamento</SelectItem>
+                    <SelectItem value="AGUARDANDO_APROVACAO">🟡 Aguardando Aprovação</SelectItem>
+                    <SelectItem value="AGUARDANDO_PAGAMENTO">🟠 Aguardando Pagamento</SelectItem>
+                    <SelectItem value="CONCLUIDO">🟢 Concluído</SelectItem>
+                    <SelectItem value="EM_ESPERA">⏸️ Em Espera</SelectItem>
+                    <SelectItem value="PARALISADO">🔴 Paralisado</SelectItem>
                   </SelectContent>
                 </Select>
 

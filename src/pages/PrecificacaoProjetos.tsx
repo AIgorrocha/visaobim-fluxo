@@ -109,8 +109,8 @@ const PrecificacaoProjetos = () => {
   const [deletingDisciplineId, setDeletingDisciplineId] = useState<string | null>(null);
   const [isDeleteDisciplineDialogOpen, setIsDeleteDisciplineDialogOpen] = useState(false);
 
-  // Verificar acesso - apenas Igor e Stael podem acessar
-  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
+  // Verificar acesso - apenas Igor, Stael e Edilson podem acessar
+  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com', 'edilson@visaobim.com'];
   const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
 
   if (!hasAccess) {

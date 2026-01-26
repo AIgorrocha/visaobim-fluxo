@@ -127,7 +127,13 @@ const AdminFinanceiro = () => {
     summary: contractSummary,
     loading: contractsLoading
   } = useContractOverview();
-  const { income: contractIncome } = useContractIncome();
+  const {
+    income: contractIncome,
+    createIncome,
+    updateIncome,
+    deleteIncome,
+    refetch: refetchIncome
+  } = useContractIncome();
   const {
     expenses: companyExpenses,
     publicExpenses: publicCompanyExpenses,
@@ -150,6 +156,19 @@ const AdminFinanceiro = () => {
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [isContractDetailOpen, setIsContractDetailOpen] = useState(false);
+
+  // Estados para modal de Receitas
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<any | null>(null);
+  const [isDeleteIncomeDialogOpen, setIsDeleteIncomeDialogOpen] = useState(false);
+  const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
+  const [incomeFormData, setIncomeFormData] = useState({
+    project_id: '',
+    amount: 0,
+    income_date: new Date().toISOString().split('T')[0],
+    description: '',
+    income_type: 'medicao' as 'medicao' | 'entrada' | 'parcela' | 'outro'
+  });
 
   // Filtros
   const [filterDesigner, setFilterDesigner] = useState<string>('all');
@@ -460,6 +479,130 @@ const AdminFinanceiro = () => {
       toast({
         title: 'Erro ao salvar',
         description: error.message || 'Erro desconhecido ao salvar pagamento',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // ============ HANDLERS DE RECEITAS ============
+
+  // Abrir modal para nova receita
+  const handleAddIncome = () => {
+    setEditingIncome(null);
+    setIncomeFormData({
+      project_id: '',
+      amount: 0,
+      income_date: new Date().toISOString().split('T')[0],
+      description: '',
+      income_type: 'medicao'
+    });
+    setIsIncomeModalOpen(true);
+  };
+
+  // Abrir modal para editar receita
+  const handleEditIncome = (income: any) => {
+    setEditingIncome(income);
+    setIncomeFormData({
+      project_id: income.project_id || '',
+      amount: income.amount,
+      income_date: income.income_date,
+      description: income.description || '',
+      income_type: income.income_type || 'medicao'
+    });
+    setIsIncomeModalOpen(true);
+  };
+
+  // Confirmar delete de receita
+  const handleDeleteIncomeClick = (id: string) => {
+    setDeletingIncomeId(id);
+    setIsDeleteIncomeDialogOpen(true);
+  };
+
+  // Executar delete de receita
+  const handleConfirmDeleteIncome = async () => {
+    if (!deletingIncomeId) return;
+
+    try {
+      const result = await deleteIncome(deletingIncomeId);
+      if (result.success) {
+        toast({
+          title: 'Receita removida',
+          description: 'A receita foi removida com sucesso'
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleteIncomeDialogOpen(false);
+      setDeletingIncomeId(null);
+    }
+  };
+
+  // Salvar receita (criar ou atualizar)
+  const handleSaveIncome = async () => {
+    try {
+      // Validar projeto
+      if (!incomeFormData.project_id) {
+        toast({
+          title: 'Projeto obrigatório',
+          description: 'Selecione um projeto',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Validar valor
+      if (incomeFormData.amount <= 0) {
+        toast({
+          title: 'Valor inválido',
+          description: 'O valor deve ser maior que zero',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const dataToSave = {
+        project_id: incomeFormData.project_id,
+        amount: Number(incomeFormData.amount),
+        income_date: incomeFormData.income_date,
+        description: incomeFormData.description || null,
+        income_type: incomeFormData.income_type
+      };
+
+      if (editingIncome) {
+        const result = await updateIncome(editingIncome.id, dataToSave);
+        if (result.success) {
+          toast({
+            title: 'Receita atualizada',
+            description: 'A receita foi atualizada com sucesso'
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      } else {
+        const result = await createIncome(dataToSave);
+        if (result.success) {
+          toast({
+            title: 'Receita registrada',
+            description: 'A receita foi registrada com sucesso'
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      }
+
+      setIsIncomeModalOpen(false);
+    } catch (error: any) {
+      console.error('Erro ao salvar receita:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message || 'Erro desconhecido ao salvar receita',
         variant: 'destructive'
       });
     }
@@ -1161,8 +1304,13 @@ const AdminFinanceiro = () => {
               </Card>
             </div>
 
-            {/* Filtros de Receitas */}
+            {/* Botão Nova Receita + Filtros */}
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
+              <Button onClick={handleAddIncome} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Receita
+              </Button>
+              <div className="h-6 w-px bg-border mx-2" />
               <Label className="font-semibold">Filtros:</Label>
 
               {/* Filtro por Projeto */}
@@ -1231,6 +1379,7 @@ const AdminFinanceiro = () => {
                           <TableHead>Descrição</TableHead>
                           <TableHead>Setor</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
+                          <TableHead className="text-center w-[100px]">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1271,6 +1420,27 @@ const AdminFinanceiro = () => {
                             <TableCell className="text-right font-semibold text-green-600 whitespace-nowrap">
                               {formatCurrency(income.amount)}
                             </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditIncome(income)}
+                                  title="Editar"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteIncomeClick(income.id)}
+                                  title="Excluir"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
@@ -1279,6 +1449,7 @@ const AdminFinanceiro = () => {
                           <TableCell className="text-right text-emerald-600">
                             {formatCurrency(incomeSummary.total)}
                           </TableCell>
+                          <TableCell></TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
@@ -2054,6 +2225,133 @@ const AdminFinanceiro = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Receita (criar/editar) */}
+      <Dialog open={isIncomeModalOpen} onOpenChange={setIsIncomeModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingIncome ? 'Editar Receita' : 'Nova Receita'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingIncome
+                ? 'Altere os dados da receita'
+                : 'Registre uma nova receita (medição, parcela, entrada, etc.)'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Projeto */}
+            <div className="space-y-2">
+              <Label>Projeto *</Label>
+              <Select
+                value={incomeFormData.project_id}
+                onValueChange={(value) => setIncomeFormData({ ...incomeFormData, project_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.filter(p => p.id && !p.is_archived).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo de Receita */}
+            <div className="space-y-2">
+              <Label>Tipo de Receita *</Label>
+              <Select
+                value={incomeFormData.income_type}
+                onValueChange={(value: 'medicao' | 'entrada' | 'parcela' | 'outro') =>
+                  setIncomeFormData({ ...incomeFormData, income_type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="medicao">Medição</SelectItem>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="parcela">Parcela</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Valor */}
+              <div className="space-y-2">
+                <Label>Valor (R$) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={incomeFormData.amount || ''}
+                  onChange={(e) => setIncomeFormData({
+                    ...incomeFormData,
+                    amount: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+              </div>
+
+              {/* Data */}
+              <div className="space-y-2">
+                <Label>Data *</Label>
+                <Input
+                  type="date"
+                  value={incomeFormData.income_date}
+                  onChange={(e) => setIncomeFormData({ ...incomeFormData, income_date: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Descrição */}
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea
+                value={incomeFormData.description}
+                onChange={(e) => setIncomeFormData({ ...incomeFormData, description: e.target.value })}
+                placeholder="Ex: Medição 3/5, Entrada 30%, etc."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsIncomeModalOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveIncome}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação de Delete de Receita */}
+      <AlertDialog open={isDeleteIncomeDialogOpen} onOpenChange={setIsDeleteIncomeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta receita?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteIncome} className="bg-destructive text-destructive-foreground">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
