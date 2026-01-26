@@ -26,9 +26,10 @@ import {
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // Emails com acesso restrito a areas financeiras
-const RESTRICTED_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com', 'edilson@visaobim.com'];
-// Emails com acesso à Gestão Financeira (admin completo) - apenas Igor e Stael
+// Emails com acesso à Gestão Financeira e Precificação - apenas Igor e Stael
 const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
+// Emails com acesso às Propostas - apenas Igor
+const PROPOSTAS_EMAILS = ['igor@visaobim.com'];
 
 const menuItems = [
   {
@@ -80,7 +81,7 @@ const menuItems = [
     url: '/propostas',
     icon: FileText,
     roles: ['admin'],
-    restrictedEmails: RESTRICTED_EMAILS
+    restrictedEmails: PROPOSTAS_EMAILS
   },
   { title: "Relatorios", url: "/relatorios", icon: BarChart3, roles: ["admin", "user"] },
   {
