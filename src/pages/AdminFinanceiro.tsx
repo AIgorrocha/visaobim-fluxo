@@ -1304,13 +1304,8 @@ const AdminFinanceiro = () => {
               </Card>
             </div>
 
-            {/* Botão Nova Receita + Filtros */}
+            {/* Filtros de Receitas */}
             <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
-              <Button onClick={handleAddIncome} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Receita
-              </Button>
-              <div className="h-6 w-px bg-border mx-2" />
               <Label className="font-semibold">Filtros:</Label>
 
               {/* Filtro por Projeto */}
