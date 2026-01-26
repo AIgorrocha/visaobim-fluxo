@@ -66,7 +66,7 @@ const menuItems = [
     url: '/precificacao',
     icon: Calculator,
     roles: ['admin'],
-    restrictedEmails: RESTRICTED_EMAILS
+    restrictedEmails: ADMIN_FINANCIAL_EMAILS
   },
   {
     title: 'Gestao Financeira',
