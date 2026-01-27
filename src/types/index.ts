@@ -13,7 +13,7 @@ export interface Project {
   name: string;
   client: string;
   type: 'privado' | 'publico';
-  status: 'EM_ANDAMENTO' | 'EM_ESPERA' | 'PARALISADO' | 'CONCLUIDO' | 'AGUARDANDO_PAGAMENTO' | 'AGUARDANDO_APROVACAO';
+  status: 'EM_ANDAMENTO' | 'EM_ESPERA' | 'PARALISADO' | 'CONCLUIDO' | 'FINALIZADO' | 'AGUARDANDO_PAGAMENTO' | 'AGUARDANDO_APROVACAO';
   art_emitida?: boolean;
   description?: string;
   responsible_ids: string[];

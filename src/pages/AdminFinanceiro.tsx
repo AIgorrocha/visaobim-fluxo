@@ -990,13 +990,14 @@ const AdminFinanceiro = () => {
               {/* Filtro por Status (Multi-seleção) */}
               <div className="flex flex-wrap gap-3 items-center">
                 <Label className="text-sm">Status: <span className="text-xs text-muted-foreground font-normal">(selecione vários)</span></Label>
-                {[
+              {[
                   { value: 'all', label: 'Todos' },
                   { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
                   { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
                   { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
                   { value: 'PARALISADO', label: 'Paralisado' },
-                  { value: 'CONCLUIDO', label: 'Concluido' }
+                  { value: 'CONCLUIDO', label: 'Concluido' },
+                  { value: 'FINALIZADO', label: 'Finalizado' }
                 ].map(status => (
                   <div key={status.value} className="flex items-center space-x-1">
                     <Checkbox
