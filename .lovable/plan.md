@@ -1,104 +1,176 @@
 
-## Plano: Incluir Contratos Concluídos/Arquivados na Visão Geral Financeira
 
-### Problema Diagnosticado
+## Plano: Correção de Dois Problemas na Gestão Financeira e Projetos
 
-Os contratos concluídos/arquivados não aparecem na **aba "Visão Geral"** do Admin Financeiro porque:
+### Problemas Identificados
 
-1. O hook `useContractOverview()` usa `useSupabaseData().projects`, que filtra por `is_archived = false`
-2. Isso exclui automaticamente todos os projetos arquivados, incluindo a maioria dos **CONCLUÍDOS**
+---
 
-**Projetos arquivados não visíveis (13+ projetos, R$ 631k em valor):**
+#### **Problema 1: Contratos Públicos Concluídos Não Aparecem na Visão Geral**
 
-| Projeto | Valor Contrato | Status |
-|---------|----------------|--------|
-| FHEMIG-BH | R$ 404.172,91 | FINALIZADO |
-| SPRF-AL | R$ 52.479,04 | FINALIZADO |
-| FENIX-COWORKING | R$ 30.000,00 | CONCLUIDO |
-| LORENA-SP | R$ 28.500,00 | FINALIZADO |
-| ZOOTECNIA-USP | R$ 18.800,00 | FINALIZADO |
-| UNESPAR - EST. METÁLICA | R$ 18.997,00 | FINALIZADO |
-| IBC-RJ | R$ 18.498,92 | FINALIZADO |
-| SPF-RO | R$ 17.107,04 | FINALIZADO |
-| SANTA MARIA-RS | R$ 16.470,58 | FINALIZADO |
-| CIAP-SP | R$ 12.298,77 | FINALIZADO |
-| THALES-GILVANDO&CARINE | R$ 5.500,00 | AGUARD. PAG. |
-| THALES-CLEBER&IGOR | R$ 4.500,00 | CONCLUIDO |
-| IRIS-REFORCO EST | R$ 4.000,00 | CONCLUIDO |
+**Diagnóstico:**
+- No banco de dados existem **dois status diferentes** para projetos "concluídos":
+  - `CONCLUIDO` (6 privados + 1 público)
+  - `FINALIZADO` (9 públicos)
+- O filtro de status na Visão Geral só tem a opção `CONCLUIDO`
+- Isso exclui todos os 9 contratos públicos que têm status `FINALIZADO`
+
+**Dados do banco:**
+| Status | Tipo | Quantidade |
+|--------|------|------------|
+| CONCLUIDO | privado | 6 |
+| CONCLUIDO | publico | 1 |
+| FINALIZADO | publico | **9** (não aparecem!) |
+
+---
+
+#### **Problema 2: Status do Projeto "Reforma das Coberturas" Não Atualiza**
+
+**Diagnóstico:**
+- O projeto está **arquivado** (`is_archived = true`)
+- O hook `useProjects()` só busca projetos com `is_archived = false`
+- Quando você está na visualização de arquivados e tenta atualizar o status:
+  1. A atualização **funciona no banco** (confirmei que o status está atualizado)
+  2. Porém o estado local não é atualizado porque o projeto não está na lista carregada
+  3. A UI não reflete a mudança até recarregar a página
+
+**Adicionalmente:** Há erros de `invalid input syntax for type date: ""` nos logs que indicam que datas vazias estão sendo enviadas ao banco.
+
+---
 
 ### Solução Proposta
 
-Modificar o hook `useContractOverview()` para usar `useAllProjects()` (que já existe no mesmo arquivo) em vez de `useSupabaseData().projects`. Isso garantirá que **todos os projetos** (ativos e arquivados) sejam incluídos na análise financeira.
+#### 1. Adicionar status `FINALIZADO` ao filtro de Visão Geral
 
-### Mudanças Técnicas
+**Arquivo:** `src/pages/AdminFinanceiro.tsx`
 
-#### 1. Modificar `useContractOverview()` em `src/hooks/useContractFinancials.ts`
+Adicionar a opção `FINALIZADO` ao array de status disponíveis para filtro:
 
-**Antes:**
 ```typescript
-export function useContractOverview() {
-  const { projects, payments, pricing } = useSupabaseData();
-  // ...
-  return projects
-    .filter(p => !p.is_archived && p.project_value && ...)
+{[
+  { value: 'all', label: 'Todos' },
+  { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
+  { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
+  { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
+  { value: 'PARALISADO', label: 'Paralisado' },
+  { value: 'CONCLUIDO', label: 'Concluído' },
+  { value: 'FINALIZADO', label: 'Finalizado' }  // NOVO
+]}
 ```
 
-**Depois:**
-```typescript
-export function useContractOverview() {
-  const { payments, pricing } = useSupabaseData();
-  const { projects: allProjects, loading: projectsLoading } = useAllProjects();
-  // ...
-  return allProjects
-    .filter(p => p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA')
-    // Remover filtro !p.is_archived para incluir arquivados
-```
+**Alternativa:** Unificar os status no banco para usar apenas `CONCLUIDO`. Esta seria uma migração de dados.
 
-#### 2. Adicionar indicador de "Arquivado" no ContractOverview
+---
 
-Modificar a interface `ContractOverview` para incluir:
+#### 2. Modificar `useProjects` para gerenciar projetos arquivados corretamente
+
+**Arquivo:** `src/hooks/useSupabaseData.ts`
+
+O hook `updateProject` precisa:
+1. Atualizar o estado local mesmo para projetos arquivados
+2. Manter o projeto na lista se estiver sendo visualizado na aba "Arquivados"
 
 ```typescript
-export interface ContractOverview {
-  // ... campos existentes ...
-  is_archived?: boolean; // Novo campo
-}
-```
+const updateProject = async (id: string, updates: Partial<Project>) => {
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-E no mapeamento:
-```typescript
-return {
-  // ... campos existentes ...
-  is_archived: project.is_archived || false
+    if (error) throw error;
+
+    // Se o projeto atualizado está arquivado e não está na lista,
+    // não adicionar (pois a lista só mostra ativos)
+    // Mas se JÁ ESTÁ na lista, atualizar normalmente
+    setProjects(prev => {
+      const existsInList = prev.some(p => p.id === id);
+      if (existsInList) {
+        return prev.map(p => p.id === id ? data as Project : p);
+      }
+      return prev;
+    });
+    
+    return data;
+  } catch (err: any) {
+    setError(err.message);
+    throw err;
+  }
 };
 ```
 
-#### 3. Atualizar a UI para indicar contratos arquivados
+---
 
-Na tabela de contratos (AdminFinanceiro.tsx), adicionar um indicador visual:
+#### 3. Criar hook separado para gerenciar projetos arquivados
 
-```tsx
-<Badge variant={contract.is_archived ? 'outline' : 'secondary'}>
-  {contract.project_name}
-  {contract.is_archived && ' 📦'}
-</Badge>
+**Arquivo:** `src/hooks/useSupabaseData.ts`
+
+Criar `useArchivedProjects` que busca apenas projetos arquivados:
+
+```typescript
+export function useArchivedProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProjects = async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('is_archived', true)
+      .order('created_at', { ascending: false });
+    
+    if (!error) setProjects(data || []);
+    setLoading(false);
+  };
+
+  // ... updateProject específico para arquivados
+
+  useEffect(() => { fetchProjects(); }, []);
+  return { projects, loading, updateProject, refetch: fetchProjects };
+}
 ```
+
+---
+
+#### 4. Corrigir erro de data vazia no ProjectModal
+
+**Arquivo:** `src/components/ProjectModal.tsx`
+
+A função `formatDateForStorage` retorna string vazia quando não há data, mas o banco espera `null`:
+
+```typescript
+const formatDateForStorage = (dateString: string) => {
+  if (!dateString) return null;  // Retornar null em vez de ''
+  return dateString;
+};
+
+// No handleSubmit:
+const projectData = {
+  ...formData,
+  contract_start: formData.contract_start || null,
+  contract_end: formData.contract_end || null,
+  prazo_vigencia: formData.prazo_vigencia || null
+};
+```
+
+---
 
 ### Arquivos a Modificar
 
-1. **src/hooks/useContractFinancials.ts**
-   - Modificar `useContractOverview()` para usar `useAllProjects()`
-   - Atualizar interface `ContractOverview` com campo `is_archived`
-   - Remover filtro `!p.is_archived` no useMemo
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/AdminFinanceiro.tsx` | Adicionar `FINALIZADO` ao filtro de status |
+| `src/hooks/useSupabaseData.ts` | Corrigir `updateProject` para projetos arquivados e criar `useArchivedProjects` |
+| `src/components/ProjectModal.tsx` | Retornar `null` em vez de `''` para datas vazias |
+| `src/pages/Projetos.tsx` | Usar hook correto para projetos arquivados |
 
-2. **src/pages/AdminFinanceiro.tsx**
-   - Adicionar indicador visual para contratos arquivados nas tabelas
-   - Adicionar filtro opcional para mostrar/ocultar arquivados (se desejado)
+---
 
 ### Resultado Esperado
 
-- **Todos os contratos** (ativos e arquivados) aparecerão na Visão Geral
-- Contratos CONCLUÍDOS/FINALIZADOS serão visíveis ao selecionar o filtro de status correspondente
-- Receitas e despesas de projetos arquivados serão contabilizadas corretamente
-- Contratos arquivados terão indicador visual para diferenciá-los
-- Os cards de resumo mostrarão valores totais incluindo projetos concluídos
+1. **Contratos públicos finalizados** aparecerão ao selecionar o filtro "Finalizado" ou "Todos"
+2. **Atualizações de status** em projetos arquivados serão refletidas imediatamente na UI
+3. **Erros de data** não ocorrerão mais ao salvar projetos sem datas preenchidas
+
