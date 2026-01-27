@@ -1,176 +1,109 @@
 
 
-## Plano: Correção de Dois Problemas na Gestão Financeira e Projetos
+## Plano: Unificar Status e Corrigir Visualização de Projetos Arquivados
 
-### Problemas Identificados
+### Problema 1: Dois Status Para "Concluído"
 
----
+**Situação atual:**
+- No banco de dados existem dois status diferentes:
+  - `CONCLUIDO` - usado em 7 projetos (6 privados + 1 público)
+  - `FINALIZADO` - usado em 9 projetos públicos
+- Tarefas usam apenas `CONCLUIDA` (com "A" no final, diferente de projetos)
 
-#### **Problema 1: Contratos Públicos Concluídos Não Aparecem na Visão Geral**
-
-**Diagnóstico:**
-- No banco de dados existem **dois status diferentes** para projetos "concluídos":
-  - `CONCLUIDO` (6 privados + 1 público)
-  - `FINALIZADO` (9 públicos)
-- O filtro de status na Visão Geral só tem a opção `CONCLUIDO`
-- Isso exclui todos os 9 contratos públicos que têm status `FINALIZADO`
-
-**Dados do banco:**
-| Status | Tipo | Quantidade |
-|--------|------|------------|
-| CONCLUIDO | privado | 6 |
-| CONCLUIDO | publico | 1 |
-| FINALIZADO | publico | **9** (não aparecem!) |
+**Decisão:** Unificar todos para `CONCLUIDO` pois:
+1. É o mais usado em projetos privados
+2. É consistente com o status de tarefas (`CONCLUIDA`)
+3. Requer menos mudanças no código (maioria já usa CONCLUIDO)
 
 ---
 
-#### **Problema 2: Status do Projeto "Reforma das Coberturas" Não Atualiza**
+### Problema 2: Projetos Arquivados Não Aparecem
 
-**Diagnóstico:**
-- O projeto está **arquivado** (`is_archived = true`)
-- O hook `useProjects()` só busca projetos com `is_archived = false`
-- Quando você está na visualização de arquivados e tenta atualizar o status:
-  1. A atualização **funciona no banco** (confirmei que o status está atualizado)
-  2. Porém o estado local não é atualizado porque o projeto não está na lista carregada
-  3. A UI não reflete a mudança até recarregar a página
+**Causa raiz:**
+- A página Projetos usa `useSupabaseData().projects` que só busca projetos com `is_archived = false`
+- Quando você clica em "Ver Arquivados", o filtro `showArchived` muda para `true`
+- MAS a lista de projetos continua sendo a mesma (só projetos ativos)
+- O hook `useArchivedProjects()` existe no código mas NÃO está sendo usado
 
-**Adicionalmente:** Há erros de `invalid input syntax for type date: ""` nos logs que indicam que datas vazias estão sendo enviadas ao banco.
+**Projeto "Reforma das Coberturas":**
+- Está no banco como arquivado (`is_archived = true`)
+- Status: `CONCLUIDO`, Tipo: `publico`
+- Não aparece porque o hook só busca projetos ativos
 
 ---
 
 ### Solução Proposta
 
-#### 1. Adicionar status `FINALIZADO` ao filtro de Visão Geral
+#### Parte 1: Migração SQL para Unificar Status
 
-**Arquivo:** `src/pages/AdminFinanceiro.tsx`
+Atualizar todos os projetos com status `FINALIZADO` para `CONCLUIDO`:
 
-Adicionar a opção `FINALIZADO` ao array de status disponíveis para filtro:
+```sql
+-- Atualizar projetos com status FINALIZADO para CONCLUIDO
+UPDATE projects 
+SET status = 'CONCLUIDO' 
+WHERE status = 'FINALIZADO';
 
-```typescript
-{[
-  { value: 'all', label: 'Todos' },
-  { value: 'EM_ANDAMENTO', label: 'Em Andamento' },
-  { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
-  { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
-  { value: 'PARALISADO', label: 'Paralisado' },
-  { value: 'CONCLUIDO', label: 'Concluído' },
-  { value: 'FINALIZADO', label: 'Finalizado' }  // NOVO
-]}
+-- Atualizar a constraint para remover FINALIZADO
+ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+ALTER TABLE projects ADD CONSTRAINT projects_status_check 
+CHECK (status IN ('EM_ANDAMENTO', 'EM_ESPERA', 'PARALISADO', 'CONCLUIDO', 'AGUARDANDO_PAGAMENTO', 'AGUARDANDO_APROVACAO'));
 ```
 
-**Alternativa:** Unificar os status no banco para usar apenas `CONCLUIDO`. Esta seria uma migração de dados.
+#### Parte 2: Modificar Página de Projetos
 
----
+**Arquivo:** `src/pages/Projetos.tsx`
 
-#### 2. Modificar `useProjects` para gerenciar projetos arquivados corretamente
-
-**Arquivo:** `src/hooks/useSupabaseData.ts`
-
-O hook `updateProject` precisa:
-1. Atualizar o estado local mesmo para projetos arquivados
-2. Manter o projeto na lista se estiver sendo visualizado na aba "Arquivados"
+Usar o hook `useArchivedProjects()` quando o usuário clicar em "Ver Arquivados":
 
 ```typescript
-const updateProject = async (id: string, updates: Partial<Project>) => {
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+import { useArchivedProjects } from '@/hooks/useSupabaseData';
 
-    if (error) throw error;
-
-    // Se o projeto atualizado está arquivado e não está na lista,
-    // não adicionar (pois a lista só mostra ativos)
-    // Mas se JÁ ESTÁ na lista, atualizar normalmente
-    setProjects(prev => {
-      const existsInList = prev.some(p => p.id === id);
-      if (existsInList) {
-        return prev.map(p => p.id === id ? data as Project : p);
-      }
-      return prev;
-    });
-    
-    return data;
-  } catch (err: any) {
-    setError(err.message);
-    throw err;
-  }
-};
+const Projetos = () => {
+  const { projects: activeProjects, updateProject, deleteProject, profiles } = useSupabaseData();
+  const { projects: archivedProjects, updateProject: updateArchivedProject, refetch: refetchArchived } = useArchivedProjects();
+  
+  // Usar a lista correta baseada no estado
+  const allProjects = isAdmin 
+    ? (showArchived ? archivedProjects : activeProjects)
+    : (showArchived ? archivedProjects : activeProjects).filter(project => 
+        project.responsible_ids?.includes(user.id)
+      );
 ```
 
----
+#### Parte 3: Atualizar Código para Usar Apenas CONCLUIDO
 
-#### 3. Criar hook separado para gerenciar projetos arquivados
+**Arquivos a modificar:**
 
-**Arquivo:** `src/hooks/useSupabaseData.ts`
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/types/index.ts` | Remover `FINALIZADO` do tipo status |
+| `src/pages/AdminFinanceiro.tsx` | Remover opção `FINALIZADO` do filtro |
+| `src/pages/Projetos.tsx` | Remover `FINALIZADO` do statusConfig e filtros |
+| `src/hooks/useContractFinancials.ts` | Atualizar contagem de contratos concluídos para incluir só `CONCLUIDO` |
+| `src/hooks/useUserData.tsx` | Remover referência a `FINALIZADO` |
+| `src/pages/Relatorios.tsx` | Já usa apenas `CONCLUIDO` |
 
-Criar `useArchivedProjects` que busca apenas projetos arquivados:
+#### Parte 4: Exportar useArchivedProjects no Contexto (Opcional)
 
-```typescript
-export function useArchivedProjects() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchProjects = async () => {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('is_archived', true)
-      .order('created_at', { ascending: false });
-    
-    if (!error) setProjects(data || []);
-    setLoading(false);
-  };
-
-  // ... updateProject específico para arquivados
-
-  useEffect(() => { fetchProjects(); }, []);
-  return { projects, loading, updateProject, refetch: fetchProjects };
-}
-```
-
----
-
-#### 4. Corrigir erro de data vazia no ProjectModal
-
-**Arquivo:** `src/components/ProjectModal.tsx`
-
-A função `formatDateForStorage` retorna string vazia quando não há data, mas o banco espera `null`:
-
-```typescript
-const formatDateForStorage = (dateString: string) => {
-  if (!dateString) return null;  // Retornar null em vez de ''
-  return dateString;
-};
-
-// No handleSubmit:
-const projectData = {
-  ...formData,
-  contract_start: formData.contract_start || null,
-  contract_end: formData.contract_end || null,
-  prazo_vigencia: formData.prazo_vigencia || null
-};
-```
+Adicionar ao `SupabaseDataContext` para facilitar o uso em todo o sistema.
 
 ---
 
 ### Arquivos a Modificar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/AdminFinanceiro.tsx` | Adicionar `FINALIZADO` ao filtro de status |
-| `src/hooks/useSupabaseData.ts` | Corrigir `updateProject` para projetos arquivados e criar `useArchivedProjects` |
-| `src/components/ProjectModal.tsx` | Retornar `null` em vez de `''` para datas vazias |
-| `src/pages/Projetos.tsx` | Usar hook correto para projetos arquivados |
+1. **Migração SQL** - Unificar FINALIZADO → CONCLUIDO no banco
+2. **`src/pages/Projetos.tsx`** - Usar `useArchivedProjects` para projetos arquivados
+3. **`src/types/index.ts`** - Remover `FINALIZADO` do tipo
+4. **`src/pages/AdminFinanceiro.tsx`** - Remover `FINALIZADO` do filtro
+5. **`src/hooks/useContractFinancials.ts`** - Simplificar lógica de contagem
 
 ---
 
 ### Resultado Esperado
 
-1. **Contratos públicos finalizados** aparecerão ao selecionar o filtro "Finalizado" ou "Todos"
-2. **Atualizações de status** em projetos arquivados serão refletidas imediatamente na UI
-3. **Erros de data** não ocorrerão mais ao salvar projetos sem datas preenchidas
+1. **Status unificado:** Apenas `CONCLUIDO` em todo o sistema
+2. **Projetos arquivados visíveis:** Ao clicar em "Ver Arquivados", verá os 13+ projetos arquivados
+3. **"Reforma das Coberturas" visível:** Aparecerá na lista de projetos arquivados
+4. **Consistência:** Mesmo status em projetos, tarefas e gestão financeira
 
