@@ -167,6 +167,56 @@ export function useCompanyExpenses() {
       .reduce((sum, e) => sum + Number(e.amount), 0);
   }, [expenses]);
 
+  // Criar despesa
+  const createExpense = useCallback(async (data: Omit<CompanyExpense, 'id' | 'created_at' | 'project_name'>) => {
+    try {
+      const { error } = await (supabase
+        .from('company_expenses') as any)
+        .insert([data]);
+
+      if (error) throw error;
+      await fetchExpenses();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao criar despesa:', err);
+      return { success: false, error: err.message };
+    }
+  }, [fetchExpenses]);
+
+  // Atualizar despesa
+  const updateExpense = useCallback(async (id: string, data: Partial<Omit<CompanyExpense, 'id' | 'created_at' | 'project_name'>>) => {
+    try {
+      const { error } = await (supabase
+        .from('company_expenses') as any)
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchExpenses();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao atualizar despesa:', err);
+      return { success: false, error: err.message };
+    }
+  }, [fetchExpenses]);
+
+  // Deletar despesa
+  const deleteExpense = useCallback(async (id: string) => {
+    try {
+      const { error } = await (supabase
+        .from('company_expenses') as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchExpenses();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao deletar despesa:', err);
+      return { success: false, error: err.message };
+    }
+  }, [fetchExpenses]);
+
   return {
     expenses,
     publicExpenses,
@@ -176,6 +226,9 @@ export function useCompanyExpenses() {
     error,
     refetch: fetchExpenses,
     getExpensesByProject,
-    getTotalExpensesByProject
+    getTotalExpensesByProject,
+    createExpense,
+    updateExpense,
+    deleteExpense
   };
 }
