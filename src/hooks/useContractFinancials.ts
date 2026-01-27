@@ -2,6 +2,33 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
+/**
+ * Hook para buscar TODOS os projetos (incluindo arquivados)
+ * Usado para contextos financeiros onde receitas podem estar vinculadas a projetos arquivados
+ */
+export function useAllProjects() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllProjects = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Erro ao buscar todos os projetos:', error);
+      }
+      setProjects(data || []);
+      setLoading(false);
+    };
+    fetchAllProjects();
+  }, []);
+
+  return { projects, loading };
+}
+
 export interface ContractIncome {
   id: string;
   project_id: string;
