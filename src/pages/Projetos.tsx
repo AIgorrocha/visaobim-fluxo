@@ -9,19 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useArchivedProjects } from '@/hooks/useSupabaseData';
 import ProjectModal from '@/components/ProjectModal';
 import { Project } from '@/types';
 
 const Projetos = () => {
   const { user, profile } = useAuth();
-  const { projects, deleteProject, updateProject, profiles } = useSupabaseData();
+  const { projects: activeProjects, deleteProject, updateProject, profiles } = useSupabaseData();
+  const { projects: archivedProjects, updateProject: updateArchivedProject, refetch: refetchArchived } = useArchivedProjects();
 
-  // Função para obter projetos do usuário
-  const getProjectsByUser = (userId: string) => {
-    return projects.filter(project => 
-      project.responsible_ids && project.responsible_ids.includes(userId)
-    );
-  };
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [typeFilter, setTypeFilter] = useState<string>('todos');
@@ -35,18 +31,24 @@ const Projetos = () => {
   if (!user) return null;
 
   const isAdmin = profile?.role === 'admin';
-  const allProjects = isAdmin ? projects : getProjectsByUser(user.id);
   
-  // Filtrar por status de arquivamento
-  const projectsToShow = allProjects.filter(project => 
-    showArchived ? project.is_archived : !project.is_archived
-  );
+  // Selecionar a lista correta baseada no estado de arquivamento
+  const currentProjects = showArchived ? archivedProjects : activeProjects;
+  
+  // Função para obter projetos do usuário
+  const getProjectsByUser = (userId: string, projectList: Project[]) => {
+    return projectList.filter(project => 
+      project.responsible_ids && project.responsible_ids.includes(userId)
+    );
+  };
+
+  // Projetos a mostrar (filtrados por usuário se não for admin)
+  const projectsToShow = isAdmin ? currentProjects : getProjectsByUser(user.id, currentProjects);
 
   const getStatusBadge = (status: Project['status']) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'EM_ANDAMENTO': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
       'CONCLUIDO': { label: 'Concluído', className: 'bg-success text-success-foreground' },
-      'FINALIZADO': { label: 'Finalizado', className: 'bg-success text-success-foreground' },
       'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' },
       'PARALISADO': { label: 'Paralisado', className: 'bg-destructive text-destructive-foreground' },
       'AGUARDANDO_PAGAMENTO': { label: 'Aguardando Pagamento', className: 'bg-secondary text-secondary-foreground' },
@@ -55,6 +57,18 @@ const Projetos = () => {
     
     const config = statusConfig[status] || { label: status || 'Desconhecido', className: 'bg-muted text-muted-foreground' };
     return <Badge className={config.className}>{config.label}</Badge>;
+  };
+  
+  // Handler para arquivar/desarquivar projetos
+  const handleArchiveProject = async (project: Project) => {
+    if (showArchived) {
+      // Desarquivando - usar updateArchivedProject e refetch
+      await updateArchivedProject(project.id, { is_archived: false });
+      refetchArchived();
+    } else {
+      // Arquivando - usar updateProject normal
+      await updateProject(project.id, { is_archived: true });
+    }
   };
 
 
@@ -121,9 +135,6 @@ const Projetos = () => {
     }
   };
   
-  const handleArchiveProject = async (project: Project) => {
-    await updateProject(project.id, { is_archived: !project.is_archived });
-  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);

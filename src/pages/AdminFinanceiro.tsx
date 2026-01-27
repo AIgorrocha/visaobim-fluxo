@@ -996,8 +996,7 @@ const AdminFinanceiro = () => {
                   { value: 'AGUARDANDO_PAGAMENTO', label: 'Aguard. Pagamento' },
                   { value: 'AGUARDANDO_APROVACAO', label: 'Aguard. Aprovacao' },
                   { value: 'PARALISADO', label: 'Paralisado' },
-                  { value: 'CONCLUIDO', label: 'Concluido' },
-                  { value: 'FINALIZADO', label: 'Finalizado' }
+                  { value: 'CONCLUIDO', label: 'Concluído' }
                 ].map(status => (
                   <div key={status.value} className="flex items-center space-x-1">
                     <Checkbox
