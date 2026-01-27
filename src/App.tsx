@@ -35,100 +35,100 @@ const App = () => (
       <SupabaseDataProvider>
         <ViewAsUserProvider>
           <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/projetos" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Projetos />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/minhas-tarefas" element={
-              <ProtectedRoute>
-                <Layout>
-                  <MinhasTarefas />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/equipe" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Equipe />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/conquistas" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Conquistas />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/financeiro" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Financeiro />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/meu-financeiro" element={
-              <ProtectedRoute>
-                <Layout>
-                  <MeuFinanceiro />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/precificacao" element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <PrecificacaoProjetos />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin-financeiro" element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <AdminFinanceiro />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/propostas" element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <Propostas />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/relatorios" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Relatorios />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/configuracoes" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Configuracoes />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-        <DataDebugPanel />
-        <TaskNotificationSystem />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Dashboard />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/projetos" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Projetos />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/minhas-tarefas" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <MinhasTarefas />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/equipe" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Equipe />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/conquistas" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Conquistas />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/financeiro" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Financeiro />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/meu-financeiro" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <MeuFinanceiro />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/precificacao" element={
+                  <ProtectedRoute adminOnly>
+                    <Layout>
+                      <PrecificacaoProjetos />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin-financeiro" element={
+                  <ProtectedRoute adminOnly>
+                    <Layout>
+                      <AdminFinanceiro />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/propostas" element={
+                  <ProtectedRoute adminOnly>
+                    <Layout>
+                      <Propostas />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/relatorios" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Relatorios />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/configuracoes" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Configuracoes />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+            <DataDebugPanel />
+            <TaskNotificationSystem />
           </TooltipProvider>
         </ViewAsUserProvider>
       </SupabaseDataProvider>
