@@ -69,7 +69,7 @@ import {
   useAdminFinancialOverview,
   useProjectPricing
 } from '@/hooks/useDesignerFinancials';
-import { useContractOverview, useContractIncome } from '@/hooks/useContractFinancials';
+import { useContractOverview, useContractIncome, useAllProjects } from '@/hooks/useContractFinancials';
 import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
 import { ContractDetailModal } from '@/components/ContractDetailModal';
 import { DesignerPayment } from '@/types';
@@ -145,6 +145,8 @@ const AdminFinanceiro = () => {
     deleteExpense,
     refetch: refetchExpenses
   } = useCompanyExpenses();
+  // Buscar TODOS os projetos (incluindo arquivados) para enriquecer receitas
+  const { projects: allProjects } = useAllProjects();
   const { toast } = useToast();
 
   // Precificações não atribuídas (sem projetista)
@@ -296,16 +298,18 @@ const AdminFinanceiro = () => {
   }, [filteredPayments]);
 
   // Dados enriquecidos de receitas (com nome do projeto)
+  // Usa allProjects para incluir projetos arquivados
   const enrichedIncome = useMemo(() => {
     return contractIncome.map(inc => {
-      const project = projects.find(p => p.id === inc.project_id);
+      const project = allProjects.find(p => p.id === inc.project_id);
       return {
         ...inc,
-        project_name: project?.name || 'N/A',
-        sector: project?.type || 'privado'
+        project_name: project?.name || 'Projeto não encontrado',
+        sector: project?.type || 'privado',
+        is_archived: project?.is_archived || false
       };
     });
-  }, [contractIncome, projects]);
+  }, [contractIncome, allProjects]);
 
   // Filtrar e calcular resumo de receitas
   const incomeSummary = useMemo(() => {
@@ -344,11 +348,11 @@ const AdminFinanceiro = () => {
     };
   }, [enrichedIncome, filterIncomeType, filterIncomeProject, filterIncomeSector]);
 
-  // Projetos com receitas (para filtro)
+  // Projetos com receitas (para filtro) - usa allProjects para incluir arquivados
   const projectsWithIncome = useMemo(() => {
     const projectIds = [...new Set(contractIncome.map(i => i.project_id).filter(Boolean))];
-    return projects.filter(p => projectIds.includes(p.id));
-  }, [contractIncome, projects]);
+    return allProjects.filter(p => projectIds.includes(p.id));
+  }, [contractIncome, allProjects]);
 
   // Abrir modal para novo pagamento
   const handleAddPayment = () => {
