@@ -64,6 +64,7 @@ export interface ContractOverview {
   total_expenses: number; // Despesas do contrato
   profit_margin: number;
   contract_end?: string;
+  is_archived?: boolean; // Indica se o projeto está arquivado
 }
 
 export interface ContractSummary {
@@ -212,17 +213,20 @@ export function useCompanyExpensesData() {
  * Combina dados de projetos, receitas, pagamentos a projetistas e despesas
  */
 export function useContractOverview() {
-  const { projects, payments, pricing } = useSupabaseData();
+  // Usar useAllProjects para incluir contratos arquivados/concluídos na análise financeira
+  const { projects: allProjects, loading: projectsLoading } = useAllProjects();
+  const { payments, pricing } = useSupabaseData();
   const { income, loading: incomeLoading } = useContractIncome();
   const { expenses, loading: expensesLoading } = useCompanyExpensesData();
 
-  // Calcular visão geral de cada contrato
+  // Calcular visão geral de cada contrato (incluindo arquivados)
   const contractsOverview = useMemo<ContractOverview[]>(() => {
-    if (!projects || projects.length === 0) return [];
+    if (!allProjects || allProjects.length === 0) return [];
 
-    return projects
-      // Excluir arquivados, sem valor e EM_ESPERA (ainda não iniciaram)
-      .filter(p => !p.is_archived && p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA')
+    return allProjects
+      // Incluir TODOS os projetos com valor, exceto EM_ESPERA (ainda não iniciaram)
+      // Removido filtro !p.is_archived para incluir contratos concluídos/arquivados
+      .filter(p => p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA')
       .map(project => {
         // Total recebido do cliente (soma das receitas do contrato)
         const projectIncome = income.filter(i => i.project_id === project.id);
@@ -266,11 +270,12 @@ export function useContractOverview() {
           amount_to_pay_designers: amountToPayDesigners,
           total_expenses: totalExpenses,
           profit_margin: profitMargin,
-          contract_end: project.contract_end
+          contract_end: project.contract_end,
+          is_archived: project.is_archived || false
         };
       })
       .sort((a, b) => b.contract_value - a.contract_value); // Ordenar por valor
-  }, [projects, income, payments, pricing, expenses]);
+  }, [allProjects, income, payments, pricing, expenses]);
 
   // Calcular resumo geral
   const summary = useMemo<ContractSummary>(() => {
@@ -325,7 +330,7 @@ export function useContractOverview() {
     privateContracts,
     summary,
     expenses,
-    loading: incomeLoading || expensesLoading
+    loading: incomeLoading || expensesLoading || projectsLoading
   };
 }
 

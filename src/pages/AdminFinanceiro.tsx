@@ -1281,7 +1281,12 @@ const AdminFinanceiro = () => {
                               }}
                             >
                               <TableCell className="font-medium">
-                                <div>{contract.project_name}</div>
+                                <div className="flex items-center gap-1.5">
+                                  {contract.project_name}
+                                  {contract.is_archived && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">📦 Arquivado</Badge>
+                                  )}
+                                </div>
                                 {contract.client && (
                                   <div className="text-xs text-muted-foreground">{contract.client}</div>
                                 )}
@@ -1390,7 +1395,12 @@ const AdminFinanceiro = () => {
                               }}
                             >
                               <TableCell className="font-medium">
-                                <div>{contract.project_name}</div>
+                                <div className="flex items-center gap-1.5">
+                                  {contract.project_name}
+                                  {contract.is_archived && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">📦 Arquivado</Badge>
+                                  )}
+                                </div>
                                 {contract.client && (
                                   <div className="text-xs text-muted-foreground">{contract.client}</div>
                                 )}
