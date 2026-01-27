@@ -139,7 +139,11 @@ const AdminFinanceiro = () => {
     publicExpenses: publicCompanyExpenses,
     privateExpenses: privateCompanyExpenses,
     summary: expensesSummary,
-    loading: expensesLoading
+    loading: expensesLoading,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+    refetch: refetchExpenses
   } = useCompanyExpenses();
   const { toast } = useToast();
 
@@ -168,6 +172,22 @@ const AdminFinanceiro = () => {
     income_date: new Date().toISOString().split('T')[0],
     description: '',
     income_type: 'medicao' as 'medicao' | 'entrada' | 'parcela' | 'outro'
+  });
+
+  // Estados para modal de Despesas
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<any | null>(null);
+  const [isDeleteExpenseDialogOpen, setIsDeleteExpenseDialogOpen] = useState(false);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+  const [expenseFormData, setExpenseFormData] = useState({
+    project_id: '',
+    amount: 0,
+    expense_date: new Date().toISOString().split('T')[0],
+    description: '',
+    cost_center: '',
+    contract_name: 'GERAL',
+    sector: 'privado' as 'publico' | 'privado',
+    responsible: ''
   });
 
   // Filtros
@@ -603,6 +623,151 @@ const AdminFinanceiro = () => {
       toast({
         title: 'Erro ao salvar',
         description: error.message || 'Erro desconhecido ao salvar receita',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // ============ HANDLERS DE DESPESAS ============
+
+  // Abrir modal para nova despesa
+  const handleAddExpense = () => {
+    setEditingExpense(null);
+    setExpenseFormData({
+      project_id: '',
+      amount: 0,
+      expense_date: new Date().toISOString().split('T')[0],
+      description: '',
+      cost_center: '',
+      contract_name: 'GERAL',
+      sector: 'privado',
+      responsible: ''
+    });
+    setIsExpenseModalOpen(true);
+  };
+
+  // Abrir modal para editar despesa
+  const handleEditExpense = (expense: any) => {
+    setEditingExpense(expense);
+    setExpenseFormData({
+      project_id: expense.project_id || '',
+      amount: expense.amount,
+      expense_date: expense.expense_date,
+      description: expense.description || '',
+      cost_center: expense.cost_center || '',
+      contract_name: expense.contract_name || 'GERAL',
+      sector: expense.sector || 'privado',
+      responsible: expense.responsible || ''
+    });
+    setIsExpenseModalOpen(true);
+  };
+
+  // Confirmar delete de despesa
+  const handleDeleteExpenseClick = (id: string) => {
+    setDeletingExpenseId(id);
+    setIsDeleteExpenseDialogOpen(true);
+  };
+
+  // Executar delete de despesa
+  const handleConfirmDeleteExpense = async () => {
+    if (!deletingExpenseId) return;
+
+    try {
+      const result = await deleteExpense(deletingExpenseId);
+      if (result.success) {
+        toast({
+          title: 'Despesa removida',
+          description: 'A despesa foi removida com sucesso'
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleteExpenseDialogOpen(false);
+      setDeletingExpenseId(null);
+    }
+  };
+
+  // Salvar despesa (criar ou atualizar)
+  const handleSaveExpense = async () => {
+    try {
+      // Validar descrição
+      if (!expenseFormData.description.trim()) {
+        toast({
+          title: 'Descrição obrigatória',
+          description: 'Digite uma descrição para a despesa',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Validar valor
+      if (expenseFormData.amount <= 0) {
+        toast({
+          title: 'Valor inválido',
+          description: 'O valor deve ser maior que zero',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Validar centro de custo
+      if (!expenseFormData.cost_center.trim()) {
+        toast({
+          title: 'Centro de Custo obrigatório',
+          description: 'Digite um centro de custo',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const dataToSave: any = {
+        amount: Number(expenseFormData.amount),
+        expense_date: expenseFormData.expense_date,
+        description: expenseFormData.description.trim(),
+        cost_center: expenseFormData.cost_center.trim(),
+        contract_name: expenseFormData.contract_name || 'GERAL',
+        sector: expenseFormData.sector
+      };
+
+      // Adicionar campos opcionais
+      if (expenseFormData.project_id) dataToSave.project_id = expenseFormData.project_id;
+      if (expenseFormData.responsible?.trim()) dataToSave.responsible = expenseFormData.responsible.trim();
+
+      if (editingExpense) {
+        const result = await updateExpense(editingExpense.id, dataToSave);
+        if (result.success) {
+          toast({
+            title: 'Despesa atualizada',
+            description: 'A despesa foi atualizada com sucesso'
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      } else {
+        const result = await createExpense(dataToSave);
+        if (result.success) {
+          toast({
+            title: 'Despesa registrada',
+            description: 'A despesa foi registrada com sucesso'
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      }
+
+      setIsExpenseModalOpen(false);
+    } catch (error: any) {
+      console.error('Erro ao salvar despesa:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message || 'Erro desconhecido ao salvar despesa',
         variant: 'destructive'
       });
     }
@@ -1832,6 +1997,11 @@ const AdminFinanceiro = () => {
                 </Button>
               )}
 
+              <Button onClick={handleAddExpense} size="sm" className="ml-2">
+                <Plus className="h-4 w-4 mr-1" />
+                Nova Despesa
+              </Button>
+
               <Badge variant="outline" className="ml-auto">
                 {filteredExpenses.length} despesas | {formatCurrency(filteredExpensesSummary.totalGeral)}
               </Badge>
@@ -1947,6 +2117,7 @@ const AdminFinanceiro = () => {
                           <TableHead>Contrato</TableHead>
                           <TableHead>Centro de Custo</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
+                          <TableHead className="text-center w-[100px]">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1994,11 +2165,31 @@ const AdminFinanceiro = () => {
                             }`}>
                               {formatCurrency(expense.amount)}
                             </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEditExpense(expense)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteExpenseClick(expense.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                         {/* Linha de Total */}
                         <TableRow className="bg-muted/50 font-bold">
-                          <TableCell colSpan={5}>TOTAL</TableCell>
+                          <TableCell colSpan={6}>TOTAL</TableCell>
                           <TableCell className="text-right text-purple-600">
                             {formatCurrency(filteredExpensesSummary.totalGeral)}
                           </TableCell>
@@ -2347,6 +2538,161 @@ const AdminFinanceiro = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDeleteIncome} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Despesa (criar/editar) */}
+      <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingExpense ? 'Editar Despesa' : 'Nova Despesa'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingExpense
+                ? 'Altere os dados da despesa'
+                : 'Registre uma nova despesa da empresa'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Descrição */}
+            <div className="space-y-2">
+              <Label>Descrição *</Label>
+              <Input
+                value={expenseFormData.description}
+                onChange={(e) => setExpenseFormData({ ...expenseFormData, description: e.target.value })}
+                placeholder="Descrição da despesa"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Valor */}
+              <div className="space-y-2">
+                <Label>Valor (R$) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={expenseFormData.amount || ''}
+                  onChange={(e) => setExpenseFormData({
+                    ...expenseFormData,
+                    amount: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+              </div>
+
+              {/* Data */}
+              <div className="space-y-2">
+                <Label>Data *</Label>
+                <Input
+                  type="date"
+                  value={expenseFormData.expense_date}
+                  onChange={(e) => setExpenseFormData({ ...expenseFormData, expense_date: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Centro de Custo */}
+              <div className="space-y-2">
+                <Label>Centro de Custo *</Label>
+                <Input
+                  value={expenseFormData.cost_center}
+                  onChange={(e) => setExpenseFormData({ ...expenseFormData, cost_center: e.target.value })}
+                  placeholder="Ex: Operacional, Marketing..."
+                />
+              </div>
+
+              {/* Setor */}
+              <div className="space-y-2">
+                <Label>Setor</Label>
+                <Select
+                  value={expenseFormData.sector}
+                  onValueChange={(value: 'publico' | 'privado') =>
+                    setExpenseFormData({ ...expenseFormData, sector: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="privado">Privado</SelectItem>
+                    <SelectItem value="publico">Público</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Projeto (opcional) */}
+            <div className="space-y-2">
+              <Label>Contrato/Projeto (opcional)</Label>
+              <Select
+                value={expenseFormData.project_id || 'none'}
+                onValueChange={(value) => {
+                  const projectId = value === 'none' ? '' : value;
+                  const project = projects.find(p => p.id === projectId);
+                  setExpenseFormData({
+                    ...expenseFormData,
+                    project_id: projectId,
+                    contract_name: project ? project.name : 'GERAL'
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um projeto (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">GERAL (sem projeto)</SelectItem>
+                  {projects.filter(p => p.id && !p.is_archived).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Responsável */}
+            <div className="space-y-2">
+              <Label>Responsável (opcional)</Label>
+              <Input
+                value={expenseFormData.responsible}
+                onChange={(e) => setExpenseFormData({ ...expenseFormData, responsible: e.target.value })}
+                placeholder="Nome do responsável"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsExpenseModalOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveExpense}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação de Delete de Despesa */}
+      <AlertDialog open={isDeleteExpenseDialogOpen} onOpenChange={setIsDeleteExpenseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta despesa?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteExpense} className="bg-destructive text-destructive-foreground">
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
