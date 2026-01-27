@@ -135,7 +135,16 @@ export function useProjects() {
 
       if (error) throw error;
 
-      setProjects(prev => prev.map(p => p.id === id ? data as Project : p));
+      // Atualizar estado local apenas se o projeto já estiver na lista
+      // Isso permite atualizar projetos arquivados quando estão sendo visualizados
+      setProjects(prev => {
+        const existsInList = prev.some(p => p.id === id);
+        if (existsInList) {
+          return prev.map(p => p.id === id ? data as Project : p);
+        }
+        return prev;
+      });
+      
       return data;
     } catch (err: any) {
       setError(err.message);
@@ -165,6 +174,78 @@ export function useProjects() {
   }, []);
 
   return { projects, loading, error, createProject, updateProject, deleteProject, refetch: fetchProjects };
+}
+
+// Hook para gerenciar projetos arquivados (separado para evitar conflitos de estado)
+export function useArchivedProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProjects = async () => {
+    try {
+      console.log('🔍 Fetching archived projects...');
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('is_archived', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching archived projects:', error);
+        throw error;
+      }
+      
+      console.log('✅ Archived projects fetched:', data?.length || 0, 'items');
+      setProjects((data || []) as Project[]);
+    } catch (err: any) {
+      console.error('❌ Archived projects fetch failed:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProject = async (id: string, updates: Partial<Project>) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProjects(prev => prev.map(p => p.id === id ? data as Project : p));
+      return data;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const unarchiveProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ is_archived: false })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProjects(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  return { projects, loading, error, updateProject, unarchiveProject, refetch: fetchProjects };
 }
 
 // Hook para gerenciar tarefas

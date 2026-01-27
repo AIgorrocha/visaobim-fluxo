@@ -46,6 +46,7 @@ const Projetos = () => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       'EM_ANDAMENTO': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
       'CONCLUIDO': { label: 'Concluído', className: 'bg-success text-success-foreground' },
+      'FINALIZADO': { label: 'Finalizado', className: 'bg-success text-success-foreground' },
       'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' },
       'PARALISADO': { label: 'Paralisado', className: 'bg-destructive text-destructive-foreground' },
       'AGUARDANDO_PAGAMENTO': { label: 'Aguardando Pagamento', className: 'bg-secondary text-secondary-foreground' },

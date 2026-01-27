@@ -33,8 +33,9 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
   };
 
   // Função para converter data do input para formato ISO (mantém a data correta)
-  const formatDateForStorage = (dateString: string) => {
-    if (!dateString) return '';
+  // Retorna null em vez de '' para evitar erro "invalid input syntax for type date"
+  const formatDateForStorage = (dateString: string): string | null => {
+    if (!dateString) return null;
     return dateString; // Mantém o formato YYYY-MM-DD
   };
 
@@ -87,12 +88,12 @@ const ProjectModal = ({ isOpen, onClose, project, mode }: ProjectModalProps) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Preparar dados com datas corretas
+    // Preparar dados com datas corretas (null em vez de '' para evitar erro de date)
     const projectData = {
       ...formData,
-      contract_start: formatDateForStorage(formData.contract_start),
-      contract_end: formatDateForStorage(formData.contract_end),
-      prazo_vigencia: formData.prazo_vigencia ? formatDateForStorage(formData.prazo_vigencia) : undefined
+      contract_start: formatDateForStorage(formData.contract_start) || null,
+      contract_end: formatDateForStorage(formData.contract_end) || null,
+      prazo_vigencia: formatDateForStorage(formData.prazo_vigencia) || null
     };
 
     if (mode === 'create') {
