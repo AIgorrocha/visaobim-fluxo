@@ -43,7 +43,7 @@ const Projetos = () => {
   );
 
   const getStatusBadge = (status: Project['status']) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { label: string; className: string }> = {
       'EM_ANDAMENTO': { label: 'Em Andamento', className: 'bg-primary text-primary-foreground' },
       'CONCLUIDO': { label: 'Concluído', className: 'bg-success text-success-foreground' },
       'EM_ESPERA': { label: 'Em Espera', className: 'bg-warning text-warning-foreground' },
@@ -52,7 +52,7 @@ const Projetos = () => {
       'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', className: 'bg-amber-500 text-white' }
     };
     
-    const config = statusConfig[status];
+    const config = statusConfig[status] || { label: status || 'Desconhecido', className: 'bg-muted text-muted-foreground' };
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
