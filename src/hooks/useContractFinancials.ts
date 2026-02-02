@@ -508,7 +508,8 @@ export function useContractDetails(projectId: string | null) {
         amount_to_pay_designers: pricing.reduce((s, p) => s + Math.max(0, p.designer_value - p.amount_paid), 0),
         total_expenses: totalExpenses,
         profit_margin: saldo,
-        contract_end: projectData.contract_end
+        contract_end: projectData.contract_end,
+        is_archived: projectData.is_archived || false
       };
 
       setData({

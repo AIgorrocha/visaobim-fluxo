@@ -101,7 +101,7 @@ interface PaymentFormData {
 
 const AdminFinanceiro = () => {
   const { user, profile } = useAuth();
-  const { projects, profiles } = useSupabaseData();
+  const { projects, profiles, refetchProjects } = useSupabaseData();
   const { disciplines } = useDisciplines();
   const {
     payments,
@@ -2718,6 +2718,11 @@ const AdminFinanceiro = () => {
         projectId={selectedContractId}
         open={isContractDetailOpen}
         onOpenChange={setIsContractDetailOpen}
+        onDataChanged={() => {
+          refetchProjects();
+          refetchIncome();
+          refetch();
+        }}
       />
 
       {/* Modal de Detalhamento dos Cards */}

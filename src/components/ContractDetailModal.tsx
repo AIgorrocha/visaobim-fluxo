@@ -54,7 +54,9 @@ import {
   Trash2,
   X,
   Save,
-  RefreshCw
+  RefreshCw,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 
 // Formatar valores em BRL
@@ -129,12 +131,42 @@ export function ContractDetailModal({
 
       if (error) throw error;
 
-      toast({ title: 'Status atualizado com sucesso!' });
+      toast({
+        title: 'Status atualizado com sucesso!',
+        description: 'Atualize a pagina se o contrato nao aparecer na lista (verifique o filtro de status).'
+      });
       setEditingStatus(false);
-      refetch();
+      await refetch();
       onDataChanged?.();
     } catch (err: any) {
       toast({ title: 'Erro ao atualizar status', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  // Arquivar/Desarquivar projeto
+  const handleToggleArchive = async () => {
+    if (!projectId || !data?.contract) return;
+
+    const isCurrentlyArchived = (data.contract as any).is_archived;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ is_archived: !isCurrentlyArchived })
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast({
+        title: isCurrentlyArchived ? 'Contrato desarquivado!' : 'Contrato arquivado!',
+        description: isCurrentlyArchived
+          ? 'O contrato voltou a aparecer nas listagens.'
+          : 'O contrato foi movido para arquivados e nao aparece mais na visao geral.'
+      });
+      await refetch();
+      onDataChanged?.();
+    } catch (err: any) {
+      toast({ title: 'Erro ao arquivar', description: err.message, variant: 'destructive' });
     }
   };
 
@@ -347,9 +379,23 @@ export function ContractDetailModal({
                   )}
                 </>
               )}
-              <Button size="sm" variant="outline" onClick={() => refetch()} className="ml-auto">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  size="sm"
+                  variant={(data?.contract as any)?.is_archived ? "default" : "outline"}
+                  onClick={handleToggleArchive}
+                  title={(data?.contract as any)?.is_archived ? "Desarquivar contrato" : "Arquivar contrato"}
+                >
+                  {(data?.contract as any)?.is_archived ? (
+                    <><ArchiveRestore className="h-4 w-4 mr-1" /> Desarquivar</>
+                  ) : (
+                    <><Archive className="h-4 w-4 mr-1" /> Arquivar</>
+                  )}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => refetch()}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </DialogTitle>
             <DialogDescription>
               {data?.contract?.client && `Cliente: ${data.contract.client}`}
