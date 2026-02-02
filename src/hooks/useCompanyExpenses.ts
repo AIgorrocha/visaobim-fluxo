@@ -112,7 +112,7 @@ export function useCompanyExpenses() {
       .map(([contract_name, data]) => ({ contract_name, ...data }))
       .sort((a, b) => b.total - a.total);
 
-    // Agrupar por mês
+    // Agrupar por mes
     const monthMap: { [key: string]: { publico: number; privado: number } } = {};
     expenses.forEach(e => {
       const month = e.expense_date?.substring(0, 7) || 'Sem data';

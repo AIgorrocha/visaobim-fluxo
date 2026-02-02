@@ -171,8 +171,8 @@ export function useProjectPricing(projectId?: string) {
 
   const updatePricing = async (id: string, updates: Partial<ProjectPricing>) => {
     try {
-      // Remover campos calculados e virtuais
-      const { designer_value, designer_name, project_name, ...updateData } = updates as any;
+      // Remover campos virtuais (que vem de joins, nao existem na tabela)
+      const { designer_name, project_name, ...updateData } = updates as any;
 
       const { data, error } = await (supabase
         .from('project_pricing') as any)
@@ -184,10 +184,10 @@ export function useProjectPricing(projectId?: string) {
       if (error) throw error;
 
       setPricing(prev => prev.map(p => p.id === id ? data as ProjectPricing : p));
-      return data;
+      return { success: true, data };
     } catch (err: any) {
       console.error('Erro ao atualizar precificação:', err.message);
-      throw err;
+      return { success: false, error: err.message };
     }
   };
 
