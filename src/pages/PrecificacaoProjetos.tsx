@@ -79,7 +79,7 @@ interface PricingFormData {
   designer_value_final: number;
 }
 
-type InputMode = 'total' | 'designer';
+type InputMode = 'total' | 'designer' | 'both';
 type MajoracaoMode = 'adicional' | 'final';
 
 const PrecificacaoProjetos = () => {
@@ -275,23 +275,61 @@ const PrecificacaoProjetos = () => {
         return;
       }
 
-      if (formData.total_value <= 0) {
-        toast({
-          title: 'Valor invalido',
-          description: 'O valor total deve ser maior que zero',
-          variant: 'destructive'
-        });
-        return;
+      // Validar valor total baseado no modo
+      if (inputMode === 'both') {
+        if (formData.total_value <= 0 || formData.designer_value_direct <= 0) {
+          toast({
+            title: 'Valores invalidos',
+            description: 'O valor total e o valor do projetista devem ser maiores que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
+      } else if (inputMode === 'designer') {
+        if (formData.designer_value_direct <= 0) {
+          toast({
+            title: 'Valor invalido',
+            description: 'O valor do projetista deve ser maior que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
+      } else {
+        if (formData.total_value <= 0) {
+          toast({
+            title: 'Valor invalido',
+            description: 'O valor total deve ser maior que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
       }
 
       // Calcular valores finais baseados nos modos de entrada
-      const finalTotalValue = inputMode === 'designer' && formData.designer_percentage > 0
-        ? formData.designer_value_direct / (formData.designer_percentage / 100)
-        : formData.total_value;
-      
-      const finalBaseValue = inputMode === 'total'
-        ? (formData.total_value * formData.designer_percentage) / 100
-        : formData.designer_value_direct;
+      let finalTotalValue: number;
+      let finalPercentage: number;
+      let finalBaseValue: number;
+
+      if (inputMode === 'both') {
+        // Modo Ambos → % : calcula porcentagem automaticamente
+        finalTotalValue = formData.total_value;
+        finalPercentage = formData.total_value > 0 
+          ? (formData.designer_value_direct / formData.total_value) * 100 
+          : 0;
+        finalBaseValue = formData.designer_value_direct;
+      } else if (inputMode === 'designer') {
+        // Modo Projetista → Total
+        finalPercentage = formData.designer_percentage;
+        finalTotalValue = formData.designer_percentage > 0
+          ? formData.designer_value_direct / (formData.designer_percentage / 100)
+          : 0;
+        finalBaseValue = formData.designer_value_direct;
+      } else {
+        // Modo Total → Projetista
+        finalTotalValue = formData.total_value;
+        finalPercentage = formData.designer_percentage;
+        finalBaseValue = (formData.total_value * formData.designer_percentage) / 100;
+      }
       
       const finalMajoracao = majoracaoMode === 'final'
         ? Math.max(0, formData.designer_value_final - finalBaseValue)
@@ -301,7 +339,7 @@ const PrecificacaoProjetos = () => {
         project_id: formData.project_id,
         discipline_name: disciplineName,
         total_value: finalTotalValue,
-        designer_percentage: formData.designer_percentage,
+        designer_percentage: finalPercentage,
         majoracao: finalMajoracao,
         designer_id: formData.designer_id || null,
         notes: formData.notes || null,
@@ -669,7 +707,7 @@ const PrecificacaoProjetos = () => {
 
       {/* Modal de Adicionar/Editar */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingPricing ? 'Editar Precificacao' : 'Nova Precificacao'}
@@ -719,51 +757,59 @@ const PrecificacaoProjetos = () => {
             {/* Toggle: Modo de Entrada */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modo de Entrada do Valor</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant={inputMode === 'total' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setInputMode('total')}
-                  className="flex-1"
+                  className="flex-1 min-w-[120px]"
                 >
-                  Valor Total → Projetista
+                  Total → Projetista
                 </Button>
                 <Button
                   type="button"
                   variant={inputMode === 'designer' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setInputMode('designer')}
-                  className="flex-1"
+                  className="flex-1 min-w-[120px]"
                 >
-                  Projetista → Valor Total
+                  Projetista → Total
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'both' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('both')}
+                  className="flex-1 min-w-[120px]"
+                >
+                  Ambos → %
                 </Button>
               </div>
             </div>
 
-            {/* Porcentagem */}
-            <div className="space-y-2">
-              <Label>Porcentagem do Projetista (%)</Label>
-              <Input
-                type="number"
-                step={1}
-                min={0}
-                max={100}
-                value={formData.designer_percentage}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setFormData({
-                    ...formData,
-                    designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
-                  });
-                }}
-                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
-              />
-            </div>
-
             {/* Campos condicionais baseados no modo */}
-            {inputMode === 'total' ? (
+            {inputMode === 'total' && (
               <>
+                {/* Porcentagem */}
+                <div className="space-y-2">
+                  <Label>Porcentagem do Projetista (%)</Label>
+                  <Input
+                    type="number"
+                    step={1}
+                    min={0}
+                    max={100}
+                    value={formData.designer_percentage}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({
+                        ...formData,
+                        designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                      });
+                    }}
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                  />
+                </div>
                 {/* Valor Total da Disciplina */}
                 <div className="space-y-2">
                   <Label>Valor Total da Disciplina (R$) *</Label>
@@ -790,8 +836,29 @@ const PrecificacaoProjetos = () => {
                   </p>
                 </div>
               </>
-            ) : (
+            )}
+
+            {inputMode === 'designer' && (
               <>
+                {/* Porcentagem */}
+                <div className="space-y-2">
+                  <Label>Porcentagem do Projetista (%)</Label>
+                  <Input
+                    type="number"
+                    step={1}
+                    min={0}
+                    max={100}
+                    value={formData.designer_percentage}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({
+                        ...formData,
+                        designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                      });
+                    }}
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                  />
+                </div>
                 {/* Valor do Projetista (direto) */}
                 <div className="space-y-2">
                   <Label>Valor do Projetista (R$) *</Label>
@@ -818,6 +885,53 @@ const PrecificacaoProjetos = () => {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatCurrency(formData.designer_value_direct)} ÷ {formData.designer_percentage}%
+                  </p>
+                </div>
+              </>
+            )}
+
+            {inputMode === 'both' && (
+              <>
+                {/* Valor Total da Disciplina */}
+                <div className="space-y-2">
+                  <Label>Valor Total da Disciplina (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.total_value || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      total_value: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Valor do Projetista */}
+                <div className="space-y-2">
+                  <Label>Valor do Projetista (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.designer_value_direct || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      designer_value_direct: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Porcentagem Calculada (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Porcentagem Calculada</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formData.total_value > 0
+                      ? `${((formData.designer_value_direct / formData.total_value) * 100).toFixed(2)}%`
+                      : '0%'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(formData.designer_value_direct)} ÷ {formatCurrency(formData.total_value)}
                   </p>
                 </div>
               </>
