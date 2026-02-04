@@ -74,7 +74,13 @@ interface PricingFormData {
   majoracao: number;
   designer_id: string;
   notes: string;
+  // Novos campos para entrada bidirecional
+  designer_value_direct: number;
+  designer_value_final: number;
 }
+
+type InputMode = 'total' | 'designer';
+type MajoracaoMode = 'adicional' | 'final';
 
 const PrecificacaoProjetos = () => {
   const { user, profile } = useAuth();
@@ -99,8 +105,14 @@ const PrecificacaoProjetos = () => {
     designer_percentage: 40,
     majoracao: 0,
     designer_id: '',
-    notes: ''
+    notes: '',
+    designer_value_direct: 0,
+    designer_value_final: 0
   });
+
+  // Estados para modo de entrada bidirecional
+  const [inputMode, setInputMode] = useState<InputMode>('total');
+  const [majoracaoMode, setMajoracaoMode] = useState<MajoracaoMode>('adicional');
 
   // Estados para gerenciamento de disciplinas
   const [isDisciplinesModalOpen, setIsDisciplinesModalOpen] = useState(false);
@@ -112,14 +124,6 @@ const PrecificacaoProjetos = () => {
   // Verificar acesso - apenas Igor e Stael podem acessar
   const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
   const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
-
-  if (!hasAccess) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-muted-foreground">Acesso restrito</p>
-      </div>
-    );
-  }
 
   // Filtrar e ordenar projetos (mais recentes primeiro)
   const filteredProjects = useMemo(() => {
@@ -165,6 +169,15 @@ const PrecificacaoProjetos = () => {
     return projectPricing.reduce((sum, p) => sum + Number(p.designer_value || 0), 0);
   }, [projectPricing]);
 
+  // Early return para acesso restrito (APÓS todos os hooks)
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <p className="text-muted-foreground">Acesso restrito</p>
+      </div>
+    );
+  }
+
   // Abrir modal para nova precificacao
   const handleAddPricing = () => {
     if (!selectedProjectId) {
@@ -185,24 +198,34 @@ const PrecificacaoProjetos = () => {
       designer_percentage: 40,
       majoracao: 0,
       designer_id: '',
-      notes: ''
+      notes: '',
+      designer_value_direct: 0,
+      designer_value_final: 0
     });
+    setInputMode('total');
+    setMajoracaoMode('adicional');
     setIsModalOpen(true);
   };
 
   // Abrir modal para editar
   const handleEditPricing = (item: ProjectPricing) => {
     setEditingPricing(item);
+    const majoracaoVal = (item as any).majoracao || 0;
+    const baseValue = (item.total_value * item.designer_percentage) / 100;
     setFormData({
       project_id: item.project_id,
       discipline_name: item.discipline_name,
       newDiscipline: '',
       total_value: item.total_value,
       designer_percentage: item.designer_percentage,
-      majoracao: (item as any).majoracao || 0,
+      majoracao: majoracaoVal,
       designer_id: item.designer_id || '',
-      notes: item.notes || ''
+      notes: item.notes || '',
+      designer_value_direct: baseValue,
+      designer_value_final: baseValue + majoracaoVal
     });
+    setInputMode('total');
+    setMajoracaoMode('adicional');
     setIsModalOpen(true);
   };
 
@@ -261,12 +284,25 @@ const PrecificacaoProjetos = () => {
         return;
       }
 
+      // Calcular valores finais baseados nos modos de entrada
+      const finalTotalValue = inputMode === 'designer' && formData.designer_percentage > 0
+        ? formData.designer_value_direct / (formData.designer_percentage / 100)
+        : formData.total_value;
+      
+      const finalBaseValue = inputMode === 'total'
+        ? (formData.total_value * formData.designer_percentage) / 100
+        : formData.designer_value_direct;
+      
+      const finalMajoracao = majoracaoMode === 'final'
+        ? Math.max(0, formData.designer_value_final - finalBaseValue)
+        : (formData.majoracao || 0);
+
       const dataToSave = {
         project_id: formData.project_id,
         discipline_name: disciplineName,
-        total_value: formData.total_value,
+        total_value: finalTotalValue,
         designer_percentage: formData.designer_percentage,
-        majoracao: formData.majoracao || 0,
+        majoracao: finalMajoracao,
         designer_id: formData.designer_id || null,
         notes: formData.notes || null,
         amount_paid: 0,
@@ -299,9 +335,20 @@ const PrecificacaoProjetos = () => {
     }
   };
 
-  // Calcular valor do projetista (porcentagem + majoração)
-  const baseDesignerValue = (formData.total_value * formData.designer_percentage) / 100;
-  const calculatedDesignerValue = baseDesignerValue + (formData.majoracao || 0);
+  // Calcular valores baseados no modo de entrada
+  const baseDesignerValue = inputMode === 'total'
+    ? (formData.total_value * formData.designer_percentage) / 100
+    : formData.designer_value_direct;
+  
+  const calculatedMajoracao = majoracaoMode === 'final'
+    ? formData.designer_value_final - baseDesignerValue
+    : formData.majoracao;
+  
+  const calculatedDesignerValue = baseDesignerValue + Math.max(0, calculatedMajoracao || 0);
+  
+  const calculatedTotalValue = inputMode === 'designer' && formData.designer_percentage > 0
+    ? formData.designer_value_direct / (formData.designer_percentage / 100)
+    : formData.total_value;
 
   // Handlers para gerenciamento de disciplinas
   const handleAddDiscipline = async () => {
@@ -669,20 +716,29 @@ const PrecificacaoProjetos = () => {
               </div>
             )}
 
-            {/* Valor Total */}
+            {/* Toggle: Modo de Entrada */}
             <div className="space-y-2">
-              <Label>Valor Total da Disciplina (R$) *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.total_value || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  total_value: parseFloat(e.target.value) || 0
-                })}
-                placeholder="0,00"
-              />
+              <Label className="text-sm font-medium">Modo de Entrada do Valor</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={inputMode === 'total' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('total')}
+                  className="flex-1"
+                >
+                  Valor Total → Projetista
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'designer' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('designer')}
+                  className="flex-1"
+                >
+                  Projetista → Valor Total
+                </Button>
+              </div>
             </div>
 
             {/* Porcentagem */}
@@ -705,34 +761,146 @@ const PrecificacaoProjetos = () => {
               />
             </div>
 
-            {/* Majoração (opcional) */}
+            {/* Campos condicionais baseados no modo */}
+            {inputMode === 'total' ? (
+              <>
+                {/* Valor Total da Disciplina */}
+                <div className="space-y-2">
+                  <Label>Valor Total da Disciplina (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.total_value || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      total_value: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Valor Calculado do Projetista (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Valor Base do Projetista (calculado)</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatCurrency(baseDesignerValue)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.designer_percentage}% de {formatCurrency(formData.total_value)}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Valor do Projetista (direto) */}
+                <div className="space-y-2">
+                  <Label>Valor do Projetista (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.designer_value_direct || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      designer_value_direct: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Digite o valor que o projetista deve receber (sem majoração)
+                  </p>
+                </div>
+                {/* Valor Total Calculado (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Valor Total da Disciplina (calculado)</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatCurrency(calculatedTotalValue)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(formData.designer_value_direct)} ÷ {formData.designer_percentage}%
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Toggle: Modo de Majoração */}
             <div className="space-y-2">
-              <Label>Majoracao (R$) - Opcional</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.majoracao || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  majoracao: parseFloat(e.target.value) || 0
-                })}
-                placeholder="0,00"
-              />
-              <p className="text-xs text-muted-foreground">
-                Valor extra a adicionar ao calculo do projetista
-              </p>
+              <Label className="text-sm font-medium">Majoração</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={majoracaoMode === 'adicional' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMajoracaoMode('adicional')}
+                  className="flex-1"
+                >
+                  Valor Adicional
+                </Button>
+                <Button
+                  type="button"
+                  variant={majoracaoMode === 'final' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMajoracaoMode('final')}
+                  className="flex-1"
+                >
+                  Valor Final
+                </Button>
+              </div>
             </div>
 
-            {/* Valor Calculado */}
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Valor do Projetista (calculado + majoracao)</p>
+            {/* Campo de Majoração baseado no modo */}
+            {majoracaoMode === 'adicional' ? (
+              <div className="space-y-2">
+                <Label>Majoração (R$) - Opcional</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.majoracao || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    majoracao: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Valor extra a adicionar ao cálculo do projetista
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Valor Final do Projetista (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.designer_value_final || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    designer_value_final: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Digite o valor final que o projetista deve receber (já com majoração)
+                </p>
+                {formData.designer_value_final > baseDesignerValue && (
+                  <p className="text-xs text-green-600">
+                    Majoração calculada: {formatCurrency(formData.designer_value_final - baseDesignerValue)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Resumo Final */}
+            <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-sm text-muted-foreground">Valor Final do Projetista</p>
               <p className="text-xl font-bold text-green-600">
                 {formatCurrency(calculatedDesignerValue)}
               </p>
-              {formData.majoracao > 0 && (
+              {(calculatedMajoracao || 0) > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Base: {formatCurrency(baseDesignerValue)} + Majoracao: {formatCurrency(formData.majoracao)}
+                  Base: {formatCurrency(baseDesignerValue)} + Majoração: {formatCurrency(calculatedMajoracao)}
                 </p>
               )}
             </div>
