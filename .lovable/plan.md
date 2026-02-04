@@ -1,109 +1,135 @@
 
+## Plano: Flexibilizar Entrada de Valores na Precificação
 
-## Plano: Unificar Status e Corrigir Visualização de Projetos Arquivados
+### Problema Atual
 
-### Problema 1: Dois Status Para "Concluído"
+O formulário de precificação só permite preencher **em uma direção**:
+1. Você digita o **Valor Total da Disciplina**
+2. O sistema calcula o **Valor do Projetista** = (Total × Porcentagem) + Majoração
 
-**Situação atual:**
-- No banco de dados existem dois status diferentes:
-  - `CONCLUIDO` - usado em 7 projetos (6 privados + 1 público)
-  - `FINALIZADO` - usado em 9 projetos públicos
-- Tarefas usam apenas `CONCLUIDA` (com "A" no final, diferente de projetos)
-
-**Decisão:** Unificar todos para `CONCLUIDO` pois:
-1. É o mais usado em projetos privados
-2. É consistente com o status de tarefas (`CONCLUIDA`)
-3. Requer menos mudanças no código (maioria já usa CONCLUIDO)
-
----
-
-### Problema 2: Projetos Arquivados Não Aparecem
-
-**Causa raiz:**
-- A página Projetos usa `useSupabaseData().projects` que só busca projetos com `is_archived = false`
-- Quando você clica em "Ver Arquivados", o filtro `showArchived` muda para `true`
-- MAS a lista de projetos continua sendo a mesma (só projetos ativos)
-- O hook `useArchivedProjects()` existe no código mas NÃO está sendo usado
-
-**Projeto "Reforma das Coberturas":**
-- Está no banco como arquivado (`is_archived = true`)
-- Status: `CONCLUIDO`, Tipo: `publico`
-- Não aparece porque o hook só busca projetos ativos
+**Você quer poder fazer o inverso também**, além de poder digitar o valor final majorado diretamente.
 
 ---
 
 ### Solução Proposta
 
-#### Parte 1: Migração SQL para Unificar Status
+Adicionar **opções de entrada bidirecional** onde o usuário pode escolher qual campo preencher e o sistema calcula os outros automaticamente.
 
-Atualizar todos os projetos com status `FINALIZADO` para `CONCLUIDO`:
+#### Novos Modos de Entrada
 
-```sql
--- Atualizar projetos com status FINALIZADO para CONCLUIDO
-UPDATE projects 
-SET status = 'CONCLUIDO' 
-WHERE status = 'FINALIZADO';
-
--- Atualizar a constraint para remover FINALIZADO
-ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
-ALTER TABLE projects ADD CONSTRAINT projects_status_check 
-CHECK (status IN ('EM_ANDAMENTO', 'EM_ESPERA', 'PARALISADO', 'CONCLUIDO', 'AGUARDANDO_PAGAMENTO', 'AGUARDANDO_APROVACAO'));
-```
-
-#### Parte 2: Modificar Página de Projetos
-
-**Arquivo:** `src/pages/Projetos.tsx`
-
-Usar o hook `useArchivedProjects()` quando o usuário clicar em "Ver Arquivados":
-
-```typescript
-import { useArchivedProjects } from '@/hooks/useSupabaseData';
-
-const Projetos = () => {
-  const { projects: activeProjects, updateProject, deleteProject, profiles } = useSupabaseData();
-  const { projects: archivedProjects, updateProject: updateArchivedProject, refetch: refetchArchived } = useArchivedProjects();
-  
-  // Usar a lista correta baseada no estado
-  const allProjects = isAdmin 
-    ? (showArchived ? archivedProjects : activeProjects)
-    : (showArchived ? archivedProjects : activeProjects).filter(project => 
-        project.responsible_ids?.includes(user.id)
-      );
-```
-
-#### Parte 3: Atualizar Código para Usar Apenas CONCLUIDO
-
-**Arquivos a modificar:**
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/types/index.ts` | Remover `FINALIZADO` do tipo status |
-| `src/pages/AdminFinanceiro.tsx` | Remover opção `FINALIZADO` do filtro |
-| `src/pages/Projetos.tsx` | Remover `FINALIZADO` do statusConfig e filtros |
-| `src/hooks/useContractFinancials.ts` | Atualizar contagem de contratos concluídos para incluir só `CONCLUIDO` |
-| `src/hooks/useUserData.tsx` | Remover referência a `FINALIZADO` |
-| `src/pages/Relatorios.tsx` | Já usa apenas `CONCLUIDO` |
-
-#### Parte 4: Exportar useArchivedProjects no Contexto (Opcional)
-
-Adicionar ao `SupabaseDataContext` para facilitar o uso em todo o sistema.
+| Campo Preenchido | Campos Calculados |
+|------------------|-------------------|
+| Valor Total da Disciplina | → Valor do Projetista |
+| **Valor do Projetista** (NOVO) | → Valor Total da Disciplina |
+| **Valor Final Majorado** (NOVO) | → Majoração (diferença) |
 
 ---
 
-### Arquivos a Modificar
+### Modificações no Formulário
 
-1. **Migração SQL** - Unificar FINALIZADO → CONCLUIDO no banco
-2. **`src/pages/Projetos.tsx`** - Usar `useArchivedProjects` para projetos arquivados
-3. **`src/types/index.ts`** - Remover `FINALIZADO` do tipo
-4. **`src/pages/AdminFinanceiro.tsx`** - Remover `FINALIZADO` do filtro
-5. **`src/hooks/useContractFinancials.ts`** - Simplificar lógica de contagem
+#### 1. Adicionar campo "Valor do Projetista" editável
+
+Novo campo onde você pode digitar diretamente quanto o projetista vai receber. O sistema vai calcular o valor total da disciplina usando a fórmula inversa:
+
+```
+Valor Total = Valor Projetista / (Porcentagem / 100)
+```
+
+Exemplo:
+- Se você quer pagar **R$ 4.000** ao projetista com **40%**
+- Sistema calcula: **R$ 10.000** como valor total da disciplina
+
+#### 2. Modificar campo de Majoração
+
+Atualmente você digita o **valor a adicionar** (ex: R$ 500 de majoração).
+
+Nova opção: digitar o **valor final majorado** e o sistema calcula a diferença.
+
+Exemplo:
+- Base calculada: R$ 4.000 (40% de R$ 10.000)
+- Você digita: R$ 4.500 como valor final
+- Sistema calcula: R$ 500 de majoração
+
+#### 3. Interface com Toggle de Modo
+
+Adicionar um seletor para escolher o modo de preenchimento:
+- **Modo Normal**: Preenche valor total → calcula valor projetista
+- **Modo Inverso**: Preenche valor projetista → calcula valor total
+
+---
+
+### Alterações no Código
+
+**Arquivo:** `src/pages/PrecificacaoProjetos.tsx`
+
+1. **Adicionar estado para modo de entrada:**
+```typescript
+const [inputMode, setInputMode] = useState<'total' | 'designer'>('total');
+const [majoracaoMode, setMajoracaoMode] = useState<'adicional' | 'final'>('adicional');
+```
+
+2. **Adicionar campo para valor do projetista direto:**
+```typescript
+interface PricingFormData {
+  // ... campos existentes
+  designer_value_direct: number; // NOVO - valor direto do projetista
+  designer_value_final: number;  // NOVO - valor final com majoração
+}
+```
+
+3. **Lógica de cálculo bidirecional:**
+```typescript
+// Quando inputMode === 'designer' e usuário digita designer_value_direct:
+const calculatedTotalValue = formData.designer_value_direct / (formData.designer_percentage / 100);
+
+// Quando majoracaoMode === 'final' e usuário digita designer_value_final:
+const calculatedMajoracao = formData.designer_value_final - baseDesignerValue;
+```
+
+4. **UI com toggle para escolher modo:**
+- Radio buttons ou tabs para alternar entre modos
+- Labels dinâmicos explicando qual campo preencher
+
+---
+
+### Correção dos Erros de Build (Edge Functions)
+
+Os erros de TypeScript nas edge functions precisam ser corrigidos também:
+
+**Arquivos:**
+- `supabase/functions/appsheet-lancamento-pub/index.ts`
+- `supabase/functions/appsheet-lancamento-pvt/index.ts`
+
+**Problema:** `error` é do tipo `unknown`, mas estamos acessando `error.message` diretamente.
+
+**Solução:**
+```typescript
+} catch (error) {
+  console.error('❌ Erro ao processar webhook:', error);
+  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+  return new Response(
+    JSON.stringify({ success: false, error: errorMessage }),
+    { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+```
 
 ---
 
 ### Resultado Esperado
 
-1. **Status unificado:** Apenas `CONCLUIDO` em todo o sistema
-2. **Projetos arquivados visíveis:** Ao clicar em "Ver Arquivados", verá os 13+ projetos arquivados
-3. **"Reforma das Coberturas" visível:** Aparecerá na lista de projetos arquivados
-4. **Consistência:** Mesmo status em projetos, tarefas e gestão financeira
+1. **Modo Normal (atual):** Digitar valor total → ver valor do projetista calculado
+2. **Modo Inverso (novo):** Digitar valor do projetista → ver valor total calculado
+3. **Majoração direta:** Digitar valor final majorado → sistema calcula a diferença
 
+O formulário fica mais flexível para você preencher da forma mais conveniente em cada situação.
+
+---
+
+### Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/PrecificacaoProjetos.tsx` | Adicionar modos de entrada bidirecional |
+| `supabase/functions/appsheet-lancamento-pub/index.ts` | Corrigir tipagem do error |
+| `supabase/functions/appsheet-lancamento-pvt/index.ts` | Corrigir tipagem do error |
