@@ -1009,18 +1009,29 @@ export function ContractDetailModal({
                                       <TableCell className="text-right">
                                         {formatCurrency(price.designer_value)}
                                       </TableCell>
-                                      <TableCell className="text-right text-green-600">
+                                      <TableCell className={`text-right ${price.amount_paid > price.designer_value ? 'text-red-600 font-bold' : 'text-green-600'}`}>
                                         {formatCurrency(price.amount_paid)}
+                                        {price.amount_paid > price.designer_value && (
+                                          <div className="text-xs text-red-500">
+                                            +{formatCurrency(price.amount_paid - price.designer_value)} excesso
+                                          </div>
+                                        )}
                                       </TableCell>
                                       <TableCell>
-                                        <Badge
-                                          variant={
-                                            price.status === 'pago' ? 'default' :
-                                            price.status === 'parcial' ? 'secondary' : 'outline'
-                                          }
-                                        >
-                                          {price.status}
-                                        </Badge>
+                                        {price.amount_paid > price.designer_value ? (
+                                          <Badge variant="destructive">
+                                            excesso
+                                          </Badge>
+                                        ) : (
+                                          <Badge
+                                            variant={
+                                              price.status === 'pago' ? 'default' :
+                                              price.status === 'parcial' ? 'secondary' : 'outline'
+                                            }
+                                          >
+                                            {price.status}
+                                          </Badge>
+                                        )}
                                       </TableCell>
                                       <TableCell>
                                         <Button size="sm" variant="ghost" onClick={() => startEditPricing(price)}>
@@ -1040,9 +1051,21 @@ export function ContractDetailModal({
                                 <TableCell className="text-right">
                                   {formatCurrency(data.pricing.reduce((s, p) => s + p.designer_value, 0))}
                                 </TableCell>
-                                <TableCell className="text-right text-green-600">
-                                  {formatCurrency(data.pricing.reduce((s, p) => s + p.amount_paid, 0))}
-                                </TableCell>
+                                {(() => {
+                                  const totalPaid = data.pricing.reduce((s, p) => s + p.amount_paid, 0);
+                                  const totalDesigner = data.pricing.reduce((s, p) => s + p.designer_value, 0);
+                                  const isExcesso = totalPaid > totalDesigner;
+                                  return (
+                                    <TableCell className={`text-right ${isExcesso ? 'text-red-600' : 'text-green-600'}`}>
+                                      {formatCurrency(totalPaid)}
+                                      {isExcesso && (
+                                        <div className="text-xs text-red-500">
+                                          +{formatCurrency(totalPaid - totalDesigner)} excesso
+                                        </div>
+                                      )}
+                                    </TableCell>
+                                  );
+                                })()}
                                 <TableCell colSpan={2}></TableCell>
                               </TableRow>
                             </TableBody>

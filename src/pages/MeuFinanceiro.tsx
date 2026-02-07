@@ -296,11 +296,19 @@ const MeuFinanceiro = () => {
                           <TableCell className="text-right">
                             {formatCurrency(item.designer_value)}
                           </TableCell>
-                          <TableCell className="text-right text-green-600">
+                          <TableCell className={`text-right ${item.amount_paid > item.designer_value ? 'text-red-600 font-bold' : 'text-green-600'}`}>
                             {formatCurrency(item.amount_paid)}
+                            {item.amount_paid > item.designer_value && (
+                              <div className="text-xs text-red-500">
+                                +{formatCurrency(item.amount_paid - item.designer_value)} excesso
+                              </div>
+                            )}
                           </TableCell>
-                          <TableCell className="text-right font-semibold text-yellow-600">
-                            {formatCurrency(item.amount_pending)}
+                          <TableCell className={`text-right font-semibold ${item.amount_pending < 0 ? 'text-red-600' : 'text-yellow-600'}`}>
+                            {item.amount_pending < 0
+                              ? formatCurrency(0)
+                              : formatCurrency(item.amount_pending)
+                            }
                           </TableCell>
                         </TableRow>
                       ))}
