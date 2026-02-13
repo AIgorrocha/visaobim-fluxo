@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Mapeamento de contratos PÚBLICO
+// Mapeamento de contratos PUBLICO
 const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'GERAL': null,
   'DRF-PV': 'f9ef85e6-a442-4b35-bb82-004cbe331fa4',
@@ -17,12 +17,18 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'SOP-GINASIOS': '2196fb07-7126-4793-8240-a57d7a5fed15',
   'GINASIOS-SOP': '2196fb07-7126-4793-8240-a57d7a5fed15',
   'HTR': '3142ffab-1005-4710-9fb0-e838ba069e97',
+  'FES-HTR': '3142ffab-1005-4710-9fb0-e838ba069e97',
   'PRODESP': '65598f7a-0883-4cc5-89e0-ff3efeaba35c',
+  'PRODESP PAISAGISMO': 'a37cd798-df75-4152-96eb-3a0ccb6cb328',
   'CELESC-TUBARAO': 'bbf35b14-5047-4ea5-ad21-d9e9733a5040',
+  'CELESC_TUBARAO': 'bbf35b14-5047-4ea5-ad21-d9e9733a5040',
   'CELESC-EST CENTRAL': 'a602e340-23e8-4b2d-bf4e-d06c26f9dc3c',
+  'CELESC-ESTUDO': 'a602e340-23e8-4b2d-bf4e-d06c26f9dc3c',
+  'CELESC-RS': 'bbf35b14-5047-4ea5-ad21-d9e9733a5040',
   'SPRF-AL': '60a49d27-05d9-4e60-aa18-accffc94cca1',
   'SPF-RO': '04e09afb-8b45-4ab8-b6ff-8e57dd0ed0b5',
   'UNESPAR-ELE': 'ae4caf7d-730c-4d22-991d-0a255bfeb695',
+  'UNESPAR - ESTRUTURA METALICA': '9de6e94a-bce4-4ab5-9923-1081d0a9eba1',
   // Projetos finalizados
   'IBC-RJ': '46195969-2413-4782-8753-0002fd633655',
   'IBC': '46195969-2413-4782-8753-0002fd633655',
@@ -33,8 +39,8 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'ZOOTECNIA': '91a2dfd8-d0e1-4bb0-8b0d-f9d43ac0d3a3',
   'UNESPAR-EST.MET': '9de6e94a-bce4-4ab5-9923-1081d0a9eba1',
   'UNESPAR-EST': '9de6e94a-bce4-4ab5-9923-1081d0a9eba1',
-  'CARVALHO-PORTAL DA ALEGRIA': 'b940baaf-1bab-481d-925a-98d2479bf334',
-  'CARVALHO-PORTAL': 'b940baaf-1bab-481d-925a-98d2479bf334',
+  'LORENA-SP': '67c376a8-f269-4529-8cc0-26d99cd7bd28',
+  'LORENA': '67c376a8-f269-4529-8cc0-26d99cd7bd28',
   // Outros aliases
   'FHEMIG-BH': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
   'FHEMIG': '8f05c236-6a68-4326-84d3-bfed1e62c3dd',
@@ -46,12 +52,10 @@ const CONTRACT_MAPPING: { [key: string]: string | null } = {
   'IRIS-REFORCO': '7638c70a-7a2b-4608-b7b0-b198edb584dd',
   'BRENO-CASA': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
   'BRENO': '03990012-9e4a-443d-97a6-7dc0ad5bf269',
-  // REFORÇO COLEGIO - SOP (aliases)
-  'SOP-REFORÇO': '80deac2b-928f-4177-ab77-984d76944b06',
+  // REFORCO COLEGIO - SOP (aliases)
   'SOP-REFORCO': '80deac2b-928f-4177-ab77-984d76944b06',
-  'REFORÇO COLEGIO': '80deac2b-928f-4177-ab77-984d76944b06',
   'REFORCO COLEGIO': '80deac2b-928f-4177-ab77-984d76944b06',
-  'REFORÇO COLEGIO - SOP': '80deac2b-928f-4177-ab77-984d76944b06',
+  'REFORCO COLEGIO - SOP': '80deac2b-928f-4177-ab77-984d76944b06',
 };
 
 // Mapeamento de projetistas (nome -> designer_id)
@@ -60,6 +64,7 @@ const DESIGNER_MAPPING: { [key: string]: string } = {
   'GUSTAVO': '7526fbed-99da-4d87-b647-422f278e961b',
   'PEDRO/LUCAS': '7b13b7de-68df-4dde-9263-0e2a72d481b0',
   'PEDRO': '7b13b7de-68df-4dde-9263-0e2a72d481b0',
+  'PEDRO/LUCAS ': '7b13b7de-68df-4dde-9263-0e2a72d481b0',
   'LUCAS': '7b13b7de-68df-4dde-9263-0e2a72d481b0',
   'LEONARDO': '5d9e3d5a-0b0a-46b9-87e3-2a9fe1bf1a91',
   'RONDINELLY': '905fde13-5c9f-49be-b76a-f76e4ffd124d',
@@ -74,14 +79,16 @@ const DESIGNER_MAPPING: { [key: string]: string } = {
   'IGOR': 'cf3a3c2b-8729-405c-9057-8d91fa63ee18',
   'NICOLAS': '0510e615-438d-400e-886c-fed07c997dc9',
   'BESSA': 'c96e4c49-6b7b-4d89-b56d-f8779271d6e0',
+  'PHILIP': '6fefce39-d90a-4c2a-abf9-80867ac60772',
+  'LISBOA': 'd90fcfdb-4a4f-41af-817c-6e9cd38c2478',
   'PROJETISTA EXTERNO': '4c3ce88b-abf9-45cd-a919-954bea79aa0c',
+  'EMPRESA': '4c3ce88b-abf9-45cd-a919-954bea79aa0c',
 };
 
 const FALLBACK_DESIGNER_ID = '4c3ce88b-abf9-45cd-a919-954bea79aa0c'; // PROJETISTA EXTERNO
 
 function parseDate(dateStr: string): string | null {
   if (!dateStr) return null;
-  // Formato: DD/MM/YYYY
   const parts = dateStr.split('/');
   if (parts.length === 3) {
     const [day, month, year] = parts;
@@ -92,12 +99,13 @@ function parseDate(dateStr: string): string | null {
 
 function parseAmount(valueStr: string): number {
   if (!valueStr) return 0;
-  // Remove "R$", espaços, pontos de milhar e converte vírgula para ponto
-  const cleaned = valueStr
-    .replace(/R\$\s?/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-    .trim();
+  let cleaned = valueStr.replace(/R\$\s?/g, '').trim();
+  // Detecta formato BR (virgula como decimal) vs internacional (ponto como decimal)
+  if (cleaned.includes(',')) {
+    // Formato BR: 1.200,50 -> remove pontos de milhar, troca virgula por ponto
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  }
+  // Se nao tem virgula, assume que ponto e decimal (formato internacional)
   return parseFloat(cleaned) || 0;
 }
 
@@ -110,24 +118,23 @@ function findDesignerId(name: string): string {
 function findProjectId(contractName: string): string | null {
   if (!contractName) return null;
   const upperName = contractName.toUpperCase().trim();
-  
+
   // Tenta match exato
   if (upperName in CONTRACT_MAPPING) {
     return CONTRACT_MAPPING[upperName];
   }
-  
+
   // Tenta match parcial
   for (const [key, value] of Object.entries(CONTRACT_MAPPING)) {
     if (upperName.includes(key) || key.includes(upperName)) {
       return value;
     }
   }
-  
+
   return null;
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const payload = await req.json();
-    console.log('📥 Payload recebido (PÚBLICO):', JSON.stringify(payload));
+    console.log('Payload recebido (PUBLICO):', JSON.stringify(payload));
 
     const {
       ID_Lancamento,
@@ -148,31 +155,79 @@ Deno.serve(async (req) => {
       Descricao,
       Contrato,
       Centro_de_Custo,
-      Responsavel, // Quem registrou (IGOR/STAEL)
-      Projetista,  // Nome do projetista
+      Responsavel,
+      Projetista,
       Disciplina
     } = payload;
+
+    // FIX: Usar Projetista com fallback para Responsavel
+    const nomeProjetista = Projetista || Responsavel;
+    const appsheetId = ID_Lancamento ? String(ID_Lancamento) : null;
 
     const parsedDate = parseDate(Datas);
     const parsedAmount = parseAmount(Valor);
     const projectId = findProjectId(Contrato);
-    const designerId = findDesignerId(Projetista);
+    const designerId = findDesignerId(nomeProjetista);
     const tipoUpper = (Tipo || '').toUpperCase().trim();
     const centroCustoUpper = (Centro_de_Custo || '').toUpperCase().trim();
 
-    console.log(`🔍 Processando: Tipo=${tipoUpper}, CentroCusto=${centroCustoUpper}, Contrato=${Contrato}, Projetista=${Projetista}`);
-    console.log(`🔍 Mapeamento: projectId=${projectId}, designerId=${designerId}`);
+    console.log(`Processando (PUBLICO): Tipo=${tipoUpper}, CentroCusto=${centroCustoUpper}, Contrato=${Contrato}, Projetista=${nomeProjetista}, AppSheetID=${appsheetId}`);
+    console.log(`Mapeamento: projectId=${projectId}, designerId=${designerId}`);
+
+    // PROTECAO ANTI-DUPLICATA: verificar se appsheet_id ja existe
+    if (appsheetId) {
+      const { data: existingPayment } = await supabase
+        .from('designer_payments')
+        .select('id')
+        .eq('appsheet_id', appsheetId)
+        .maybeSingle();
+
+      if (existingPayment) {
+        console.log(`DUPLICATA DETECTADA: appsheet_id ${appsheetId} ja existe em designer_payments (${existingPayment.id})`);
+        return new Response(
+          JSON.stringify({ success: true, duplicate: true, existing_id: existingPayment.id }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: existingIncome } = await supabase
+        .from('contract_income')
+        .select('id')
+        .eq('appsheet_id', appsheetId)
+        .maybeSingle();
+
+      if (existingIncome) {
+        console.log(`DUPLICATA DETECTADA: appsheet_id ${appsheetId} ja existe em contract_income (${existingIncome.id})`);
+        return new Response(
+          JSON.stringify({ success: true, duplicate: true, existing_id: existingIncome.id }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: existingExpense } = await supabase
+        .from('company_expenses')
+        .select('id')
+        .eq('appsheet_id', appsheetId)
+        .maybeSingle();
+
+      if (existingExpense) {
+        console.log(`DUPLICATA DETECTADA: appsheet_id ${appsheetId} ja existe em company_expenses (${existingExpense.id})`);
+        return new Response(
+          JSON.stringify({ success: true, duplicate: true, existing_id: existingExpense.id }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     let result;
 
     // DESPESA + PROJETISTA = Pagamento a projetista
     if (tipoUpper === 'DESPESA' && centroCustoUpper === 'PROJETISTA') {
-      console.log('💰 Inserindo pagamento de projetista...');
-      
-      // Buscar precificação existente para vincular automaticamente
+      console.log('Inserindo pagamento de projetista (PUBLICO)...');
+
       let pricingId: string | null = null;
       let pricingRecord: { id: string; discipline_name: string; designer_value: number; amount_paid: number } | null = null;
-      
+
       if (projectId && designerId) {
         const { data: pricings } = await supabase
           .from('project_pricing')
@@ -182,20 +237,17 @@ Deno.serve(async (req) => {
           .order('created_at', { ascending: true });
 
         if (pricings && pricings.length > 0) {
-          // Prioriza precificação com disciplina igual ou similar
           const disciplineUpper = (Disciplina || '').toUpperCase().trim();
           pricingRecord = pricings.find((p: any) => {
             const pricingDisc = (p.discipline_name || '').toUpperCase();
             return pricingDisc.includes(disciplineUpper) || disciplineUpper.includes(pricingDisc);
           }) || pricings[0];
-          
+
           pricingId = pricingRecord.id;
-          console.log(`🔗 Precificação encontrada: ${pricingId} (${pricingRecord.discipline_name})`);
-        } else {
-          console.log('⚠️ Nenhuma precificação encontrada para vincular');
+          console.log(`Precificacao encontrada: ${pricingId} (${pricingRecord.discipline_name})`);
         }
       }
-      
+
       const { data, error } = await supabase
         .from('designer_payments')
         .insert({
@@ -208,41 +260,41 @@ Deno.serve(async (req) => {
           description: Descricao || ID_Lancamento,
           sector: 'publico',
           status: 'pago',
-          pricing_id: pricingId
+          pricing_id: pricingId,
+          appsheet_id: appsheetId
         })
         .select()
         .single();
 
       if (error) throw error;
       result = { type: 'designer_payment', data, pricing_linked: !!pricingId };
-      console.log('✅ Pagamento de projetista inserido:', data.id);
-      
-      // Atualizar amount_paid na precificação após inserir pagamento
+      console.log('Pagamento de projetista inserido (PUBLICO):', data.id);
+
       if (pricingId && pricingRecord) {
         const newAmountPaid = (pricingRecord.amount_paid || 0) + parsedAmount;
         const newStatus = newAmountPaid >= pricingRecord.designer_value ? 'pago' : 'parcial';
-        
+
         const { error: updateError } = await supabase
           .from('project_pricing')
-          .update({ 
+          .update({
             amount_paid: Math.min(newAmountPaid, pricingRecord.designer_value),
-            status: newStatus 
+            status: newStatus
           })
           .eq('id', pricingId);
-          
+
         if (updateError) {
-          console.error('⚠️ Erro ao atualizar precificação:', updateError);
+          console.error('Erro ao atualizar precificacao:', updateError);
         } else {
-          console.log(`📊 Precificação atualizada: amount_paid=${newAmountPaid.toFixed(2)}, status=${newStatus}`);
+          console.log(`Precificacao atualizada: amount_paid=${newAmountPaid.toFixed(2)}, status=${newStatus}`);
         }
       }
     }
     // RECEITA + PAGAMENTO ou MEDICAO = Receita do contrato
     else if (tipoUpper === 'RECEITA' && (centroCustoUpper === 'PAGAMENTO' || centroCustoUpper === 'MEDICAO')) {
-      console.log('💵 Inserindo receita do contrato...');
-      
+      console.log('Inserindo receita do contrato (PUBLICO)...');
+
       const incomeType = centroCustoUpper === 'MEDICAO' ? 'medicao' : 'entrada';
-      
+
       const { data, error } = await supabase
         .from('contract_income')
         .insert({
@@ -250,19 +302,20 @@ Deno.serve(async (req) => {
           amount: parsedAmount,
           income_date: parsedDate,
           description: Descricao || ID_Lancamento,
-          income_type: incomeType
+          income_type: incomeType,
+          appsheet_id: appsheetId
         })
         .select()
         .single();
 
       if (error) throw error;
       result = { type: 'contract_income', data };
-      console.log('✅ Receita do contrato inserida:', data.id);
+      console.log('Receita do contrato inserida (PUBLICO):', data.id);
     }
     // DESPESA + Outros centros de custo = Despesa da empresa
     else if (tipoUpper === 'DESPESA') {
-      console.log('📊 Inserindo despesa da empresa...');
-      
+      console.log('Inserindo despesa da empresa (PUBLICO)...');
+
       const { data, error } = await supabase
         .from('company_expenses')
         .insert({
@@ -273,34 +326,23 @@ Deno.serve(async (req) => {
           expense_date: parsedDate,
           cost_center: Centro_de_Custo || 'OUTROS',
           sector: 'publico',
-          responsible: Responsavel
+          responsible: Responsavel,
+          appsheet_id: appsheetId
         })
         .select()
         .single();
 
       if (error) throw error;
       result = { type: 'company_expense', data };
-      console.log('✅ Despesa da empresa inserida:', data.id);
+      console.log('Despesa da empresa inserida (PUBLICO):', data.id);
     }
     else {
-      console.log('⚠️ Tipo de lançamento não reconhecido:', tipoUpper);
-      result = { type: 'unknown', message: 'Tipo de lançamento não reconhecido' };
+      console.log('Tipo de lancamento nao reconhecido:', tipoUpper);
+      result = { type: 'unknown', message: 'Tipo de lancamento nao reconhecido' };
     }
 
-    // Se contrato não foi encontrado, registrar para revisão manual
     if (projectId === null && Contrato && Contrato !== 'GERAL') {
-      console.log('⚠️ Contrato não mapeado:', Contrato);
-      
-      await supabase
-        .from('unmatched_entries')
-        .insert({
-          entry_id: result.data?.id || ID_Lancamento,
-          source_table: result.type || 'unknown',
-          field_type: 'contract',
-          original_value: Contrato,
-          sector: 'publico',
-          status: 'pending'
-        });
+      console.log('Contrato nao mapeado (PUBLICO):', Contrato);
     }
 
     return new Response(
@@ -309,7 +351,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ Erro ao processar webhook:', error);
+    console.error('Erro ao processar webhook (PUBLICO):', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
