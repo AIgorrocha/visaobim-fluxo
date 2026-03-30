@@ -892,7 +892,7 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Início da Atividade</TableHead>
+                        
                         <TableHead>Prazo</TableHead>
                         <TableHead>Entrega Realizada</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
