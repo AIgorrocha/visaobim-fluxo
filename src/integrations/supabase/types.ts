@@ -17,6 +17,7 @@ export type Database = {
       company_expenses: {
         Row: {
           amount: number
+          appsheet_id: string | null
           contract_name: string | null
           cost_center: string
           created_at: string | null
@@ -31,6 +32,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          appsheet_id?: string | null
           contract_name?: string | null
           cost_center: string
           created_at?: string | null
@@ -45,6 +47,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          appsheet_id?: string | null
           contract_name?: string | null
           cost_center?: string
           created_at?: string | null
@@ -128,6 +131,7 @@ export type Database = {
       contract_income: {
         Row: {
           amount: number
+          appsheet_id: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -139,6 +143,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          appsheet_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -150,6 +155,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          appsheet_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -176,9 +182,1350 @@ export type Database = {
           },
         ]
       }
+      ct_agent_openclaw: {
+        Row: {
+          agent_slug: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_sync_at: string | null
+          openclaw_session_id: string | null
+          openclaw_workspace: string | null
+          provisioned_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_slug: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          openclaw_session_id?: string | null
+          openclaw_workspace?: string | null
+          provisioned_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_slug?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_sync_at?: string | null
+          openclaw_session_id?: string | null
+          openclaw_workspace?: string | null
+          provisioned_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_agents: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          display_name: string
+          id: string
+          last_active_at: string | null
+          role: string
+          slug: string
+          status: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          last_active_at?: string | null
+          role: string
+          slug: string
+          status?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          last_active_at?: string | null
+          role?: string
+          slug?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      ct_api_keys: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          revoked_at: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "ct_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_audit_log: {
+        Row: {
+          action: string | null
+          agent: string | null
+          created_at: string | null
+          details: Json | null
+          id: number
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action?: string | null
+          agent?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: number
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string | null
+          agent?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: number
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
+      ct_brand_profile: {
+        Row: {
+          audience: Json | null
+          brand_voice: Json | null
+          content_strategy: Json | null
+          created_at: string | null
+          id: string
+          onboarding_completed: boolean | null
+          onboarding_step: string | null
+          questionnaire: Json | null
+          raw_social_data: Json | null
+          site_analysis: Json | null
+          site_url: string | null
+          social_links: Json | null
+          updated_at: string | null
+          video_transcripts: string[] | null
+          video_urls: string[] | null
+          visual_identity: Json | null
+        }
+        Insert: {
+          audience?: Json | null
+          brand_voice?: Json | null
+          content_strategy?: Json | null
+          created_at?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: string | null
+          questionnaire?: Json | null
+          raw_social_data?: Json | null
+          site_analysis?: Json | null
+          site_url?: string | null
+          social_links?: Json | null
+          updated_at?: string | null
+          video_transcripts?: string[] | null
+          video_urls?: string[] | null
+          visual_identity?: Json | null
+        }
+        Update: {
+          audience?: Json | null
+          brand_voice?: Json | null
+          content_strategy?: Json | null
+          created_at?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: string | null
+          questionnaire?: Json | null
+          raw_social_data?: Json | null
+          site_analysis?: Json | null
+          site_url?: string | null
+          social_links?: Json | null
+          updated_at?: string | null
+          video_transcripts?: string[] | null
+          video_urls?: string[] | null
+          visual_identity?: Json | null
+        }
+        Relationships: []
+      }
+      ct_collaborations: {
+        Row: {
+          content_id: string | null
+          created_at: string | null
+          id: string
+          influencer_id: string | null
+          notes: string | null
+          scheduled_at: string | null
+          status: string | null
+          type: string | null
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          influencer_id?: string | null
+          notes?: string | null
+          scheduled_at?: string | null
+          status?: string | null
+          type?: string | null
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          influencer_id?: string | null
+          notes?: string | null
+          scheduled_at?: string | null
+          status?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_collaborations_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "ct_content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_collaborations_influencer_id_fkey"
+            columns: ["influencer_id"]
+            isOneToOne: false
+            referencedRelation: "ct_influencers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_competitor_posts: {
+        Row: {
+          analysis: string | null
+          caption: string | null
+          competitor_handle: string | null
+          competitor_id: string | null
+          content_preview: string | null
+          engagement: Json | null
+          external_id: string | null
+          id: string
+          is_viral: boolean | null
+          media_urls: string[] | null
+          platform: string | null
+          platform_post_id: string | null
+          post_type: string | null
+          posted_at: string | null
+          scraped_at: string | null
+          source_type: string | null
+        }
+        Insert: {
+          analysis?: string | null
+          caption?: string | null
+          competitor_handle?: string | null
+          competitor_id?: string | null
+          content_preview?: string | null
+          engagement?: Json | null
+          external_id?: string | null
+          id?: string
+          is_viral?: boolean | null
+          media_urls?: string[] | null
+          platform?: string | null
+          platform_post_id?: string | null
+          post_type?: string | null
+          posted_at?: string | null
+          scraped_at?: string | null
+          source_type?: string | null
+        }
+        Update: {
+          analysis?: string | null
+          caption?: string | null
+          competitor_handle?: string | null
+          competitor_id?: string | null
+          content_preview?: string | null
+          engagement?: Json | null
+          external_id?: string | null
+          id?: string
+          is_viral?: boolean | null
+          media_urls?: string[] | null
+          platform?: string | null
+          platform_post_id?: string | null
+          post_type?: string | null
+          posted_at?: string | null
+          scraped_at?: string | null
+          source_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_competitor_posts_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "ct_competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_competitors: {
+        Row: {
+          display_name: string | null
+          handle: string
+          id: string
+          is_active: boolean | null
+          last_scraped_at: string | null
+          metadata: Json | null
+          niche: string | null
+          platform: string | null
+        }
+        Insert: {
+          display_name?: string | null
+          handle: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          metadata?: Json | null
+          niche?: string | null
+          platform?: string | null
+        }
+        Update: {
+          display_name?: string | null
+          handle?: string
+          id?: string
+          is_active?: boolean | null
+          last_scraped_at?: string | null
+          metadata?: Json | null
+          niche?: string | null
+          platform?: string | null
+        }
+        Relationships: []
+      }
+      ct_contacts: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          instagram: string | null
+          linkedin: string | null
+          metadata: Json | null
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          metadata?: Json | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          metadata?: Json | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_content_items: {
+        Row: {
+          approval_notes: string | null
+          approval_status: string | null
+          brand: string | null
+          caption: string | null
+          content_body: string | null
+          content_type: string
+          created_at: string | null
+          created_by: string | null
+          engagement: Json | null
+          hashtags: string[] | null
+          id: string
+          media_urls: string[] | null
+          metadata: Json | null
+          platform: string | null
+          publish_url: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          script: string | null
+          source_agent: string | null
+          source_url: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          visual_notes: string | null
+        }
+        Insert: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          brand?: string | null
+          caption?: string | null
+          content_body?: string | null
+          content_type: string
+          created_at?: string | null
+          created_by?: string | null
+          engagement?: Json | null
+          hashtags?: string[] | null
+          id?: string
+          media_urls?: string[] | null
+          metadata?: Json | null
+          platform?: string | null
+          publish_url?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          source_agent?: string | null
+          source_url?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          visual_notes?: string | null
+        }
+        Update: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          brand?: string | null
+          caption?: string | null
+          content_body?: string | null
+          content_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          engagement?: Json | null
+          hashtags?: string[] | null
+          id?: string
+          media_urls?: string[] | null
+          metadata?: Json | null
+          platform?: string | null
+          publish_url?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          script?: string | null
+          source_agent?: string | null
+          source_url?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          visual_notes?: string | null
+        }
+        Relationships: []
+      }
+      ct_content_series: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          platforms: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          platforms?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          platforms?: string[] | null
+        }
+        Relationships: []
+      }
+      ct_content_series_items: {
+        Row: {
+          content_id: string
+          sequence_num: number | null
+          series_id: string
+        }
+        Insert: {
+          content_id: string
+          sequence_num?: number | null
+          series_id: string
+        }
+        Update: {
+          content_id?: string
+          sequence_num?: number | null
+          series_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_content_series_items_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "ct_content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_content_series_items_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "ct_content_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_credentials: {
+        Row: {
+          auth_tag: string
+          created_at: string | null
+          credential_key: string
+          encrypted_value: string
+          id: string
+          iv: string
+          service: string
+          updated_at: string | null
+        }
+        Insert: {
+          auth_tag: string
+          created_at?: string | null
+          credential_key: string
+          encrypted_value: string
+          id?: string
+          iv: string
+          service: string
+          updated_at?: string | null
+        }
+        Update: {
+          auth_tag?: string
+          created_at?: string | null
+          credential_key?: string
+          encrypted_value?: string
+          id?: string
+          iv?: string
+          service?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_deal_activities: {
+        Row: {
+          activity_type: string | null
+          contact_id: string | null
+          deal_id: string | null
+          description: string | null
+          id: string
+          performed_at: string | null
+          performed_by: string | null
+        }
+        Insert: {
+          activity_type?: string | null
+          contact_id?: string | null
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Update: {
+          activity_type?: string | null
+          contact_id?: string | null
+          deal_id?: string | null
+          description?: string | null
+          id?: string
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_deal_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "ct_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_deal_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "ct_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_deals: {
+        Row: {
+          closed_at: string | null
+          contact_id: string | null
+          created_at: string | null
+          currency: string | null
+          expected_close_at: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          stage_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          value: number | null
+        }
+        Insert: {
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_close_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          stage_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Update: {
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_close_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          stage_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "ct_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_deals_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "ct_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_design_system: {
+        Row: {
+          brand_voice: string | null
+          carousel_style: Json | null
+          colors: Json | null
+          fonts: Json | null
+          id: string
+          logo_url: string | null
+          owner: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand_voice?: string | null
+          carousel_style?: Json | null
+          colors?: Json | null
+          fonts?: Json | null
+          id?: string
+          logo_url?: string | null
+          owner?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand_voice?: string | null
+          carousel_style?: Json | null
+          colors?: Json | null
+          fonts?: Json | null
+          id?: string
+          logo_url?: string | null
+          owner?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_email_campaigns: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          campaign_type: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          provider: string | null
+          provider_campaign_id: string | null
+          recipient_tags: string[] | null
+          scheduled_at: string | null
+          sent_at: string | null
+          stats: Json | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          campaign_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          provider?: string | null
+          provider_campaign_id?: string | null
+          recipient_tags?: string[] | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          stats?: Json | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          campaign_type?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          provider?: string | null
+          provider_campaign_id?: string | null
+          recipient_tags?: string[] | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          stats?: Json | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      ct_email_sequence_steps: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          delay_hours: number | null
+          id: string
+          metadata: Json | null
+          sequence_id: string | null
+          step_number: number
+          subject: string | null
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          delay_hours?: number | null
+          id?: string
+          metadata?: Json | null
+          sequence_id?: string | null
+          step_number: number
+          subject?: string | null
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          delay_hours?: number | null
+          id?: string
+          metadata?: Json | null
+          sequence_id?: string | null
+          step_number?: number
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_email_sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "ct_email_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_email_sequences: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          trigger_event: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          trigger_event?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          trigger_event?: string | null
+        }
+        Relationships: []
+      }
+      ct_influencers: {
+        Row: {
+          created_at: string | null
+          followers_approx: number | null
+          handles: Json | null
+          id: string
+          last_contact_at: string | null
+          metadata: Json | null
+          name: string
+          niche: string | null
+          notes: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          followers_approx?: number | null
+          handles?: Json | null
+          id?: string
+          last_contact_at?: string | null
+          metadata?: Json | null
+          name: string
+          niche?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          followers_approx?: number | null
+          handles?: Json | null
+          id?: string
+          last_contact_at?: string | null
+          metadata?: Json | null
+          name?: string
+          niche?: string | null
+          notes?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      ct_instagram_posts: {
+        Row: {
+          caption: string
+          created_at: string | null
+          error_message: string | null
+          hashtags: string[] | null
+          id: string
+          ig_container_id: string | null
+          ig_media_id: string | null
+          ig_permalink: string | null
+          image_url: string
+          media_type: string
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          caption: string
+          created_at?: string | null
+          error_message?: string | null
+          hashtags?: string[] | null
+          id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
+          image_url: string
+          media_type?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          caption?: string
+          created_at?: string | null
+          error_message?: string | null
+          hashtags?: string[] | null
+          id?: string
+          ig_container_id?: string | null
+          ig_media_id?: string | null
+          ig_permalink?: string | null
+          image_url?: string
+          media_type?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_lead_magnets: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          download_count: number | null
+          file_url: string | null
+          id: string
+          is_active: boolean | null
+          landing_page_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          download_count?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          landing_page_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          download_count?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          landing_page_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      ct_pipeline_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          position: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          position: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      ct_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: string[]
+          id: string
+          is_active: boolean | null
+          limits: Json
+          name: string
+          price_monthly: number
+          price_yearly: number
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: string[]
+          id: string
+          is_active?: boolean | null
+          limits?: Json
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: string[]
+          id?: string
+          is_active?: boolean | null
+          limits?: Json
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      ct_subscribers: {
+        Row: {
+          email: string
+          id: string
+          lead_magnet_id: string | null
+          metadata: Json | null
+          name: string | null
+          source: string | null
+          status: string | null
+          subscribed_at: string | null
+          tags: string[] | null
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          lead_magnet_id?: string | null
+          metadata?: Json | null
+          name?: string | null
+          source?: string | null
+          status?: string | null
+          subscribed_at?: string | null
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          lead_magnet_id?: string | null
+          metadata?: Json | null
+          name?: string | null
+          source?: string | null
+          status?: string | null
+          subscribed_at?: string | null
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      ct_subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancelled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          status: string
+          tenant_id: string
+          trial_ends_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          tenant_id: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          status?: string
+          tenant_id?: string
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "ct_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "ct_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_tasks: {
+        Row: {
+          assigned_agent: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          metadata: Json | null
+          parent_task_id: string | null
+          priority: number | null
+          result: Json | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_agent?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_task_id?: string | null
+          priority?: number | null
+          result?: Json | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_agent?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json | null
+          parent_task_id?: string | null
+          priority?: number | null
+          result?: Json | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_tasks_assigned_agent_fkey"
+            columns: ["assigned_agent"]
+            isOneToOne: false
+            referencedRelation: "ct_agents"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "ct_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "ct_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_tenant_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "ct_tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_tenant_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "ct_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_tenants: {
+        Row: {
+          created_at: string | null
+          database_url: string
+          id: string
+          name: string
+          plan: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          database_url: string
+          id?: string
+          name: string
+          plan?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          database_url?: string
+          id?: string
+          name?: string
+          plan?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      ct_usage: {
+        Row: {
+          agents_used: number | null
+          api_calls: number | null
+          content_created: number | null
+          created_at: string | null
+          emails_sent: number | null
+          id: string
+          period: string
+          storage_bytes: number | null
+          tasks_executed: number | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          agents_used?: number | null
+          api_calls?: number | null
+          content_created?: number | null
+          created_at?: string | null
+          emails_sent?: number | null
+          id?: string
+          period: string
+          storage_bytes?: number | null
+          tasks_executed?: number | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          agents_used?: number | null
+          api_calls?: number | null
+          content_created?: number | null
+          created_at?: string | null
+          emails_sent?: number | null
+          id?: string
+          period?: string
+          storage_bytes?: number | null
+          tasks_executed?: number | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_usage_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "ct_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ct_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          password_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          password_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          password_hash?: string
+        }
+        Relationships: []
+      }
       designer_payments: {
         Row: {
           amount: number
+          appsheet_id: string | null
           contract_reference: string | null
           created_at: string | null
           created_by: string | null
@@ -198,6 +1545,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          appsheet_id?: string | null
           contract_reference?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -217,6 +1565,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          appsheet_id?: string | null
           contract_reference?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -311,6 +1660,7 @@ export type Database = {
           budget_limit: number | null
           color: string | null
           created_at: string | null
+          expense_type: string | null
           icon: string | null
           id: string
           is_income: boolean | null
@@ -322,6 +1672,7 @@ export type Database = {
           budget_limit?: number | null
           color?: string | null
           created_at?: string | null
+          expense_type?: string | null
           icon?: string | null
           id?: string
           is_income?: boolean | null
@@ -333,6 +1684,7 @@ export type Database = {
           budget_limit?: number | null
           color?: string | null
           created_at?: string | null
+          expense_type?: string | null
           icon?: string | null
           id?: string
           is_income?: boolean | null
@@ -1303,6 +2655,17 @@ export type Database = {
           total_transacoes: number | null
           valor_medio: number | null
           valor_total: number | null
+        }
+        Relationships: []
+      }
+      vw_monthly_recurring_cost: {
+        Row: {
+          custo_fixo: number | null
+          custo_misto: number | null
+          custo_variavel: number | null
+          mes: string | null
+          total_despesas: number | null
+          total_transacoes: number | null
         }
         Relationships: []
       }
