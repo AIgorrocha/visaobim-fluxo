@@ -417,9 +417,6 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{renderStatusSelect(task)}</TableCell>
-      <TableCell className="text-sm">
-        {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
-      </TableCell>
       <TableCell className={`text-sm ${
         task.due_date && isOverdue(task.due_date) ? 'text-destructive font-semibold' : ''
       }`}>
