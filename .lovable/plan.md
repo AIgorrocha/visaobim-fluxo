@@ -1,88 +1,61 @@
 
 
-## Plano: Corrigir Scroll e Adicionar Cálculo Automático de Porcentagem
+## Plano: Filtro por Nome de Projeto e Correção de Desmarcar Entrega
 
-### Problema 1: Scroll não Funciona no Modal
+### Problema 1: Filtro por Nome do Projeto
 
-**Causa:** O `DialogContent` do modal de precificação (linha 672) não tem as classes CSS para permitir scroll em conteúdo longo.
+A página MinhasTarefas já tem um filtro de projeto por select, mas não tem busca por **nome do projeto** no campo de pesquisa. O `searchTerm` só busca no título e descrição da tarefa (linha 101-102).
 
-**Solução:** Adicionar `max-h-[80vh] overflow-y-auto` ao DialogContent, igual ao modal de disciplinas que já funciona corretamente.
+**Solução:** Expandir o filtro de busca para incluir o nome do projeto associado à tarefa.
 
-```tsx
-// Antes
-<DialogContent className="sm:max-w-[500px]">
+**Arquivo:** `src/pages/MinhasTarefas.tsx` (linha ~101)
 
-// Depois
-<DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+```typescript
+const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  projects.find(p => p.id === task.project_id)?.name.toLowerCase().includes(searchTerm.toLowerCase());
 ```
 
 ---
 
-### Problema 2: Calcular Porcentagem Automaticamente
+### Problema 2: Não Consegue Desmarcar "Entrega Realizada"
 
-**Situação atual:**
-- Modo "Total → Projetista": Você digita o valor total + porcentagem fixa → calcula valor do projetista
-- Modo "Projetista → Total": Você digita o valor do projetista + porcentagem fixa → calcula valor total
+**Causa:** O `useEffect` na linha 178-190 do TaskModal monitora `formData.last_delivery`. Quando o campo tem valor, força o status para `CONCLUIDA`. Porém, quando você **limpa** o campo (valor vira `''`), o `useEffect` não faz nada — o status continua `CONCLUIDA` e não volta ao anterior.
 
-**O que você quer:**
-- Digitar o valor total da disciplina E o valor do projetista
-- Sistema calcular automaticamente a porcentagem (%)
+Além disso, o `completed_at` na linha 243-245 define `undefined` quando não é CONCLUIDA, mas o status não é revertido automaticamente.
 
-**Solução:** Adicionar um **terceiro modo de entrada**: "Ambos → Porcentagem"
+**Solução:** Adicionar lógica no `useEffect` para reverter o status quando `last_delivery` é limpo:
 
-| Modo | O que você digita | O que é calculado |
-|------|-------------------|-------------------|
-| Total → Projetista | Valor Total + % | Valor Projetista |
-| Projetista → Total | Valor Projetista + % | Valor Total |
-| **Ambos → %** (NOVO) | Valor Total + Valor Projetista | % calculada |
+**Arquivo:** `src/components/TaskModal.tsx` (linhas 178-190)
 
-**Fórmula para o novo modo:**
-```
-Porcentagem = (Valor Projetista / Valor Total) × 100
-```
-
-Exemplo:
-- Valor Total da Disciplina: R$ 10.000
-- Valor do Projetista: R$ 4.500
-- Sistema calcula: 45%
-
----
-
-### Alterações no Código
-
-**Arquivo:** `src/pages/PrecificacaoProjetos.tsx`
-
-1. **Adicionar classe de scroll no DialogContent (linha 672):**
-```tsx
-<DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+```typescript
+useEffect(() => {
+  if (formData.last_delivery && formData.status !== 'CONCLUIDA') {
+    setFormData(prev => ({ 
+      ...prev, 
+      status: 'CONCLUIDA',
+      completed_at: formData.last_delivery + 'T18:00:00.000Z'
+    }));
+    setAutoCompletedMessage(true);
+    setTimeout(() => setAutoCompletedMessage(false), 3000);
+  } else if (!formData.last_delivery && formData.status === 'CONCLUIDA') {
+    // Reverter status quando entrega é desmarcada
+    setFormData(prev => ({ 
+      ...prev, 
+      status: task?.status && task.status !== 'CONCLUIDA' ? task.status : 'EM_ANDAMENTO',
+      completed_at: undefined
+    }));
+  }
+}, [formData.last_delivery]);
 ```
 
-2. **Alterar tipo InputMode:**
-```tsx
-type InputMode = 'total' | 'designer' | 'both';
+Também garantir que ao salvar com `last_delivery` vazio, o `completed_at` seja explicitamente `null`:
+
+```typescript
+completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery)
+  ? (taskData.last_delivery + 'T18:00:00.000Z')
+  : null,  // null em vez de undefined para limpar no banco
 ```
-
-3. **Adicionar terceiro botão no toggle:**
-```tsx
-<Button
-  type="button"
-  variant={inputMode === 'both' ? 'default' : 'outline'}
-  size="sm"
-  onClick={() => setInputMode('both')}
-  className="flex-1"
->
-  Ambos → %
-</Button>
-```
-
-4. **Adicionar UI para modo "both":**
-- Dois campos editáveis: Valor Total e Valor Projetista
-- Porcentagem calculada e exibida como somente leitura
-- Cálculo automático: `designer_percentage = (designer_value / total_value) * 100`
-
-5. **Ajustar lógica de salvamento:**
-- Quando `inputMode === 'both'`, usar os valores digitados diretamente
-- A porcentagem calculada já estará no `formData.designer_percentage`
 
 ---
 
@@ -90,13 +63,12 @@ type InputMode = 'total' | 'designer' | 'both';
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/pages/PrecificacaoProjetos.tsx` | Adicionar scroll, novo modo de entrada "both" |
-
----
+| `src/pages/MinhasTarefas.tsx` | Incluir nome do projeto na busca por texto |
+| `src/components/TaskModal.tsx` | Reverter status ao limpar entrega + salvar `null` no `completed_at` |
 
 ### Resultado Esperado
 
-1. **Scroll funcionando**: Poderá rolar até o final do modal e clicar em Salvar
-2. **Novo modo de entrada**: Três opções - Total→Projetista, Projetista→Total, Ambos→%
-3. **Cálculo automático de %**: Digite os dois valores e a porcentagem é calculada automaticamente
+1. Digitar o nome de um projeto no campo de busca filtra as tarefas desse projeto
+2. Limpar o campo "Entrega Realizada" reverte o status de CONCLUIDA para EM_ANDAMENTO
+3. Salvar com entrega limpa remove o `completed_at` do banco
 
