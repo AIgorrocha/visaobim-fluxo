@@ -417,9 +417,6 @@ const MinhasTarefas = () => {
         </div>
       </TableCell>
       <TableCell>{renderStatusSelect(task)}</TableCell>
-      <TableCell className="text-sm">
-        {task.activity_start ? formatDate(task.activity_start) : 'Não iniciada'}
-      </TableCell>
       <TableCell className={`text-sm ${
         task.due_date && isOverdue(task.due_date) ? 'text-destructive font-semibold' : ''
       }`}>
@@ -514,19 +511,10 @@ const MinhasTarefas = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  {task.activity_start && (
-                    <>
-                      <span>Início: {formatDate(task.activity_start)}</span>
-                      <span className="hidden sm:inline">•</span>
-                    </>
-                  )}
                   {task.last_delivery && (
                     <span className="text-success font-medium">
                       Entrega realizada: {formatDate(task.last_delivery)}
                     </span>
-                  )}
-                  {!task.activity_start && task.status === 'PENDENTE' && (
-                    <span className="text-warning">Não iniciada</span>
                   )}
                 </div>
               </div>
@@ -892,7 +880,7 @@ const MinhasTarefas = () => {
                         <TableHead>Nome da Tarefa</TableHead>
                         <TableHead>Projeto</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Início da Atividade</TableHead>
+                        
                         <TableHead>Prazo</TableHead>
                         <TableHead>Entrega Realizada</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
