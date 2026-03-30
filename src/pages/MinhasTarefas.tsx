@@ -98,8 +98,10 @@ const MinhasTarefas = () => {
 
 
   const filteredAndSortedTasks = userTasks.filter(task => {
+    const projectName = projects.find(p => p.id === task.project_id)?.name || '';
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+                         task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         projectName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesProject = projectFilter === 'todos' || task.project_id === projectFilter;
 

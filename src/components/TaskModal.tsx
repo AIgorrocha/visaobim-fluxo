@@ -183,9 +183,13 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
         completed_at: formData.last_delivery + 'T18:00:00.000Z'
       }));
       setAutoCompletedMessage(true);
-      
-      // Remover mensagem após 3 segundos
       setTimeout(() => setAutoCompletedMessage(false), 3000);
+    } else if (!formData.last_delivery && formData.status === 'CONCLUIDA') {
+      setFormData(prev => ({ 
+        ...prev, 
+        status: task?.status && task.status !== 'CONCLUIDA' ? task.status : 'EM_ANDAMENTO',
+        completed_at: undefined
+      }));
     }
   }, [formData.last_delivery]);
 
@@ -242,7 +246,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
       ...taskData,
       completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery)
         ? (taskData.last_delivery + 'T18:00:00.000Z')
-        : undefined,
+        : null,
       assigned_to: taskData.assigned_to || []
     };
 
