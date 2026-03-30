@@ -246,7 +246,7 @@ const TaskModal = ({ isOpen, onClose, task, mode }: TaskModalProps) => {
       ...taskData,
       completed_at: (taskData.status === 'CONCLUIDA' && taskData.last_delivery)
         ? (taskData.last_delivery + 'T18:00:00.000Z')
-        : undefined,
+        : null,
       assigned_to: taskData.assigned_to || []
     };
 
