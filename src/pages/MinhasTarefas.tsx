@@ -511,19 +511,10 @@ const MinhasTarefas = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  {task.activity_start && (
-                    <>
-                      <span>Início: {formatDate(task.activity_start)}</span>
-                      <span className="hidden sm:inline">•</span>
-                    </>
-                  )}
                   {task.last_delivery && (
                     <span className="text-success font-medium">
                       Entrega realizada: {formatDate(task.last_delivery)}
                     </span>
-                  )}
-                  {!task.activity_start && task.status === 'PENDENTE' && (
-                    <span className="text-warning">Não iniciada</span>
                   )}
                 </div>
               </div>
