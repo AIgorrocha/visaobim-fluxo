@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useProjects, useTasks, useProposals, useProfiles } from '@/hooks/useSupabaseData';
+import { useProjects, useTasks, useProposals, useProfiles, useProposalRequests } from '@/hooks/useSupabaseData';
 import { useTaskRestrictions, TaskRestriction } from '@/hooks/useTaskRestrictions';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { useDisciplines, useProjectPricing, useDesignerPayments } from '@/hooks/useDesignerFinancials';
@@ -40,6 +40,13 @@ interface SupabaseDataContextType {
   updateProposal: any;
   deleteProposal: any;
   refetchProposals: any;
+
+  // Leads (proposal_requests)
+  leads: any[];
+  leadsLoading: boolean;
+  updateLead: any;
+  convertLeadToProposal: any;
+  refetchLeads: any;
 
   // Achievements (placeholder - não implementado no backend ainda)
   achievements: any[];
@@ -114,6 +121,14 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     deleteProposal,
     refetch: refetchProposals
   } = useProposals();
+
+  const {
+    leads,
+    loading: leadsLoading,
+    updateLead,
+    convertLeadToProposal,
+    refetch: refetchLeads
+  } = useProposalRequests();
 
 
   const {
@@ -214,6 +229,13 @@ export function SupabaseDataProvider({ children }: { children: ReactNode }) {
     updateProposal,
     deleteProposal,
     refetchProposals,
+
+    // Leads
+    leads,
+    leadsLoading,
+    updateLead,
+    convertLeadToProposal,
+    refetchLeads,
 
     // Achievements (placeholder - não implementado no backend ainda)
     achievements: [],

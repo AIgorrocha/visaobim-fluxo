@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, Project, Task, Proposal } from '@/types';
+import { Profile, Project, Task, Proposal, ProposalRequest } from '@/types';
 
 // Hook para gerenciar perfis de usuários
 export function useProfiles() {
@@ -496,5 +496,67 @@ export function useProposals() {
   }, []);
 
   return { proposals, loading, error, createProposal, updateProposal, deleteProposal, refetch: fetchProposals };
+}
+
+// Hook para gerenciar Leads (proposal_requests)
+export function useProposalRequests() {
+  const [leads, setLeads] = useState<ProposalRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('proposal_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setLeads((data || []) as ProposalRequest[]);
+    } catch (err: any) {
+      console.error('❌ Leads fetch failed:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateLead = async (id: string, updates: Partial<ProposalRequest>) => {
+    try {
+      const { data, error } = await supabase
+        .from('proposal_requests')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      setLeads(prev => prev.map(l => l.id === id ? data as ProposalRequest : l));
+      return data;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const convertLeadToProposal = async (
+    lead: ProposalRequest,
+    proposalData: Omit<Proposal, 'id' | 'created_at' | 'updated_at' | 'request_id'>
+  ) => {
+    const { data: proposal, error: pErr } = await supabase
+      .from('proposals')
+      .insert([{ ...proposalData, request_id: lead.id, is_archived: false }])
+      .select()
+      .single();
+    if (pErr) throw pErr;
+    await supabase
+      .from('proposal_requests')
+      .update({ status: 'proposta_enviada', triaged_at: new Date().toISOString() })
+      .eq('id', lead.id);
+    setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'proposta_enviada' } : l));
+    return proposal;
+  };
+
+  useEffect(() => { fetchLeads(); }, []);
+
+  return { leads, loading, error, updateLead, convertLeadToProposal, refetch: fetchLeads };
 }
 

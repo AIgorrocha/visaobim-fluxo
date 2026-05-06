@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, FileText, Calendar, DollarSign, Lock, Edit, User, Archive, Filter, Search,
   TrendingUp, BarChart3, Clock, CheckCircle, XCircle, AlertCircle, Eye, ExternalLink,
-  Target, Briefcase, Users, ChevronDown, ChevronUp, SortAsc, SortDesc, RefreshCw
+  Target, Briefcase, Users, ChevronDown, ChevronUp, SortAsc, SortDesc, RefreshCw,
+  Inbox, ArrowRight, Mail, Phone
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
-import { Proposal } from '@/types';
+import { Proposal, ProposalRequest, CompanyType } from '@/types';
 import ProposalModal from '@/components/ProposalModal';
 
 interface ProposalWithActions extends Proposal {
@@ -26,7 +27,7 @@ interface ProposalWithActions extends Proposal {
 
 const Propostas = () => {
   const { user, profile } = useAuth();
-  const { proposals, updateProposal, deleteProposal, refetchProposals } = useSupabaseData();
+  const { proposals, updateProposal, deleteProposal, refetchProposals, leads, leadsLoading, updateLead, convertLeadToProposal, refetchLeads } = useSupabaseData();
 
   // Verificar se usuario e Igor (acesso restrito)
   const allowedEmails = ['igor@visaobim.com'];
@@ -34,9 +35,10 @@ const Propostas = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [companyFilter, setCompanyFilter] = useState<'all' | 'igoria' | 'visaobim_privado'>('all');
   const [sortBy, setSortBy] = useState<string>('proposal_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'analytics'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'analytics' | 'leads'>('kanban');
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [proposalModalMode, setProposalModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -56,7 +58,10 @@ const Propostas = () => {
 
   // Enhanced proposal calculations with follow-up tracking
   const enhancedProposals: ProposalWithActions[] = useMemo(() => {
-    return proposals.map((proposal: Proposal) => {
+    const byCompany = companyFilter === 'all'
+      ? proposals
+      : proposals.filter((p: Proposal) => p.company === companyFilter);
+    return byCompany.map((proposal: Proposal) => {
       const now = new Date();
       let daysUntilFollowup: number | undefined;
       let overdue = false;
@@ -77,7 +82,70 @@ const Propostas = () => {
         isUrgent
       };
     });
+  }, [proposals, companyFilter]);
+
+  // KPIs por empresa
+  const companyKPIs = useMemo(() => {
+    const igoria = proposals.filter((p: Proposal) => p.company === 'igoria');
+    const privado = proposals.filter((p: Proposal) => p.company === 'visaobim_privado');
+    const sumValue = (arr: Proposal[]) => arr.reduce((s, p) => s + Number(p.proposal_value || 0), 0);
+    return {
+      igoria: { count: igoria.length, value: sumValue(igoria) },
+      privado: { count: privado.length, value: sumValue(privado) }
+    };
   }, [proposals]);
+
+  // Leads (proposal_requests)
+  const filteredLeads = useMemo(() => {
+    return (leads || []).filter((l: ProposalRequest) => {
+      if (companyFilter !== 'all' && l.company !== companyFilter) return false;
+      const q = searchTerm.toLowerCase();
+      if (q && !l.name?.toLowerCase().includes(q) && !l.email?.toLowerCase().includes(q) && !l.message?.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [leads, companyFilter, searchTerm]);
+
+  const leadStats = useMemo(() => {
+    const counts: Record<string, number> = { novo: 0, qualificado: 0, proposta_enviada: 0, fechado: 0, descartado: 0 };
+    (leads || []).forEach((l: ProposalRequest) => { counts[l.status] = (counts[l.status] || 0) + 1; });
+    return counts;
+  }, [leads]);
+
+  const handleConvertLead = async (lead: ProposalRequest) => {
+    if (!confirm(`Converter lead "${lead.name}" em proposta?`)) return;
+    try {
+      const proposal = await convertLeadToProposal(lead, {
+        client_name: lead.name,
+        proposal_date: new Date().toISOString().split('T')[0],
+        proposal_value: 0,
+        status: 'pendente',
+        company: lead.company || 'visaobim_privado',
+        notes: `Convertido do lead ${lead.id}.\nOrigem: ${lead.source || 'site'}\nEmail: ${lead.email}\nTelefone: ${lead.phone}\nProjeto: ${lead.project_type || '-'}\nMensagem: ${lead.message || '-'}`
+      } as any);
+      await Promise.all([refetchProposals(), refetchLeads()]);
+      setSelectedProposal(proposal as Proposal);
+      setProposalModalMode('edit');
+      setShowProposalModal(true);
+    } catch (e: any) {
+      alert('Erro ao converter: ' + e.message);
+    }
+  };
+
+  const handleLeadStatus = async (lead: ProposalRequest, status: ProposalRequest['status']) => {
+    try {
+      await updateLead(lead.id, { status, triaged_at: new Date().toISOString() });
+    } catch (e: any) {
+      alert('Erro: ' + e.message);
+    }
+  };
+
+  const handleLeadCompany = async (lead: ProposalRequest, company: 'igoria' | 'visaobim_privado') => {
+    try {
+      await updateLead(lead.id, { company });
+    } catch (e: any) {
+      alert('Erro: ' + e.message);
+    }
+  };
 
   // Analytics calculations
   const analytics = useMemo(() => {
@@ -335,12 +403,52 @@ const Propostas = () => {
         </div>
       </motion.div>
 
+      {/* Filtro por empresa */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-medium">Empresa:</span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={companyFilter === 'all' ? 'default' : 'outline'}
+                onClick={() => setCompanyFilter('all')}
+              >
+                Todas ({proposals.length})
+              </Button>
+              <Button
+                size="sm"
+                variant={companyFilter === 'igoria' ? 'default' : 'outline'}
+                className={companyFilter === 'igoria' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                onClick={() => setCompanyFilter('igoria')}
+              >
+                Igoria ({companyKPIs.igoria.count}) · {formatCurrency(companyKPIs.igoria.value)}
+              </Button>
+              <Button
+                size="sm"
+                variant={companyFilter === 'visaobim_privado' ? 'default' : 'outline'}
+                className={companyFilter === 'visaobim_privado' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                onClick={() => setCompanyFilter('visaobim_privado')}
+              >
+                Visão Privado ({companyKPIs.privado.count}) · {formatCurrency(companyKPIs.privado.value)}
+              </Button>
+            </div>
+            <span className="text-xs text-muted-foreground ml-auto">
+              Setor público da Visão é controlado por lembretes Hermes (sem pipeline aqui)
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tabs */}
       <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="table">Tabela</TabsTrigger>
+          <TabsTrigger value="leads">
+            Leads {leadStats.novo > 0 && <Badge className="ml-2 bg-orange-500">{leadStats.novo}</Badge>}
+          </TabsTrigger>
         </TabsList>
 
         {/* Analytics Tab */}
@@ -868,6 +976,126 @@ const Propostas = () => {
             </Card>
           </motion.div>
         </TabsContent>
+
+        {/* Leads Tab */}
+        <TabsContent value="leads" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Inbox className="h-5 w-5" />
+                Leads do site
+              </CardTitle>
+              <CardDescription>
+                Solicitações chegadas pelo formulário do site. Triage → converter em proposta ou descartar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3 mb-4 flex-wrap text-sm">
+                <Badge className="bg-orange-500">Novos: {leadStats.novo}</Badge>
+                <Badge className="bg-blue-500">Qualificados: {leadStats.qualificado}</Badge>
+                <Badge className="bg-green-500">Proposta enviada: {leadStats.proposta_enviada}</Badge>
+                <Badge className="bg-emerald-700">Fechados: {leadStats.fechado}</Badge>
+                <Badge variant="secondary">Descartados: {leadStats.descartado}</Badge>
+              </div>
+
+              {leadsLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Carregando leads...</div>
+              ) : filteredLeads.length === 0 ? (
+                <div className="text-center py-12">
+                  <Inbox className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground">Nenhum lead encontrado.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredLeads.map((lead: ProposalRequest) => (
+                    <Card key={lead.id} className="border-l-4" style={{
+                      borderLeftColor:
+                        lead.status === 'novo' ? '#f97316' :
+                        lead.status === 'qualificado' ? '#3b82f6' :
+                        lead.status === 'proposta_enviada' ? '#22c55e' :
+                        lead.status === 'fechado' ? '#059669' : '#94a3b8'
+                    }}>
+                      <CardContent className="pt-4">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <h4 className="font-semibold">{lead.name}</h4>
+                              <Badge variant="outline" className="text-xs">{lead.source || 'site'}</Badge>
+                              {lead.project_type && <Badge variant="secondary" className="text-xs">{lead.project_type}</Badge>}
+                              {lead.company && (
+                                <Badge className={lead.company === 'igoria' ? 'bg-purple-600' : 'bg-blue-600'}>
+                                  {lead.company === 'igoria' ? 'Igoria' : 'Visão Priv'}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2 flex-wrap">
+                              <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{lead.email}</span>
+                              <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(lead.created_at)}</span>
+                            </div>
+                            {lead.message && (
+                              <p className="text-sm text-muted-foreground bg-muted/30 rounded p-2 mb-2 line-clamp-3">
+                                {lead.message}
+                              </p>
+                            )}
+                            {lead.internal_notes && (
+                              <p className="text-xs text-orange-700 bg-orange-50 rounded p-2">
+                                Nota interna: {lead.internal_notes}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2 min-w-[220px]">
+                            <Select
+                              value={lead.company || ''}
+                              onValueChange={(v) => handleLeadCompany(lead, v as any)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Empresa..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="igoria">Igoria</SelectItem>
+                                <SelectItem value="visaobim_privado">Visão Privado</SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            <Select
+                              value={lead.status}
+                              onValueChange={(v) => handleLeadStatus(lead, v as any)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="novo">Novo</SelectItem>
+                                <SelectItem value="qualificado">Qualificado</SelectItem>
+                                <SelectItem value="proposta_enviada">Proposta enviada</SelectItem>
+                                <SelectItem value="fechado">Fechado</SelectItem>
+                                <SelectItem value="descartado">Descartado</SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            {lead.status !== 'proposta_enviada' && lead.status !== 'descartado' && lead.status !== 'fechado' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleConvertLead(lead)}
+                                className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+                              >
+                                <ArrowRight className="h-3 w-3 mr-1" />
+                                Converter em proposta
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* Enhanced Proposal Modal */}

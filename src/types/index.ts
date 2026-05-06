@@ -78,6 +78,8 @@ export interface Task {
   can_start?: boolean;
 }
 
+export type CompanyType = 'igoria' | 'visaobim_publico' | 'visaobim_privado';
+
 export interface Proposal {
   id: string;
   client_name: string;
@@ -87,10 +89,34 @@ export interface Proposal {
   proposal_link?: string;
   followup_date?: string;
   status: 'pendente' | 'aprovada' | 'rejeitada' | 'negociando';
+  company: CompanyType;
+  request_id?: string | null;
   notes?: string;
   created_at: string;
   updated_at: string;
-  is_archived?: boolean; // Campo para arquivamento de propostas
+  is_archived?: boolean;
+}
+
+export type LeadStatus = 'novo' | 'qualificado' | 'proposta_enviada' | 'fechado' | 'descartado';
+
+export interface ProposalRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  project_type?: string | null;
+  message?: string | null;
+  source?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  company?: 'igoria' | 'visaobim_privado' | null;
+  status: LeadStatus;
+  notified_at?: string | null;
+  triaged_by?: string | null;
+  triaged_at?: string | null;
+  internal_notes?: string | null;
+  created_at: string;
 }
 
 

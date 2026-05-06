@@ -1,0 +1,113 @@
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useViewAsUser } from '@/contexts/ViewAsUserContext';
+
+/**
+ * Hook personalizado para obter dados e estatísticas do usuário
+ * Centraliza a lógica de filtragem de projetos e tarefas do usuário
+ */
+export const useUserData = (userId?: string) => {
+  const { user, profile } = useAuth();
+  const { projects, tasks, profiles } = useSupabaseData();
+  const { viewAsUserId } = useViewAsUser();
+
+  // Se o admin está visualizando como outro usuário, usar esse ID
+  const effectiveUserId = userId || viewAsUserId || user?.id || '';
+  const targetUser = effectiveUserId !== user?.id ? profiles.find(p => p.id === effectiveUserId) : profile;
+  const isAdmin = profile?.role === 'admin';
+
+  // Função para obter projetos do usuário
+  const getUserProjects = (id: string) => {
+    return projects.filter(project => 
+      project.responsible_ids && project.responsible_ids.includes(id)
+    );
+  };
+
+  // Função para obter tarefas do usuário (excluindo arquivadas)
+  const getUserTasks = (id: string) => {
+    return tasks.filter(task => {
+      // Excluir tarefas arquivadas
+      if (task.is_archived) return false;
+
+      if (Array.isArray(task.assigned_to)) {
+        return task.assigned_to.includes(id);
+      }
+      return task.assigned_to === id;
+    });
+  };
+
+  // Obter dados do usuário alvo
+  const userProjects = getUserProjects(effectiveUserId);
+  const userTasks = getUserTasks(effectiveUserId);
+  
+  // Estatísticas de projetos
+  const activeProjects = userProjects.filter(p => p.status === 'EM_ANDAMENTO').length;
+  const completedProjects = userProjects.filter(p =>
+    p.status === 'CONCLUIDO'
+  ).length;
+
+  // Estatísticas de tarefas
+  const pendingTasks = userTasks.filter(t => t.status === 'PENDENTE');
+  const completedTasks = userTasks.filter(t => t.status === 'CONCLUIDA');
+  const inProgressTasks = userTasks.filter(t => t.status === 'EM_ANDAMENTO');
+  
+  // Estatísticas simples baseadas em tarefas concluídas
+  const userPoints = completedTasks.length;
+  const userLevel = 1;
+
+  // Obter co-responsáveis de uma tarefa (excluindo o usuário alvo)
+  const getCoResponsibles = (task: any) => {
+    if (!Array.isArray(task.assigned_to)) return [];
+    
+    return task.assigned_to
+      .filter(id => id !== effectiveUserId)
+      .map(id => profiles.find(p => p.id === id))
+      .filter(Boolean)
+      .map(p => p?.full_name || p?.email)
+      .join(', ');
+  };
+
+  // Obter nomes dos responsáveis por IDs
+  const getResponsibleNames = (responsibleIds: string[]) => {
+    if (!responsibleIds || responsibleIds.length === 0) return 'Não atribuído';
+    
+    return responsibleIds
+      .map(id => {
+        const profile = profiles.find(p => p.id === id);
+        return profile?.full_name || profile?.email || 'Usuário não encontrado';
+      })
+      .join(', ');
+  };
+
+  return {
+    // Dados do usuário
+    user: targetUser,
+    userId: effectiveUserId,
+    isAdmin,
+    
+    // Projetos e tarefas
+    userProjects,
+    userTasks,
+    
+    // Estatísticas de projetos
+    totalProjects: userProjects.length,
+    activeProjects,
+    completedProjects,
+    
+    // Estatísticas de tarefas
+    totalTasks: userTasks.length,
+    pendingTasks,
+    completedTasks,
+    inProgressTasks,
+    
+    // Pontuação e nível
+    userPoints,
+    userLevel,
+    
+    // Funções utilitárias
+    getUserProjects,
+    getUserTasks,
+    getCoResponsibles,
+    getResponsibleNames,
+  };
+};

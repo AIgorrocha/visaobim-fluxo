@@ -35,7 +35,8 @@ const ProposalModal = ({ isOpen, onClose, proposal, mode }: ProposalModalProps) 
     notes: '',
     followup_date: '',
     proposal_link: '',
-    status: 'pendente'
+    status: 'pendente',
+    company: 'visaobim_privado' as 'igoria' | 'visaobim_privado'
   });
 
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,8 @@ const ProposalModal = ({ isOpen, onClose, proposal, mode }: ProposalModalProps) 
         notes: proposal.notes || '',
         followup_date: proposal.followup_date || '',
         proposal_link: proposal.proposal_link || '',
-        status: proposal.status || 'pendente'
+        status: proposal.status || 'pendente',
+        company: (proposal.company === 'igoria' ? 'igoria' : 'visaobim_privado')
       });
     } else if (mode === 'create') {
       setFormData({
@@ -61,7 +63,8 @@ const ProposalModal = ({ isOpen, onClose, proposal, mode }: ProposalModalProps) 
         notes: '',
         followup_date: '',
         proposal_link: '',
-        status: 'pendente'
+        status: 'pendente',
+        company: 'visaobim_privado'
       });
     }
   }, [proposal, mode]);
@@ -79,7 +82,8 @@ const ProposalModal = ({ isOpen, onClose, proposal, mode }: ProposalModalProps) 
         notes: formData.notes || null,
         followup_date: formData.followup_date || null,
         proposal_link: formData.proposal_link || null,
-        status: formData.status
+        status: formData.status,
+        company: formData.company
       };
 
       if (mode === 'create') {
@@ -233,6 +237,33 @@ const ProposalModal = ({ isOpen, onClose, proposal, mode }: ProposalModalProps) 
                 onChange={(e) => setFormData(prev => ({ ...prev, proposal_date: e.target.value }))}
                 readOnly={isReadOnly}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company">Empresa *</Label>
+              {isReadOnly ? (
+                <div className="py-2">
+                  <Badge className={formData.company === 'igoria' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}>
+                    {formData.company === 'igoria' ? 'Igoria' : 'Visão Privado'}
+                  </Badge>
+                </div>
+              ) : (
+                <Select
+                  value={formData.company}
+                  onValueChange={(v) => setFormData(prev => ({ ...prev, company: v as 'igoria' | 'visaobim_privado' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="igoria">Igoria (consultoria IA)</SelectItem>
+                    <SelectItem value="visaobim_privado">Visão Privado (engenharia)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Setor público da Visão não usa propostas — é controlado por lembretes Hermes.
+              </p>
             </div>
 
             <div className="space-y-2">

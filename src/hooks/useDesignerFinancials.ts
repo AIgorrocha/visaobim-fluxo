@@ -559,7 +559,12 @@ export function useDesignerFinancialSummary(designerId: string) {
           amount_paid: Number(p.amount_paid || 0)
         });
         pricingByProjectWithAmountPaid[projectId].total_designer_value += Number(p.designer_value || 0);
-        pricingByProjectWithAmountPaid[projectId].total_amount_paid += Number(p.amount_paid || 0);
+        // Usar Math.max para evitar duplicação quando há múltiplas disciplinas no mesmo projeto
+        // O amount_paid no banco é o total pago por projeto (não por disciplina)
+        pricingByProjectWithAmountPaid[projectId].total_amount_paid = Math.max(
+          pricingByProjectWithAmountPaid[projectId].total_amount_paid,
+          Number(p.amount_paid || 0)
+        );
       });
 
       const receivablesList: DesignerReceivable[] = Object.values(pricingByProjectWithAmountPaid)
@@ -755,7 +760,11 @@ export function useAdminFinancialOverview() {
           };
         }
         pricingByDesignerProject[key].total_designer_value += Number(p.designer_value || 0);
-        pricingByDesignerProject[key].total_amount_paid += Number(p.amount_paid || 0);
+        // Usar Math.max para evitar duplicação quando há múltiplas disciplinas no mesmo projeto
+        pricingByDesignerProject[key].total_amount_paid = Math.max(
+          pricingByDesignerProject[key].total_amount_paid,
+          Number(p.amount_paid || 0)
+        );
       });
 
       // Calcular pendente por projeto usando amount_paid do banco

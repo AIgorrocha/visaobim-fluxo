@@ -1,0 +1,1198 @@
+import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Calculator,
+  Plus,
+  Pencil,
+  Trash2,
+  Save,
+  X,
+  Search,
+  User,
+  FileText,
+  Settings
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
+import { useDisciplines, useProjectPricing } from '@/hooks/useDesignerFinancials';
+import { ProjectPricing, Project, Profile } from '@/types';
+
+// Formatar valores em BRL
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+interface PricingFormData {
+  project_id: string;
+  discipline_name: string;
+  newDiscipline: string;
+  total_value: number;
+  designer_percentage: number;
+  majoracao: number;
+  designer_id: string;
+  notes: string;
+  // Novos campos para entrada bidirecional
+  designer_value_direct: number;
+  designer_value_final: number;
+}
+
+type InputMode = 'total' | 'designer' | 'both';
+type MajoracaoMode = 'adicional' | 'final';
+
+const PrecificacaoProjetos = () => {
+  const { user, profile } = useAuth();
+  const { projects, profiles } = useSupabaseData();
+  const { disciplines, loading: disciplinesLoading, createDiscipline, updateDiscipline, deleteDiscipline, refetch: refetchDisciplines } = useDisciplines();
+  const { pricing, loading: pricingLoading, createPricing, updatePricing, deletePricing, refetch } = useProjectPricing();
+  const { toast } = useToast();
+
+  // Estados
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'privado' | 'publico'>('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingPricing, setEditingPricing] = useState<ProjectPricing | null>(null);
+  const [deletingPricingId, setDeletingPricingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<PricingFormData>({
+    project_id: '',
+    discipline_name: '',
+    newDiscipline: '',
+    total_value: 0,
+    designer_percentage: 40,
+    majoracao: 0,
+    designer_id: '',
+    notes: '',
+    designer_value_direct: 0,
+    designer_value_final: 0
+  });
+
+  // Estados para modo de entrada bidirecional
+  const [inputMode, setInputMode] = useState<InputMode>('total');
+  const [majoracaoMode, setMajoracaoMode] = useState<MajoracaoMode>('adicional');
+
+  // Estados para gerenciamento de disciplinas
+  const [isDisciplinesModalOpen, setIsDisciplinesModalOpen] = useState(false);
+  const [editingDiscipline, setEditingDiscipline] = useState<{ id: string; name: string } | null>(null);
+  const [newDisciplineName, setNewDisciplineName] = useState('');
+  const [deletingDisciplineId, setDeletingDisciplineId] = useState<string | null>(null);
+  const [isDeleteDisciplineDialogOpen, setIsDeleteDisciplineDialogOpen] = useState(false);
+
+  // Verificar acesso - apenas Igor e Stael podem acessar
+  const allowedEmails = ['igor@visaobim.com', 'stael@visaobim.com'];
+  const hasAccess = user && profile && allowedEmails.includes(profile.email?.toLowerCase() || '');
+
+  // Filtrar e ordenar projetos (mais recentes primeiro)
+  const filteredProjects = useMemo(() => {
+    let filtered = projects;
+
+    // Filtrar por tipo (privado/publico)
+    if (filterType !== 'all') {
+      filtered = filtered.filter(p => p.type === filterType);
+    }
+
+    // Filtrar por busca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.client.toLowerCase().includes(term)
+      );
+    }
+
+    // Ordenar do mais recente pro mais antigo (por data de criação)
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA; // Mais recente primeiro
+    });
+  }, [projects, searchTerm, filterType]);
+
+  // Precificacoes do projeto selecionado
+  const projectPricing = useMemo(() => {
+    if (!selectedProjectId) return [];
+    return pricing.filter(p => p.project_id === selectedProjectId);
+  }, [pricing, selectedProjectId]);
+
+  // Projeto selecionado
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  // Total do projeto
+  const projectTotal = useMemo(() => {
+    return projectPricing.reduce((sum, p) => sum + Number(p.total_value), 0);
+  }, [projectPricing]);
+
+  const designerTotal = useMemo(() => {
+    return projectPricing.reduce((sum, p) => sum + Number(p.designer_value || 0), 0);
+  }, [projectPricing]);
+
+  // Early return para acesso restrito (APÓS todos os hooks)
+  if (!hasAccess) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <p className="text-muted-foreground">Acesso restrito</p>
+      </div>
+    );
+  }
+
+  // Abrir modal para nova precificacao
+  const handleAddPricing = () => {
+    if (!selectedProjectId) {
+      toast({
+        title: 'Selecione um projeto',
+        description: 'E necessario selecionar um projeto antes de adicionar precificacao',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setEditingPricing(null);
+    setFormData({
+      project_id: selectedProjectId,
+      discipline_name: '',
+      newDiscipline: '',
+      total_value: 0,
+      designer_percentage: 40,
+      majoracao: 0,
+      designer_id: '',
+      notes: '',
+      designer_value_direct: 0,
+      designer_value_final: 0
+    });
+    setInputMode('total');
+    setMajoracaoMode('adicional');
+    setIsModalOpen(true);
+  };
+
+  // Abrir modal para editar
+  const handleEditPricing = (item: ProjectPricing) => {
+    setEditingPricing(item);
+    const majoracaoVal = (item as any).majoracao || 0;
+    const baseValue = (item.total_value * item.designer_percentage) / 100;
+    setFormData({
+      project_id: item.project_id,
+      discipline_name: item.discipline_name,
+      newDiscipline: '',
+      total_value: item.total_value,
+      designer_percentage: item.designer_percentage,
+      majoracao: majoracaoVal,
+      designer_id: item.designer_id || '',
+      notes: item.notes || '',
+      designer_value_direct: baseValue,
+      designer_value_final: baseValue + majoracaoVal
+    });
+    setInputMode('total');
+    setMajoracaoMode('adicional');
+    setIsModalOpen(true);
+  };
+
+  // Confirmar delete
+  const handleDeleteClick = (id: string) => {
+    setDeletingPricingId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Executar delete
+  const handleConfirmDelete = async () => {
+    if (!deletingPricingId) return;
+
+    try {
+      await deletePricing(deletingPricingId);
+      toast({
+        title: 'Precificacao removida',
+        description: 'A precificacao foi removida com sucesso'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingPricingId(null);
+    }
+  };
+
+  // Salvar precificacao
+  const handleSavePricing = async () => {
+    try {
+      // Determinar nome da disciplina (nova ou existente)
+      const disciplineName = formData.discipline_name === '__new__'
+        ? formData.newDiscipline.trim()
+        : formData.discipline_name;
+
+      // Validar
+      if (!disciplineName) {
+        toast({
+          title: 'Disciplina obrigatoria',
+          description: 'Selecione ou digite uma disciplina',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Validar valor total baseado no modo
+      if (inputMode === 'both') {
+        if (formData.total_value <= 0 || formData.designer_value_direct <= 0) {
+          toast({
+            title: 'Valores invalidos',
+            description: 'O valor total e o valor do projetista devem ser maiores que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
+      } else if (inputMode === 'designer') {
+        if (formData.designer_value_direct <= 0) {
+          toast({
+            title: 'Valor invalido',
+            description: 'O valor do projetista deve ser maior que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
+      } else {
+        if (formData.total_value <= 0) {
+          toast({
+            title: 'Valor invalido',
+            description: 'O valor total deve ser maior que zero',
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+
+      // Calcular valores finais baseados nos modos de entrada
+      let finalTotalValue: number;
+      let finalPercentage: number;
+      let finalBaseValue: number;
+
+      if (inputMode === 'both') {
+        // Modo Ambos → % : calcula porcentagem automaticamente
+        finalTotalValue = formData.total_value;
+        finalPercentage = formData.total_value > 0 
+          ? (formData.designer_value_direct / formData.total_value) * 100 
+          : 0;
+        finalBaseValue = formData.designer_value_direct;
+      } else if (inputMode === 'designer') {
+        // Modo Projetista → Total
+        finalPercentage = formData.designer_percentage;
+        finalTotalValue = formData.designer_percentage > 0
+          ? formData.designer_value_direct / (formData.designer_percentage / 100)
+          : 0;
+        finalBaseValue = formData.designer_value_direct;
+      } else {
+        // Modo Total → Projetista
+        finalTotalValue = formData.total_value;
+        finalPercentage = formData.designer_percentage;
+        finalBaseValue = (formData.total_value * formData.designer_percentage) / 100;
+      }
+      
+      const finalMajoracao = majoracaoMode === 'final'
+        ? Math.max(0, formData.designer_value_final - finalBaseValue)
+        : (formData.majoracao || 0);
+
+      const dataToSave = {
+        project_id: formData.project_id,
+        discipline_name: disciplineName,
+        total_value: finalTotalValue,
+        designer_percentage: finalPercentage,
+        majoracao: finalMajoracao,
+        designer_id: formData.designer_id || null,
+        notes: formData.notes || null,
+        amount_paid: 0,
+        status: 'pendente' as const,
+        created_by: user.id
+      };
+
+      if (editingPricing) {
+        await updatePricing(editingPricing.id, dataToSave);
+        toast({
+          title: 'Precificacao atualizada',
+          description: 'A precificacao foi atualizada com sucesso'
+        });
+      } else {
+        await createPricing(dataToSave);
+        toast({
+          title: 'Precificacao criada',
+          description: 'A precificacao foi criada com sucesso'
+        });
+      }
+
+      setIsModalOpen(false);
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Calcular valores baseados no modo de entrada
+  const baseDesignerValue = inputMode === 'total'
+    ? (formData.total_value * formData.designer_percentage) / 100
+    : formData.designer_value_direct;
+  
+  const calculatedMajoracao = majoracaoMode === 'final'
+    ? formData.designer_value_final - baseDesignerValue
+    : formData.majoracao;
+  
+  const calculatedDesignerValue = baseDesignerValue + Math.max(0, calculatedMajoracao || 0);
+  
+  const calculatedTotalValue = inputMode === 'designer' && formData.designer_percentage > 0
+    ? formData.designer_value_direct / (formData.designer_percentage / 100)
+    : formData.total_value;
+
+  // Handlers para gerenciamento de disciplinas
+  const handleAddDiscipline = async () => {
+    const trimmedName = newDisciplineName.trim().toUpperCase();
+
+    if (!trimmedName) {
+      toast({
+        title: 'Nome obrigatorio',
+        description: 'Digite o nome da disciplina',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Verificar se ja existe
+    const exists = disciplines.some(d => d.name.toUpperCase() === trimmedName);
+    if (exists) {
+      toast({
+        title: 'Disciplina ja existe',
+        description: `A disciplina "${trimmedName}" ja esta cadastrada`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await createDiscipline(trimmedName);
+      setNewDisciplineName('');
+      toast({
+        title: 'Disciplina criada',
+        description: 'A disciplina foi criada com sucesso'
+      });
+    } catch (error: any) {
+      const message = error.message?.includes('duplicate')
+        ? 'Esta disciplina ja existe no sistema'
+        : error.message;
+      toast({
+        title: 'Erro ao criar',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleUpdateDiscipline = async () => {
+    if (!editingDiscipline || !editingDiscipline.name.trim()) return;
+
+    const trimmedName = editingDiscipline.name.trim().toUpperCase();
+
+    // Verificar se ja existe outra disciplina com esse nome
+    const exists = disciplines.some(d =>
+      d.id !== editingDiscipline.id && d.name.toUpperCase() === trimmedName
+    );
+    if (exists) {
+      toast({
+        title: 'Nome ja existe',
+        description: `Ja existe outra disciplina chamada "${trimmedName}"`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      await updateDiscipline(editingDiscipline.id, { name: trimmedName });
+      setEditingDiscipline(null);
+      toast({
+        title: 'Disciplina atualizada',
+        description: 'A disciplina foi atualizada com sucesso'
+      });
+    } catch (error: any) {
+      const message = error.message?.includes('duplicate')
+        ? 'Este nome ja esta em uso'
+        : error.message;
+      toast({
+        title: 'Erro ao atualizar',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteDiscipline = async () => {
+    if (!deletingDisciplineId) return;
+
+    try {
+      await deleteDiscipline(deletingDisciplineId);
+      setIsDeleteDisciplineDialogOpen(false);
+      setDeletingDisciplineId(null);
+      toast({
+        title: 'Disciplina removida',
+        description: 'A disciplina foi removida com sucesso'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao remover',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Precificacao de Projetos</h1>
+          <p className="text-muted-foreground">
+            Defina valores por disciplina e atribua projetistas responsaveis
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setIsDisciplinesModalOpen(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          Gerenciar Disciplinas
+        </Button>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lista de Projetos */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Projetos
+              </CardTitle>
+              <CardDescription>Selecione um projeto para precificar</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Filtros */}
+              <div className="space-y-2 mb-4">
+                {/* Busca */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar projeto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Filtro Tipo */}
+                <Select value={filterType} onValueChange={(value: 'all' | 'privado' | 'publico') => setFilterType(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de projeto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="publico">Publico</SelectItem>
+                    <SelectItem value="privado">Privado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Lista */}
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {filteredProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    onClick={() => setSelectedProjectId(project.id)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedProjectId === project.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <p className="font-medium text-sm truncate">{project.name}</p>
+                    <p className={`text-xs ${
+                      selectedProjectId === project.id
+                        ? 'text-primary-foreground/70'
+                        : 'text-muted-foreground'
+                    }`}>
+                      {project.client}
+                    </p>
+                    <Badge
+                      variant={project.type === 'publico' ? 'default' : 'secondary'}
+                      className="mt-1 text-xs"
+                    >
+                      {project.type === 'publico' ? 'Publico' : 'Privado'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Precificacao do Projeto */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="lg:col-span-2"
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5" />
+                    {selectedProject
+                      ? `Precificacao: ${selectedProject.name}`
+                      : 'Selecione um projeto'
+                    }
+                  </CardTitle>
+                  {selectedProject && (
+                    <CardDescription>
+                      Cliente: {selectedProject.client} | Tipo: {selectedProject.type}
+                    </CardDescription>
+                  )}
+                </div>
+                {selectedProject && (
+                  <Button onClick={handleAddPricing}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Disciplina
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!selectedProject ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Selecione um projeto na lista ao lado para ver ou adicionar precificacoes</p>
+                </div>
+              ) : pricingLoading ? (
+                <p className="text-center py-4 text-muted-foreground">Carregando...</p>
+              ) : projectPricing.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Nenhuma precificacao cadastrada para este projeto</p>
+                  <p className="text-sm mt-2">Clique em "Adicionar Disciplina" para comecar</p>
+                </div>
+              ) : (
+                <>
+                  {/* Totais */}
+                  <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Valor Total do Projeto</p>
+                      <p className="text-2xl font-bold">{formatCurrency(projectTotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Projetistas (40%)</p>
+                      <p className="text-2xl font-bold text-green-600">{formatCurrency(designerTotal)}</p>
+                    </div>
+                  </div>
+
+                  {/* Tabela */}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Disciplina</TableHead>
+                        <TableHead>Projetista</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-right">%</TableHead>
+                        <TableHead className="text-right">Valor Projetista</TableHead>
+                        <TableHead className="text-right">Acoes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projectPricing.map((item) => {
+                        const designer = profiles.find(p => p.id === item.designer_id);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.discipline_name}</TableCell>
+                            <TableCell>
+                              {designer?.full_name || (
+                                <span className="text-muted-foreground">Nao atribuido</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(item.total_value)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {item.designer_percentage}%
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-green-600">
+                              {formatCurrency(item.designer_value)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditPricing(item)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Modal de Adicionar/Editar */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPricing ? 'Editar Precificacao' : 'Nova Precificacao'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingPricing
+                ? 'Altere os dados da precificacao'
+                : 'Adicione uma nova disciplina ao projeto'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Disciplina */}
+            <div className="space-y-2">
+              <Label>Disciplina *</Label>
+              <Select
+                value={formData.discipline_name}
+                onValueChange={(value) => setFormData({ ...formData, discipline_name: value, newDiscipline: '' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a disciplina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {disciplines.map((disc) => (
+                    <SelectItem key={disc.id} value={disc.name}>
+                      {disc.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__new__">+ Nova disciplina</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Campo para nova disciplina */}
+            {formData.discipline_name === '__new__' && (
+              <div className="space-y-2">
+                <Label>Nome da Nova Disciplina *</Label>
+                <Input
+                  value={formData.newDiscipline}
+                  onChange={(e) => setFormData({ ...formData, newDiscipline: e.target.value })}
+                  placeholder="Digite o nome da disciplina"
+                />
+              </div>
+            )}
+
+            {/* Toggle: Modo de Entrada */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Modo de Entrada do Valor</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={inputMode === 'total' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('total')}
+                  className="flex-1 min-w-[120px]"
+                >
+                  Total → Projetista
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'designer' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('designer')}
+                  className="flex-1 min-w-[120px]"
+                >
+                  Projetista → Total
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'both' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('both')}
+                  className="flex-1 min-w-[120px]"
+                >
+                  Ambos → %
+                </Button>
+              </div>
+            </div>
+
+            {/* Campos condicionais baseados no modo */}
+            {inputMode === 'total' && (
+              <>
+                {/* Porcentagem */}
+                <div className="space-y-2">
+                  <Label>Porcentagem do Projetista (%)</Label>
+                  <Input
+                    type="number"
+                    step={1}
+                    min={0}
+                    max={100}
+                    value={formData.designer_percentage}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({
+                        ...formData,
+                        designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                      });
+                    }}
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                  />
+                </div>
+                {/* Valor Total da Disciplina */}
+                <div className="space-y-2">
+                  <Label>Valor Total da Disciplina (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.total_value || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      total_value: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Valor Calculado do Projetista (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Valor Base do Projetista (calculado)</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatCurrency(baseDesignerValue)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.designer_percentage}% de {formatCurrency(formData.total_value)}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {inputMode === 'designer' && (
+              <>
+                {/* Porcentagem */}
+                <div className="space-y-2">
+                  <Label>Porcentagem do Projetista (%)</Label>
+                  <Input
+                    type="number"
+                    step={1}
+                    min={0}
+                    max={100}
+                    value={formData.designer_percentage}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setFormData({
+                        ...formData,
+                        designer_percentage: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                      });
+                    }}
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+                  />
+                </div>
+                {/* Valor do Projetista (direto) */}
+                <div className="space-y-2">
+                  <Label>Valor do Projetista (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.designer_value_direct || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      designer_value_direct: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Digite o valor que o projetista deve receber (sem majoração)
+                  </p>
+                </div>
+                {/* Valor Total Calculado (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Valor Total da Disciplina (calculado)</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatCurrency(calculatedTotalValue)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(formData.designer_value_direct)} ÷ {formData.designer_percentage}%
+                  </p>
+                </div>
+              </>
+            )}
+
+            {inputMode === 'both' && (
+              <>
+                {/* Valor Total da Disciplina */}
+                <div className="space-y-2">
+                  <Label>Valor Total da Disciplina (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.total_value || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      total_value: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Valor do Projetista */}
+                <div className="space-y-2">
+                  <Label>Valor do Projetista (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.designer_value_direct || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      designer_value_direct: parseFloat(e.target.value) || 0
+                    })}
+                    placeholder="0,00"
+                  />
+                </div>
+                {/* Porcentagem Calculada (somente leitura) */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">Porcentagem Calculada</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formData.total_value > 0
+                      ? `${((formData.designer_value_direct / formData.total_value) * 100).toFixed(2)}%`
+                      : '0%'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCurrency(formData.designer_value_direct)} ÷ {formatCurrency(formData.total_value)}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Toggle: Modo de Majoração */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Majoração</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={majoracaoMode === 'adicional' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMajoracaoMode('adicional')}
+                  className="flex-1"
+                >
+                  Valor Adicional
+                </Button>
+                <Button
+                  type="button"
+                  variant={majoracaoMode === 'final' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMajoracaoMode('final')}
+                  className="flex-1"
+                >
+                  Valor Final
+                </Button>
+              </div>
+            </div>
+
+            {/* Campo de Majoração baseado no modo */}
+            {majoracaoMode === 'adicional' ? (
+              <div className="space-y-2">
+                <Label>Majoração (R$) - Opcional</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.majoracao || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    majoracao: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Valor extra a adicionar ao cálculo do projetista
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Valor Final do Projetista (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.designer_value_final || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    designer_value_final: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="0,00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Digite o valor final que o projetista deve receber (já com majoração)
+                </p>
+                {formData.designer_value_final > baseDesignerValue && (
+                  <p className="text-xs text-green-600">
+                    Majoração calculada: {formatCurrency(formData.designer_value_final - baseDesignerValue)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Resumo Final */}
+            <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+              <p className="text-sm text-muted-foreground">Valor Final do Projetista</p>
+              <p className="text-xl font-bold text-green-600">
+                {formatCurrency(calculatedDesignerValue)}
+              </p>
+              {(calculatedMajoracao || 0) > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Base: {formatCurrency(baseDesignerValue)} + Majoração: {formatCurrency(calculatedMajoracao)}
+                </p>
+              )}
+            </div>
+
+            {/* Projetista Responsavel */}
+            <div className="space-y-2">
+              <Label>Projetista Responsavel</Label>
+              <Select
+                value={formData.designer_id || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, designer_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o projetista (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nao atribuido</SelectItem>
+                  {profiles
+                    .filter(p => p.id && (p.role === 'user' || p.role === 'admin'))
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Observacoes */}
+            <div className="space-y-2">
+              <Label>Observacoes</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Observacoes adicionais..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSavePricing}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmacao de Delete */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusao</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta precificacao?
+              Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Gerenciamento de Disciplinas */}
+      <Dialog open={isDisciplinesModalOpen} onOpenChange={setIsDisciplinesModalOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Disciplinas</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova disciplinas do sistema
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Adicionar nova disciplina */}
+            <div className="flex gap-2">
+              <Input
+                value={newDisciplineName}
+                onChange={(e) => setNewDisciplineName(e.target.value)}
+                placeholder="Nova disciplina..."
+                onKeyDown={(e) => e.key === 'Enter' && handleAddDiscipline()}
+              />
+              <Button onClick={handleAddDiscipline}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Lista de disciplinas */}
+            <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+              {disciplines.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground">
+                  Nenhuma disciplina cadastrada
+                </p>
+              ) : (
+                disciplines.map((disc) => (
+                  <div key={disc.id} className="flex items-center justify-between p-3">
+                    {editingDiscipline?.id === disc.id ? (
+                      <div className="flex gap-2 flex-1">
+                        <Input
+                          value={editingDiscipline.name}
+                          onChange={(e) => setEditingDiscipline({ ...editingDiscipline, name: e.target.value })}
+                          onKeyDown={(e) => e.key === 'Enter' && handleUpdateDiscipline()}
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={handleUpdateDiscipline}>
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingDiscipline(null)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="font-medium">{disc.name}</span>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingDiscipline({ id: disc.id, name: disc.name })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setDeletingDisciplineId(disc.id);
+                              setIsDeleteDisciplineDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDisciplinesModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmacao de Delete Disciplina */}
+      <AlertDialog open={isDeleteDisciplineDialogOpen} onOpenChange={setIsDeleteDisciplineDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusao</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta disciplina?
+              Ela nao aparecera mais nas opcoes de selecao.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingDisciplineId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDiscipline} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default PrecificacaoProjetos;
