@@ -32,6 +32,9 @@ export interface Project {
   created_at: string;
   updated_at: string;
   is_archived?: boolean; // Campo para arquivamento de projetos
+  crm_next_contact?: string | null;
+  crm_last_contact?: string | null;
+  crm_health?: 'verde' | 'amarelo' | 'vermelho' | null;
 }
 
 export interface Financial {
@@ -116,7 +119,40 @@ export interface ProposalRequest {
   triaged_by?: string | null;
   triaged_at?: string | null;
   internal_notes?: string | null;
+  next_contact_date?: string | null;
+  last_contact_date?: string | null;
+  assigned_to?: string | null;
   created_at: string;
+}
+
+export type InteractionType = 'call' | 'whatsapp' | 'email' | 'meeting' | 'note';
+export type CrmEntityType = 'lead' | 'proposal' | 'project';
+
+export interface CrmInteraction {
+  id: string;
+  entity_type: CrmEntityType;
+  entity_id: string;
+  interaction_type: InteractionType;
+  occurred_at: string;
+  duration_minutes?: number | null;
+  notes?: string | null;
+  outcome?: string | null;
+  next_action_date?: string | null;
+  next_action_notes?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface CrmFollowup {
+  entity_type: CrmEntityType;
+  entity_id: string;
+  title: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  company?: string | null;
+  due_date: string;
+  days_until: number;
+  status: string;
 }
 
 

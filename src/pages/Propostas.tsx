@@ -18,6 +18,10 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { Proposal, ProposalRequest, CompanyType } from '@/types';
 import ProposalModal from '@/components/ProposalModal';
+import CrmDashboard from '@/components/crm/CrmDashboard';
+import CrmPosVenda from '@/components/crm/CrmPosVenda';
+import InteractionTimeline from '@/components/crm/InteractionTimeline';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ProposalWithActions extends Proposal {
   daysUntilFollowup?: number;
@@ -38,7 +42,9 @@ const Propostas = () => {
   const [companyFilter, setCompanyFilter] = useState<'all' | 'igoria' | 'visaobim_privado'>('all');
   const [sortBy, setSortBy] = useState<string>('proposal_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [viewMode, setViewMode] = useState<'kanban' | 'table' | 'analytics' | 'leads'>('kanban');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'table' | 'analytics' | 'leads' | 'posvenda'>('dashboard');
+  const [leadTimelineOpen, setLeadTimelineOpen] = useState<ProposalRequest | null>(null);
+  const [proposalTimelineOpen, setProposalTimelineOpen] = useState<Proposal | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [proposalModalMode, setProposalModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -442,14 +448,24 @@ const Propostas = () => {
 
       {/* Tabs */}
       <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
-          <TabsTrigger value="table">Tabela</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="dashboard">📊 CRM</TabsTrigger>
           <TabsTrigger value="leads">
-            Leads {leadStats.novo > 0 && <Badge className="ml-2 bg-orange-500">{leadStats.novo}</Badge>}
+            Pré-Venda {leadStats.novo > 0 && <Badge className="ml-2 bg-orange-500">{leadStats.novo}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="kanban">Propostas</TabsTrigger>
+          <TabsTrigger value="table">Tabela</TabsTrigger>
+          <TabsTrigger value="posvenda">Pós-Venda</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          <CrmDashboard />
+        </TabsContent>
+
+        <TabsContent value="posvenda" className="space-y-6">
+          <CrmPosVenda />
+        </TabsContent>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
@@ -688,6 +704,15 @@ const Propostas = () => {
                                     onClick={() => handleEditProposal(proposal)}
                                   >
                                     <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                                    onClick={() => setProposalTimelineOpen(proposal)}
+                                    title="Histórico de contatos"
+                                  >
+                                    <Phone className="h-3 w-3" />
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -1085,6 +1110,19 @@ const Propostas = () => {
                                 Converter em proposta
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => setLeadTimelineOpen(lead)}
+                            >
+                              📞 Histórico contatos
+                            </Button>
+                            {lead.next_contact_date && (
+                              <Badge variant="secondary" className="text-xs justify-center">
+                                Próx: {formatDate(lead.next_contact_date)}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -1105,6 +1143,30 @@ const Propostas = () => {
         proposal={selectedProposal}
         mode={proposalModalMode}
       />
+
+      {/* Timeline lead */}
+      <Dialog open={!!leadTimelineOpen} onOpenChange={(o) => !o && setLeadTimelineOpen(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{leadTimelineOpen?.name} — Histórico</DialogTitle>
+          </DialogHeader>
+          {leadTimelineOpen && (
+            <InteractionTimeline entityType="lead" entityId={leadTimelineOpen.id} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Timeline proposta */}
+      <Dialog open={!!proposalTimelineOpen} onOpenChange={(o) => !o && setProposalTimelineOpen(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{proposalTimelineOpen?.client_name} — Histórico</DialogTitle>
+          </DialogHeader>
+          {proposalTimelineOpen && (
+            <InteractionTimeline entityType="proposal" entityId={proposalTimelineOpen.id} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
