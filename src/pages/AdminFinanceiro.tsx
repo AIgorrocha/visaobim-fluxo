@@ -71,6 +71,7 @@ import {
 } from '@/hooks/useDesignerFinancials';
 import { useContractOverview, useContractIncome, useAllProjects } from '@/hooks/useContractFinancials';
 import { useSectorAccess } from '@/hooks/useSectorAccess';
+import { useUnmappedLancamentos } from '@/hooks/useUnmappedLancamentos';
 import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
 import { ContractDetailModal } from '@/components/ContractDetailModal';
 import { DesignerPayment } from '@/types';
@@ -103,6 +104,7 @@ interface PaymentFormData {
 const AdminFinanceiro = () => {
   const { user, profile } = useAuth();
   const sectorAccess = useSectorAccess();
+  const { items: orfaosLancamentos } = useUnmappedLancamentos();
   const { projects, profiles, refetchProjects } = useSupabaseData();
   const { disciplines } = useDisciplines();
   const {
@@ -1959,6 +1961,57 @@ const AdminFinanceiro = () => {
                               </SelectContent>
                             </Select>
                           </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Lançamentos Órfãos do AppSheet */}
+            <Card className="mt-4">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  <CardTitle>Lançamentos Órfãos do AppSheet</CardTitle>
+                </div>
+                <CardDescription>
+                  Lançamentos vindos do AppSheet com contrato não mapeado para projeto. Adicionar nome ao mapping da edge function corrige.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {orfaosLancamentos.filter(o => sectorAccess.canViewPrivado || o.sector === 'publico').length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <UserPlus className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <p className="text-lg font-medium text-green-600">Tudo certo!</p>
+                    <p>Nenhum lançamento órfão.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tabela</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Contrato (não mapeado)</TableHead>
+                        <TableHead>Setor</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead>AppSheet ID</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orfaosLancamentos
+                        .filter(o => sectorAccess.canViewPrivado || o.sector === 'publico')
+                        .map((o: any) => (
+                        <TableRow key={o.id} className="bg-orange-50">
+                          <TableCell><Badge variant="outline" className="text-xs">{o.tabela}</Badge></TableCell>
+                          <TableCell>{o.data}</TableCell>
+                          <TableCell className="font-medium text-red-600">{o.contract_name || '—'}</TableCell>
+                          <TableCell><Badge>{o.sector || '—'}</Badge></TableCell>
+                          <TableCell className="text-sm max-w-xs truncate">{o.description}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatCurrency(o.amount)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{o.appsheet_id || '—'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

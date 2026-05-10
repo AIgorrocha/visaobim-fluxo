@@ -133,7 +133,7 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
     t.lucroLiquido = t.lucroAntesDistribuicao - t.distribuicaoLucro;
     t.ebitdaMargem = t.receitaLiquida > 0 ? t.ebitda / t.receitaLiquida : 0;
     t.margemBruta = t.receitaLiquida > 0 ? t.lucroBruto / t.receitaLiquida : 0;
-    t.margemLiquida = t.receitaLiquida > 0 ? t.lucroLiquido / t.receitaLiquida : 0;
+    t.margemLiquida = t.receitaLiquida > 0 ? t.lucroAntesDistribuicao / t.receitaLiquida : 0;
     return t;
   }, [dreMonthly]);
 
@@ -142,16 +142,14 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
     const t = dreConsolidada;
     const pct = (v: number) => t.receita > 0 ? v / t.receita : 0;
     return [
-      { linha: 'Receita Bruta', valor: t.receita, pctReceita: 1, isSubtotal: true },
-      { linha: '(−) Deduções/Impostos s/Receita', valor: -t.deducoes, pctReceita: -pct(t.deducoes) },
+      { linha: 'Receita Bruta (Notas Fiscais)', valor: t.receita, pctReceita: 1, isSubtotal: true },
+      { linha: '(−) Simples Nacional / Impostos s/Nota Fiscal', valor: -t.deducoes, pctReceita: -pct(t.deducoes) },
       { linha: 'Receita Líquida', valor: t.receitaLiquida, pctReceita: pct(t.receitaLiquida), isSubtotal: true },
       { linha: '(−) CSP — Custos Diretos (Projetistas, Levantamentos)', valor: -t.csp, pctReceita: -pct(t.csp) },
       { linha: 'Lucro Bruto', valor: t.lucroBruto, pctReceita: pct(t.lucroBruto), isSubtotal: true, isPositive: t.lucroBruto >= 0 },
       { linha: '(−) Despesas Administrativas', valor: -t.despAdm, pctReceita: -pct(t.despAdm) },
       { linha: '(−) Despesas Comerciais', valor: -t.despCom, pctReceita: -pct(t.despCom) },
       { linha: '(−) Tecnologia/Software', valor: -t.despTec, pctReceita: -pct(t.despTec) },
-      { linha: 'EBITDA (Resultado Operacional Real)', valor: t.ebitda, pctReceita: pct(t.ebitda), isSubtotal: true, isPositive: t.ebitda >= 0 },
-      { linha: '(−) Impostos sobre Lucro/Simples', valor: -t.impostoLucro, pctReceita: -pct(t.impostoLucro) },
       { linha: '★ LUCRO REAL DA EMPRESA (antes da distribuição)', valor: t.lucroAntesDistribuicao, pctReceita: pct(t.lucroAntesDistribuicao), isSubtotal: true, isPositive: t.lucroAntesDistribuicao >= 0 },
       { linha: '(−) Distribuição de Lucro — Pró-labore Sócios', valor: -t.distribuicaoLucro, pctReceita: -pct(t.distribuicaoLucro) },
       { linha: 'Saldo Retido na Empresa (após distribuição)', valor: t.lucroLiquido, pctReceita: pct(t.lucroLiquido), isSubtotal: true, isPositive: t.lucroLiquido >= 0 }
