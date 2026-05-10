@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { useContractOverview } from './useContractFinancials';
+import { useContractOverview, useAllProjects } from './useContractFinancials';
 import { useCompanyExpenses } from './useCompanyExpenses';
 import { useContractIncome } from './useContractFinancials';
+import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 
 export type SectorFilter = 'all' | 'publico' | 'privado';
 
@@ -82,18 +83,24 @@ export function useFinancialMetrics(sector: SectorFilter = 'all') {
   const { contracts, summary, loading: cLoading } = useContractOverview();
   const { expenses, loading: eLoading } = useCompanyExpenses();
   const { income, loading: iLoading } = useContractIncome();
+  // Buscar TODOS os projetos (incluindo EM_ESPERA e value=0) para mapping de tipo correto
+  const { projects: allProjectsRaw } = useAllProjects();
+  // Pagamentos diretos a projetistas (raw, sem filtro de status do projeto)
+  const { payments: rawPayments } = useSupabaseData();
 
   const filteredContracts = useMemo(
     () => sector === 'all' ? contracts : contracts.filter(c => c.type === sector),
     [contracts, sector]
   );
 
-  // Map projectId → type para classificar income/expenses por setor via contrato
+  // Map projectId → type usando TODOS os projetos (inclui EM_ESPERA, archived, sem value)
+  // Isso garante que receitas/despesas órfãs não sejam excluídas do cálculo de caixa
   const projectTypeMap = useMemo(() => {
     const m = new Map<string, 'publico' | 'privado'>();
+    (allProjectsRaw || []).forEach((p: any) => m.set(p.id, p.type as 'publico' | 'privado'));
     contracts.forEach(c => m.set(c.project_id, c.type as 'publico' | 'privado'));
     return m;
-  }, [contracts]);
+  }, [contracts, allProjectsRaw]);
 
   const realizedIncome = useMemo(
     () => income.filter((i: any) => (i.status ?? 'recebido') === 'recebido'),
@@ -206,9 +213,14 @@ export function useFinancialMetrics(sector: SectorFilter = 'all') {
     const fixoPvtMes = fixosPvt / nMonths;
     const fixoTotalMes = (sector === 'publico' ? fixoPubMes : sector === 'privado' ? fixoPvtMes : fixoPubMes + fixoPvtMes);
 
-    // Margem contribuição % média = (receita - custo direto projetistas) / receita
-    const totalDireto = filteredContracts.reduce((s, c) => s + (c.total_paid_designers || 0), 0);
-    const totalRecContratos = filteredContracts.reduce((s, c) => s + c.total_received, 0);
+    // Total direto pago a projetistas — usa designer_payments raw (todos projetos, status='pago')
+    const totalDireto = (rawPayments || []).reduce((s: number, p: any) => {
+      if (p.status !== 'pago') return s;
+      const t = projectTypeMap.get(p.project_id);
+      if (sector !== 'all' && t !== sector) return s;
+      return s + (Number(p.amount) || 0);
+    }, 0);
+    const totalRecContratos = totalReceitas;
     const margemContribuicaoPct = totalRecContratos > 0 ? (totalRecContratos - totalDireto) / totalRecContratos : 0;
 
     const breakEven = margemContribuicaoPct > 0 ? fixoTotalMes / margemContribuicaoPct : 0;
