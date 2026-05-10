@@ -21,7 +21,9 @@ export interface DREStructured {
   despOperacional: number;
   ebitda: number;
   ebitdaMargem: number;
+  distribuicaoLucro: number;
   impostoLucro: number;
+  lucroAntesDistribuicao: number;
   lucroLiquido: number;
   margemLiquida: number;
   margemBruta: number;
@@ -68,7 +70,8 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
           ym: r.ym, monthLabel: ymLabel(r.ym),
           receita: 0, deducoes: 0, receitaLiquida: 0, csp: 0, lucroBruto: 0,
           despAdm: 0, despCom: 0, despPessoal: 0, despTec: 0, despFin: 0,
-          despOperacional: 0, ebitda: 0, ebitdaMargem: 0, impostoLucro: 0,
+          despOperacional: 0, ebitda: 0, ebitdaMargem: 0,
+          distribuicaoLucro: 0, impostoLucro: 0, lucroAntesDistribuicao: 0,
           lucroLiquido: 0, margemLiquida: 0, margemBruta: 0
         });
       }
@@ -82,18 +85,23 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
         case 'desp_pessoal': row.despPessoal += r.amount; break;
         case 'desp_tec': row.despTec += r.amount; break;
         case 'desp_fin': row.despFin += r.amount; break;
+        case 'distribuicao_lucro': row.distribuicaoLucro += r.amount; break;
         case 'imposto_lucro': row.impostoLucro += r.amount; break;
       }
     });
     return Array.from(map.values()).map(row => {
       row.receitaLiquida = row.receita - row.deducoes;
       row.lucroBruto = row.receitaLiquida - row.csp;
+      // EBITDA NÃO inclui prolabore (distribuicao_lucro). Inclui só despesas operacionais reais.
       row.despOperacional = row.despAdm + row.despCom + row.despPessoal + row.despTec + row.despFin;
       row.ebitda = row.lucroBruto - row.despOperacional;
-      row.lucroLiquido = row.ebitda - row.impostoLucro;
+      // Lucro antes da distribuição = EBITDA - impostos (este é o lucro REAL da empresa)
+      row.lucroAntesDistribuicao = row.ebitda - row.impostoLucro;
+      // Lucro líquido final = depois de retirar prolabore (saldo que sobra para empresa)
+      row.lucroLiquido = row.lucroAntesDistribuicao - row.distribuicaoLucro;
       row.ebitdaMargem = row.receitaLiquida > 0 ? row.ebitda / row.receitaLiquida : 0;
       row.margemBruta = row.receitaLiquida > 0 ? row.lucroBruto / row.receitaLiquida : 0;
-      row.margemLiquida = row.receitaLiquida > 0 ? row.lucroLiquido / row.receitaLiquida : 0;
+      row.margemLiquida = row.receitaLiquida > 0 ? row.lucroAntesDistribuicao / row.receitaLiquida : 0;
       return row;
     }).sort((a, b) => a.ym.localeCompare(b.ym));
   }, [filtered]);
@@ -104,7 +112,8 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
       ym: 'total', monthLabel: 'Acumulado',
       receita: 0, deducoes: 0, receitaLiquida: 0, csp: 0, lucroBruto: 0,
       despAdm: 0, despCom: 0, despPessoal: 0, despTec: 0, despFin: 0,
-      despOperacional: 0, ebitda: 0, ebitdaMargem: 0, impostoLucro: 0,
+      despOperacional: 0, ebitda: 0, ebitdaMargem: 0,
+      distribuicaoLucro: 0, impostoLucro: 0, lucroAntesDistribuicao: 0,
       lucroLiquido: 0, margemLiquida: 0, margemBruta: 0
     };
     dreMonthly.forEach(m => {
@@ -112,13 +121,16 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
       t.csp += m.csp;
       t.despAdm += m.despAdm; t.despCom += m.despCom;
       t.despPessoal += m.despPessoal; t.despTec += m.despTec;
-      t.despFin += m.despFin; t.impostoLucro += m.impostoLucro;
+      t.despFin += m.despFin;
+      t.distribuicaoLucro += m.distribuicaoLucro;
+      t.impostoLucro += m.impostoLucro;
     });
     t.receitaLiquida = t.receita - t.deducoes;
     t.lucroBruto = t.receitaLiquida - t.csp;
     t.despOperacional = t.despAdm + t.despCom + t.despPessoal + t.despTec + t.despFin;
     t.ebitda = t.lucroBruto - t.despOperacional;
-    t.lucroLiquido = t.ebitda - t.impostoLucro;
+    t.lucroAntesDistribuicao = t.ebitda - t.impostoLucro;
+    t.lucroLiquido = t.lucroAntesDistribuicao - t.distribuicaoLucro;
     t.ebitdaMargem = t.receitaLiquida > 0 ? t.ebitda / t.receitaLiquida : 0;
     t.margemBruta = t.receitaLiquida > 0 ? t.lucroBruto / t.receitaLiquida : 0;
     t.margemLiquida = t.receitaLiquida > 0 ? t.lucroLiquido / t.receitaLiquida : 0;
@@ -137,11 +149,12 @@ export function useFinancialDRE(sector: SectorFilter = 'all') {
       { linha: 'Lucro Bruto', valor: t.lucroBruto, pctReceita: pct(t.lucroBruto), isSubtotal: true, isPositive: t.lucroBruto >= 0 },
       { linha: '(−) Despesas Administrativas', valor: -t.despAdm, pctReceita: -pct(t.despAdm) },
       { linha: '(−) Despesas Comerciais', valor: -t.despCom, pctReceita: -pct(t.despCom) },
-      { linha: '(−) Pró-labore Sócios', valor: -t.despPessoal, pctReceita: -pct(t.despPessoal) },
       { linha: '(−) Tecnologia/Software', valor: -t.despTec, pctReceita: -pct(t.despTec) },
-      { linha: 'EBITDA (Resultado Operacional)', valor: t.ebitda, pctReceita: pct(t.ebitda), isSubtotal: true, isPositive: t.ebitda >= 0 },
+      { linha: 'EBITDA (Resultado Operacional Real)', valor: t.ebitda, pctReceita: pct(t.ebitda), isSubtotal: true, isPositive: t.ebitda >= 0 },
       { linha: '(−) Impostos sobre Lucro/Simples', valor: -t.impostoLucro, pctReceita: -pct(t.impostoLucro) },
-      { linha: 'Lucro Líquido', valor: t.lucroLiquido, pctReceita: pct(t.lucroLiquido), isSubtotal: true, isPositive: t.lucroLiquido >= 0 }
+      { linha: '★ LUCRO REAL DA EMPRESA (antes da distribuição)', valor: t.lucroAntesDistribuicao, pctReceita: pct(t.lucroAntesDistribuicao), isSubtotal: true, isPositive: t.lucroAntesDistribuicao >= 0 },
+      { linha: '(−) Distribuição de Lucro — Pró-labore Sócios', valor: -t.distribuicaoLucro, pctReceita: -pct(t.distribuicaoLucro) },
+      { linha: 'Saldo Retido na Empresa (após distribuição)', valor: t.lucroLiquido, pctReceita: pct(t.lucroLiquido), isSubtotal: true, isPositive: t.lucroLiquido >= 0 }
     ];
   }, [dreConsolidada]);
 
