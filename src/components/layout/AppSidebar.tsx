@@ -12,7 +12,8 @@ import {
   Wallet,
   Calculator,
   TrendingUp,
-  CalendarClock
+  CalendarClock,
+  CreditCard
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -89,6 +90,13 @@ const menuItems = [
     title: 'Medicoes Previstas',
     url: '/medicoes-previstas',
     icon: CalendarClock,
+    roles: ['admin'],
+    restrictedEmails: ADMIN_FINANCIAL_EMAILS
+  },
+  {
+    title: 'Contas a Pagar',
+    url: '/contas-pagar',
+    icon: CreditCard,
     roles: ['admin'],
     restrictedEmails: ADMIN_FINANCIAL_EMAILS
   },

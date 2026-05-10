@@ -2,18 +2,23 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, Target,
-  Calendar, Wallet, PieChart as PieIcon, Activity, ArrowUpRight, ArrowDownRight, Clock
+  Calendar, Wallet, PieChart as PieIcon, Activity, ArrowUpRight, ArrowDownRight, Clock,
+  AlertCircle, FileText, Download, Bell, X
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+  ResponsiveContainer, ComposedChart, Bar, Line, Area, AreaChart, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
   BarChart, RadialBarChart, RadialBar, PolarAngleAxis, PieChart, Pie, Cell
 } from 'recharts';
 import { useFinancialMetrics, type SectorFilter } from '@/hooks/useFinancialMetrics';
+import { useFinancialDRE } from '@/hooks/useFinancialDRE';
+import { useFinancialAlerts } from '@/hooks/useFinancialAlerts';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
@@ -69,6 +74,8 @@ const Financeiro = () => {
   const { profile } = useAuth();
   const [sector, setSector] = useState<SectorFilter>('all');
   const { kpis, monthlyFlow, fixedCostsByCategory, topContratos, aging, medicoesPrevistas, loading } = useFinancialMetrics(sector);
+  const { dreMonthly, dreConsolidada, dreVertical, dreHorizontal, rolling12mReceita, forecast12m, sazonalidadeMatriz } = useFinancialDRE(sector);
+  const { alerts } = useFinancialAlerts();
 
   const isFinAdmin = ADMIN_FINANCIAL_EMAILS.includes(profile?.email?.toLowerCase() || '');
 
@@ -137,14 +144,282 @@ const Financeiro = () => {
             <KPICard title="Backlog Previsto" value={fmtBRLk(kpis.backlogPrevisto)} subtitle={`Pub ${fmtBRLk(kpis.backlogPublico)} · Priv ${fmtBRLk(kpis.backlogPrivado)}`} icon={Calendar} color="text-blue-500" />
           </div>
 
-          <Tabs defaultValue="fluxo" className="space-y-4">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full md:w-auto">
-              <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
-              <TabsTrigger value="custos">Custos Fixos</TabsTrigger>
+          {/* ALERTAS CRÍTICOS */}
+          {alerts.filter(a => a.severity === 'critical').length > 0 && (
+            <div className="space-y-2">
+              {alerts.filter(a => a.severity === 'critical').slice(0, 3).map(a => (
+                <Alert key={a.id} variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>{a.title}</AlertTitle>
+                  <AlertDescription>{a.message}</AlertDescription>
+                </Alert>
+              ))}
+            </div>
+          )}
+
+          <Tabs defaultValue="dre" className="space-y-4">
+            <TabsList className="grid grid-cols-3 md:grid-cols-9 w-full">
+              <TabsTrigger value="dre">DRE</TabsTrigger>
+              <TabsTrigger value="fluxo">Fluxo</TabsTrigger>
+              <TabsTrigger value="projecao">Projeção 12m</TabsTrigger>
+              <TabsTrigger value="custos">Custos</TabsTrigger>
               <TabsTrigger value="contratos">Contratos</TabsTrigger>
-              <TabsTrigger value="medicoes">Medições Previstas</TabsTrigger>
+              <TabsTrigger value="medicoes">Medições</TabsTrigger>
+              <TabsTrigger value="alertas">Alertas {alerts.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{alerts.length}</Badge>}</TabsTrigger>
+              <TabsTrigger value="sazonal">Sazonalidade</TabsTrigger>
               <TabsTrigger value="breakeven">Break-Even</TabsTrigger>
             </TabsList>
+
+            {/* TAB DRE */}
+            <TabsContent value="dre" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>DRE — Demonstração de Resultado</CardTitle>
+                  <CardDescription>Estrutura padrão Brasil · Acumulado · Análise vertical (% Receita)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Linha</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">% Receita</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dreVertical.map((r, i) => (
+                        <TableRow key={i} className={r.isSubtotal ? 'font-bold bg-muted/30' : ''}>
+                          <TableCell className={r.isSubtotal ? 'text-base' : 'pl-6 text-sm text-muted-foreground'}>{r.linha}</TableCell>
+                          <TableCell className={`text-right ${r.valor < 0 ? 'text-red-600' : r.isSubtotal && r.isPositive === false ? 'text-red-600' : r.isSubtotal ? 'text-emerald-600' : ''}`}>{fmtBRL(r.valor)}</TableCell>
+                          <TableCell className={`text-right text-sm ${r.pctReceita < 0 ? 'text-red-600' : ''}`}>{fmtPct(r.pctReceita)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Margem Bruta</CardTitle></CardHeader><CardContent><div className={`text-3xl font-bold ${dreConsolidada.margemBruta >= 0.4 ? 'text-emerald-600' : 'text-amber-600'}`}>{fmtPct(dreConsolidada.margemBruta)}</div><p className="text-xs text-muted-foreground mt-1">Lucro Bruto / Receita Líquida</p></CardContent></Card>
+                <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">EBITDA Margem</CardTitle></CardHeader><CardContent><div className={`text-3xl font-bold ${dreConsolidada.ebitdaMargem >= 0.15 ? 'text-emerald-600' : 'text-amber-600'}`}>{fmtPct(dreConsolidada.ebitdaMargem)}</div><p className="text-xs text-muted-foreground mt-1">EBITDA = {fmtBRL(dreConsolidada.ebitda)}</p></CardContent></Card>
+                <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Margem Líquida</CardTitle></CardHeader><CardContent><div className={`text-3xl font-bold ${dreConsolidada.margemLiquida >= 0.1 ? 'text-emerald-600' : 'text-amber-600'}`}>{fmtPct(dreConsolidada.margemLiquida)}</div><p className="text-xs text-muted-foreground mt-1">Lucro Líquido = {fmtBRL(dreConsolidada.lucroLiquido)}</p></CardContent></Card>
+              </div>
+
+              <Card>
+                <CardHeader><CardTitle>Evolução EBITDA Mensal</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={dreMonthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="monthLabel" />
+                      <YAxis tickFormatter={fmtBRLk} />
+                      <Tooltip formatter={(v: number) => fmtBRL(v)} />
+                      <Legend />
+                      <Bar dataKey="receita" fill="#10b981" name="Receita" />
+                      <Bar dataKey="csp" fill="#8b5cf6" name="Custo Direto (Projetistas)" />
+                      <Bar dataKey="despOperacional" fill="#f59e0b" name="Desp. Operacionais" />
+                      <Line type="monotone" dataKey="ebitda" stroke="#ef4444" strokeWidth={3} name="EBITDA" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Análise Horizontal — Variação Mês a Mês</CardTitle></CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mês</TableHead>
+                        <TableHead className="text-right">Receita</TableHead>
+                        <TableHead className="text-right">Δ Receita</TableHead>
+                        <TableHead className="text-right">EBITDA</TableHead>
+                        <TableHead className="text-right">Δ EBITDA</TableHead>
+                        <TableHead className="text-right">Margem EBITDA</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dreHorizontal.slice(-12).reverse().map(m => (
+                        <TableRow key={m.ym}>
+                          <TableCell>{m.monthLabel}</TableCell>
+                          <TableCell className="text-right">{fmtBRL(m.receita)}</TableCell>
+                          <TableCell className={`text-right ${m.varReceita >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{m.varReceita !== 0 ? fmtPct(m.varReceita) : '—'}</TableCell>
+                          <TableCell className={`text-right ${m.ebitda >= 0 ? '' : 'text-red-600'}`}>{fmtBRL(m.ebitda)}</TableCell>
+                          <TableCell className={`text-right ${m.varEbitda >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{m.varEbitda !== 0 ? fmtPct(m.varEbitda) : '—'}</TableCell>
+                          <TableCell className="text-right">{fmtPct(m.ebitdaMargem)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TAB PROJEÇÃO */}
+            <TabsContent value="projecao" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Projeção Fluxo de Caixa 12 Meses</CardTitle>
+                  <CardDescription>Forecast baseado em média móvel últimos 3m + backlog conhecido</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <AreaChart data={[...dreMonthly.slice(-6).map(m => ({ monthLabel: m.monthLabel, saldoAcumulado: 0, receita: m.receita, despesa: m.despOperacional + m.csp + m.impostoLucro, isProjected: false })), ...forecast12m]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="monthLabel" />
+                      <YAxis tickFormatter={fmtBRLk} />
+                      <Tooltip formatter={(v: number) => fmtBRL(v)} />
+                      <Legend />
+                      <Area type="monotone" dataKey="receita" stroke="#10b981" fill="#10b98144" name="Receita" />
+                      <Area type="monotone" dataKey="despesa" stroke="#ef4444" fill="#ef444444" name="Despesa" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Tabela Projeção</CardTitle></CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mês</TableHead>
+                        <TableHead className="text-right">Receita Prevista</TableHead>
+                        <TableHead className="text-right">Despesa Prevista</TableHead>
+                        <TableHead className="text-right">Saldo Mês</TableHead>
+                        <TableHead className="text-right">Saldo Acumulado</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {forecast12m.map(f => (
+                        <TableRow key={f.ym}>
+                          <TableCell><Badge variant="outline">{f.monthLabel} (projetado)</Badge></TableCell>
+                          <TableCell className="text-right">{fmtBRL(f.receita)}</TableCell>
+                          <TableCell className="text-right text-red-600">{fmtBRL(f.despesa)}</TableCell>
+                          <TableCell className={`text-right ${f.saldoMes >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmtBRL(f.saldoMes)}</TableCell>
+                          <TableCell className={`text-right font-semibold ${f.saldoAcumulado >= 0 ? '' : 'text-red-600'}`}>{fmtBRL(f.saldoAcumulado)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <p className="text-xs text-muted-foreground mt-3">⚠️ Projeção simples baseada em média 3m. Não considera contratos novos, sazonalidade ou ajustes manuais.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TAB ALERTAS */}
+            <TabsContent value="alertas" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Alertas Automáticos</CardTitle>
+                  <CardDescription>Sistema monitora teto Simples, runway, cobertura, atrasos, EBITDA</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {alerts.length === 0 && <p className="text-center text-muted-foreground py-8">✓ Nenhum alerta. Tudo dentro dos parâmetros saudáveis.</p>}
+                  {alerts.map(a => (
+                    <Alert key={a.id} variant={a.severity === 'critical' ? 'destructive' : 'default'}>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle className="flex items-center gap-2">
+                        <Badge variant={a.severity === 'critical' ? 'destructive' : a.severity === 'warning' ? 'default' : 'secondary'}>
+                          {a.severity}
+                        </Badge>
+                        {a.title}
+                      </AlertTitle>
+                      <AlertDescription>{a.message}</AlertDescription>
+                    </Alert>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Faturamento 12 meses (rolling)</CardTitle><CardDescription>Monitoramento teto Simples Nacional R$ 4,8M</CardDescription></CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Atual</span>
+                      <span className="font-semibold">{fmtBRL(rolling12mReceita)}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                      <div
+                        className={`h-3 rounded-full transition-all ${rolling12mReceita >= 4_320_000 ? 'bg-red-500' : rolling12mReceita >= 3_840_000 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(100, (rolling12mReceita / 4_800_000) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{fmtPct(rolling12mReceita / 4_800_000)} do teto</span>
+                      <span>Teto: R$ 4,8M</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TAB SAZONALIDADE */}
+            <TabsContent value="sazonal" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Heatmap de Sazonalidade</CardTitle>
+                  <CardDescription>Receita por mês × ano · cor mais escura = mais dinheiro</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(sazonalidadeMatriz).length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Sem dados suficientes.</p>
+                  ) : (() => {
+                    const allValues = Object.values(sazonalidadeMatriz).flatMap(y => Object.values(y));
+                    const maxVal = Math.max(...allValues, 1);
+                    const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                    const years = Object.keys(sazonalidadeMatriz).sort();
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr>
+                              <th className="text-left p-2">Ano</th>
+                              {months.map(m => <th key={m} className="text-center p-2">{m}</th>)}
+                              <th className="text-right p-2">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {years.map(y => {
+                              const total = Object.values(sazonalidadeMatriz[y]).reduce((s, v) => s + v, 0);
+                              return (
+                                <tr key={y}>
+                                  <td className="p-2 font-semibold">{y}</td>
+                                  {months.map((m, i) => {
+                                    const v = sazonalidadeMatriz[y][i + 1] || 0;
+                                    const intensity = v / maxVal;
+                                    const bg = intensity > 0 ? `rgba(16, 185, 129, ${0.1 + intensity * 0.9})` : 'transparent';
+                                    return (
+                                      <td key={i} className="p-2 text-center" style={{ backgroundColor: bg }}>
+                                        {v > 0 ? fmtBRLk(v) : '—'}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="p-2 text-right font-semibold">{fmtBRLk(total)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Receita Mensal Histórica</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={dreMonthly}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="monthLabel" />
+                      <YAxis tickFormatter={fmtBRLk} />
+                      <Tooltip formatter={(v: number) => fmtBRL(v)} />
+                      <Area type="monotone" dataKey="receita" stroke="#10b981" fill="#10b98144" name="Receita" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* TAB FLUXO DE CAIXA */}
             <TabsContent value="fluxo" className="space-y-4">
