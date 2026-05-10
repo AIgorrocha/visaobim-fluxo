@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign,
@@ -211,6 +211,17 @@ const AdminFinanceiro = () => {
   const [filterIncomeType, setFilterIncomeType] = useState<string>('all');
   const [filterIncomeProject, setFilterIncomeProject] = useState<string>('all');
   const [filterIncomeSector, setFilterIncomeSector] = useState<string>('all');
+
+  // Stael: força filtros de setor para 'publico' e bloqueia mudança
+  useEffect(() => {
+    if (!sectorAccess.canViewPrivado && sectorAccess.allowedSectors.length > 0) {
+      if (filterSector !== 'publico') setFilterSector('publico');
+      if (filterContractType !== 'publico') setFilterContractType('publico');
+      if (filterExpenseSector !== 'publico') setFilterExpenseSector('publico');
+      if (filterIncomeSector !== 'publico') setFilterIncomeSector('publico');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectorAccess.canViewPrivado]);
   const [expensesExpanded, setExpensesExpanded] = useState<boolean>(false);
   const [incomeExpanded, setIncomeExpanded] = useState<boolean>(false);
   const INITIAL_ROWS_LIMIT = 20; // Mostrar 20 primeiras, depois expandir
@@ -981,14 +992,14 @@ const AdminFinanceiro = () => {
               <Label className="font-semibold">Filtros:</Label>
 
               {/* Filtro por Tipo */}
-              <Select value={filterContractType} onValueChange={setFilterContractType}>
+              <Select value={filterContractType} onValueChange={setFilterContractType} disabled={!sectorAccess.canViewPrivado}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="all">Todos os Tipos</SelectItem>}
                   <SelectItem value="publico">Publico</SelectItem>
-                  <SelectItem value="privado">Privado</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="privado">Privado</SelectItem>}
                 </SelectContent>
               </Select>
 
@@ -1506,14 +1517,14 @@ const AdminFinanceiro = () => {
               </Select>
 
               {/* Filtro por Setor */}
-              <Select value={filterIncomeSector} onValueChange={setFilterIncomeSector}>
+              <Select value={filterIncomeSector} onValueChange={setFilterIncomeSector} disabled={!sectorAccess.canViewPrivado}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Setor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="all">Todos</SelectItem>}
                   <SelectItem value="publico">Público</SelectItem>
-                  <SelectItem value="privado">Privado</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="privado">Privado</SelectItem>}
                 </SelectContent>
               </Select>
 
@@ -1695,13 +1706,13 @@ const AdminFinanceiro = () => {
                     </SelectContent>
                   </Select>
 
-                  <Select value={filterSector} onValueChange={setFilterSector}>
+                  <Select value={filterSector} onValueChange={setFilterSector} disabled={!sectorAccess.canViewPrivado}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Setor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="privado">Privado</SelectItem>
+                      {sectorAccess.canViewPrivado && <SelectItem value="all">Todos</SelectItem>}
+                      {sectorAccess.canViewPrivado && <SelectItem value="privado">Privado</SelectItem>}
                       <SelectItem value="publico">Publico</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1962,14 +1973,14 @@ const AdminFinanceiro = () => {
             {/* Filtros de Despesas */}
             <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
               <Label className="font-semibold">Filtros:</Label>
-              <Select value={filterExpenseSector} onValueChange={setFilterExpenseSector}>
+              <Select value={filterExpenseSector} onValueChange={setFilterExpenseSector} disabled={!sectorAccess.canViewPrivado}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Setor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos Setores</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="all">Todos Setores</SelectItem>}
                   <SelectItem value="publico">Publico</SelectItem>
-                  <SelectItem value="privado">Privado</SelectItem>
+                  {sectorAccess.canViewPrivado && <SelectItem value="privado">Privado</SelectItem>}
                 </SelectContent>
               </Select>
 
