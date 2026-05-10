@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useFinancialMetrics } from './useFinancialMetrics';
 import { useFinancialDRE } from './useFinancialDRE';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AppAlert {
   id: string;

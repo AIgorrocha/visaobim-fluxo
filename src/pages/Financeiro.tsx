@@ -19,6 +19,7 @@ import {
 import { useFinancialMetrics, type SectorFilter } from '@/hooks/useFinancialMetrics';
 import { useFinancialDRE } from '@/hooks/useFinancialDRE';
 import { useFinancialAlerts } from '@/hooks/useFinancialAlerts';
+import { useUnmappedLancamentos } from '@/hooks/useUnmappedLancamentos';
 import { useSectorAccess } from '@/hooks/useSectorAccess';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -80,6 +81,7 @@ const Financeiro = () => {
   const { kpis, monthlyFlow, fixedCostsByCategory, topContratos, aging, medicoesPrevistas, loading } = useFinancialMetrics(effectiveSector);
   const { dreMonthly, dreConsolidada, dreVertical, dreHorizontal, rolling12mReceita, forecast12m, sazonalidadeMatriz } = useFinancialDRE(effectiveSector);
   const { alerts } = useFinancialAlerts();
+  const { items: orfaos } = useUnmappedLancamentos();
 
   const isFinAdmin = ADMIN_FINANCIAL_EMAILS.includes(profile?.email?.toLowerCase() || '');
 
@@ -174,6 +176,7 @@ const Financeiro = () => {
               <TabsTrigger value="contratos">Contratos</TabsTrigger>
               <TabsTrigger value="medicoes">Medições</TabsTrigger>
               <TabsTrigger value="alertas">Alertas {alerts.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{alerts.length}</Badge>}</TabsTrigger>
+              <TabsTrigger value="orfaos">Órfãos {orfaos.length > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">{orfaos.length}</Badge>}</TabsTrigger>
               <TabsTrigger value="sazonal">Sazonalidade</TabsTrigger>
               <TabsTrigger value="breakeven">Break-Even</TabsTrigger>
             </TabsList>
@@ -357,6 +360,62 @@ const Financeiro = () => {
                       <span>Teto: R$ 4,8M</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* TAB ÓRFÃOS */}
+            <TabsContent value="orfaos" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-500" /> Lançamentos Órfãos</CardTitle>
+                  <CardDescription>
+                    Lançamentos do AppSheet cujo contrato não foi mapeado para um projeto no sistema.
+                    Estes ficam contabilizados mas sem vínculo correto. Adicionar mapping na edge function corrige.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {orfaos.length === 0 ? (
+                    <p className="text-center text-emerald-600 py-8">✓ Nenhum lançamento órfão. Todos os contratos estão mapeados.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Tabela</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Contrato (não mapeado)</TableHead>
+                          <TableHead>Setor</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                          <TableHead>AppSheet ID</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orfaos.map((o) => (
+                          <TableRow key={o.id}>
+                            <TableCell><Badge variant="outline" className="text-xs">{o.tabela}</Badge></TableCell>
+                            <TableCell>{o.data}</TableCell>
+                            <TableCell className="font-medium text-red-600">{o.contract_name || '—'}</TableCell>
+                            <TableCell><Badge>{o.sector || '—'}</Badge></TableCell>
+                            <TableCell className="text-sm max-w-xs truncate">{o.description}</TableCell>
+                            <TableCell className="text-right font-semibold">{fmtBRL(o.amount)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{o.appsheet_id || '—'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Como resolver órfãos</CardTitle></CardHeader>
+                <CardContent className="text-sm text-muted-foreground space-y-2">
+                  <p>1. Verifique o nome do contrato na coluna acima.</p>
+                  <p>2. Confirme se o projeto existe no sistema (Projetos).</p>
+                  <p>3. Adicione o nome (e variações) ao mapping da edge function correspondente:</p>
+                  <p>   • Setor PÚBLICO: <code className="text-xs bg-muted px-1 rounded">supabase/functions/appsheet-lancamento-pub/index.ts</code></p>
+                  <p>   • Setor PRIVADO: <code className="text-xs bg-muted px-1 rounded">supabase/functions/appsheet-lancamento-pvt/index.ts</code></p>
+                  <p>4. Depois manualmente atualizar o lançamento órfão no Supabase para o project_id correto.</p>
                 </CardContent>
               </Card>
             </TabsContent>
