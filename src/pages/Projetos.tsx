@@ -12,6 +12,7 @@ import { useSupabaseData } from '@/contexts/SupabaseDataContext';
 import { useArchivedProjects } from '@/hooks/useSupabaseData';
 import ProjectModal from '@/components/ProjectModal';
 import { Project } from '@/types';
+import { useSectorAccess } from '@/hooks/useSectorAccess';
 
 const Projetos = () => {
   const { user, profile } = useAuth();
@@ -42,8 +43,13 @@ const Projetos = () => {
     );
   };
 
+  const sectorAccess = useSectorAccess();
   // Projetos a mostrar (filtrados por usuário se não for admin)
-  const projectsToShow = isAdmin ? currentProjects : getProjectsByUser(user.id, currentProjects);
+  const baseList = isAdmin ? currentProjects : getProjectsByUser(user.id, currentProjects);
+  // Stael: bloqueia visão privada
+  const projectsToShow = sectorAccess.canViewPrivado || sectorAccess.allowedSectors.length === 0
+    ? baseList
+    : baseList.filter(p => p.type === 'publico');
 
   const getStatusBadge = (status: Project['status']) => {
     const statusConfig: Record<string, { label: string; className: string }> = {

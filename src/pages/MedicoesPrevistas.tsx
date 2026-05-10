@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAllProjects, useContractIncome } from '@/hooks/useContractFinancials';
+import { useSectorAccess } from '@/hooks/useSectorAccess';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
@@ -60,10 +61,11 @@ const emptyForm: MedicaoForm = {
 const MedicoesPrevistas = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const access = useSectorAccess();
   const { projects } = useAllProjects();
   const { income, refetch } = useContractIncome();
 
-  const [filterType, setFilterType] = useState<'all' | 'publico' | 'privado'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'publico' | 'privado'>(access.canViewPrivado ? 'all' : 'publico');
   const [filterStage, setFilterStage] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
@@ -93,6 +95,7 @@ const MedicoesPrevistas = () => {
           days_until: days
         };
       })
+      .filter(m => access.canViewPrivado || m.project_type === 'publico')
       .filter(m => filterType === 'all' || m.project_type === filterType)
       .filter(m => filterStage === 'all' || m.approval_stage === filterStage)
       .sort((a, b) => {
@@ -173,7 +176,9 @@ const MedicoesPrevistas = () => {
     setConfirmReceive(null);
   };
 
-  const projectsActive = projects.filter(p => p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA');
+  const projectsActive = projects
+    .filter(p => p.project_value && p.project_value > 0 && p.status !== 'EM_ESPERA')
+    .filter(p => access.canViewPrivado || p.type === 'publico');
   const stageOptions = form.project_id && projectMap.get(form.project_id)?.type === 'privado' ? STAGES_PRIVADO : STAGES_PUBLICO;
 
   return (
@@ -199,11 +204,15 @@ const MedicoesPrevistas = () => {
         <CardContent className="pt-6 flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <ToggleGroup type="single" value={filterType} onValueChange={(v) => v && setFilterType(v as any)}>
-              <ToggleGroupItem value="all">Tudo</ToggleGroupItem>
-              <ToggleGroupItem value="publico">Público</ToggleGroupItem>
-              <ToggleGroupItem value="privado">Privado</ToggleGroupItem>
-            </ToggleGroup>
+            {access.canViewPrivado ? (
+              <ToggleGroup type="single" value={filterType} onValueChange={(v) => v && setFilterType(v as any)}>
+                <ToggleGroupItem value="all">Tudo</ToggleGroupItem>
+                <ToggleGroupItem value="publico">Público</ToggleGroupItem>
+                <ToggleGroupItem value="privado">Privado</ToggleGroupItem>
+              </ToggleGroup>
+            ) : (
+              <Badge variant="default" className="bg-blue-500">Visão Pública</Badge>
+            )}
           </div>
           <Select value={filterStage} onValueChange={setFilterStage}>
             <SelectTrigger className="w-64"><SelectValue placeholder="Estágio" /></SelectTrigger>

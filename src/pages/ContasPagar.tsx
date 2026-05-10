@@ -17,6 +17,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, Cart
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAllProjects } from '@/hooks/useContractFinancials';
+import { useSectorAccess } from '@/hooks/useSectorAccess';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
@@ -49,6 +50,7 @@ const emptyForm: PayableForm = {
 const ContasPagar = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const access = useSectorAccess();
   const { projects } = useAllProjects();
   const [payables, setPayables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,7 @@ const ContasPagar = () => {
 
   const filtered = useMemo(() => {
     return payables
+      .filter(p => access.canViewPrivado || p.sector !== 'privado')
       .filter(p => filterStatus === 'all' || (filterStatus === 'atrasado' ? (p.status === 'aberto' && new Date(p.due_date) < new Date()) : p.status === filterStatus))
       .filter(p => filterSector === 'all' || p.sector === filterSector)
       .map(p => {
@@ -224,7 +227,7 @@ const ContasPagar = () => {
           <ToggleGroup type="single" value={filterSector} onValueChange={(v) => v && setFilterSector(v as any)}>
             <ToggleGroupItem value="all">Todos</ToggleGroupItem>
             <ToggleGroupItem value="publico">Público</ToggleGroupItem>
-            <ToggleGroupItem value="privado">Privado</ToggleGroupItem>
+            {access.canViewPrivado && <ToggleGroupItem value="privado">Privado</ToggleGroupItem>}
             <ToggleGroupItem value="geral">Geral</ToggleGroupItem>
           </ToggleGroup>
         </CardContent>

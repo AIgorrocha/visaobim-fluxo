@@ -70,6 +70,7 @@ import {
   useProjectPricing
 } from '@/hooks/useDesignerFinancials';
 import { useContractOverview, useContractIncome, useAllProjects } from '@/hooks/useContractFinancials';
+import { useSectorAccess } from '@/hooks/useSectorAccess';
 import { useCompanyExpenses } from '@/hooks/useCompanyExpenses';
 import { ContractDetailModal } from '@/components/ContractDetailModal';
 import { DesignerPayment } from '@/types';
@@ -101,6 +102,7 @@ interface PaymentFormData {
 
 const AdminFinanceiro = () => {
   const { user, profile } = useAuth();
+  const sectorAccess = useSectorAccess();
   const { projects, profiles, refetchProjects } = useSupabaseData();
   const { disciplines } = useDisciplines();
   const {
@@ -804,7 +806,10 @@ const AdminFinanceiro = () => {
   }), [filteredExpenses, filteredPublicExpenses, filteredPrivateExpenses]);
 
   // Todos os contratos combinados para filtros
-  const allContracts = useMemo(() => [...publicContracts, ...privateContracts], [publicContracts, privateContracts]);
+  const allContracts = useMemo(() => {
+    if (!sectorAccess.canViewPrivado) return [...publicContracts];
+    return [...publicContracts, ...privateContracts];
+  }, [publicContracts, privateContracts, sectorAccess.canViewPrivado]);
 
   // Filtrar contratos por status, tipo e seleção
   const filteredContracts = useMemo(() => {

@@ -19,6 +19,7 @@ import {
 import { useFinancialMetrics, type SectorFilter } from '@/hooks/useFinancialMetrics';
 import { useFinancialDRE } from '@/hooks/useFinancialDRE';
 import { useFinancialAlerts } from '@/hooks/useFinancialAlerts';
+import { useSectorAccess } from '@/hooks/useSectorAccess';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const ADMIN_FINANCIAL_EMAILS = ['igor@visaobim.com', 'stael@visaobim.com'];
@@ -72,9 +73,12 @@ function KPICard({ title, value, subtitle, icon: Icon, trend, color = 'text-prim
 
 const Financeiro = () => {
   const { profile } = useAuth();
-  const [sector, setSector] = useState<SectorFilter>('all');
-  const { kpis, monthlyFlow, fixedCostsByCategory, topContratos, aging, medicoesPrevistas, loading } = useFinancialMetrics(sector);
-  const { dreMonthly, dreConsolidada, dreVertical, dreHorizontal, rolling12mReceita, forecast12m, sazonalidadeMatriz } = useFinancialDRE(sector);
+  const access = useSectorAccess();
+  const [sector, setSector] = useState<SectorFilter>(access.defaultSector);
+  // Forçar setor permitido se usuário não pode ver privado/all
+  const effectiveSector: SectorFilter = access.canViewPrivado ? sector : 'publico';
+  const { kpis, monthlyFlow, fixedCostsByCategory, topContratos, aging, medicoesPrevistas, loading } = useFinancialMetrics(effectiveSector);
+  const { dreMonthly, dreConsolidada, dreVertical, dreHorizontal, rolling12mReceita, forecast12m, sazonalidadeMatriz } = useFinancialDRE(effectiveSector);
   const { alerts } = useFinancialAlerts();
 
   const isFinAdmin = ADMIN_FINANCIAL_EMAILS.includes(profile?.email?.toLowerCase() || '');
@@ -111,11 +115,15 @@ const Financeiro = () => {
           <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
           <p className="text-muted-foreground">Visão estratégica — Visão Engenharia BIM</p>
         </div>
-        <ToggleGroup type="single" value={sector} onValueChange={(v) => v && setSector(v as SectorFilter)}>
-          <ToggleGroupItem value="all">Tudo</ToggleGroupItem>
-          <ToggleGroupItem value="publico" className="data-[state=on]:bg-blue-500 data-[state=on]:text-white">Público</ToggleGroupItem>
-          <ToggleGroupItem value="privado" className="data-[state=on]:bg-emerald-500 data-[state=on]:text-white">Privado</ToggleGroupItem>
-        </ToggleGroup>
+        {access.canViewPrivado ? (
+          <ToggleGroup type="single" value={sector} onValueChange={(v) => v && setSector(v as SectorFilter)}>
+            <ToggleGroupItem value="all">Tudo</ToggleGroupItem>
+            <ToggleGroupItem value="publico" className="data-[state=on]:bg-blue-500 data-[state=on]:text-white">Público</ToggleGroupItem>
+            <ToggleGroupItem value="privado" className="data-[state=on]:bg-emerald-500 data-[state=on]:text-white">Privado</ToggleGroupItem>
+          </ToggleGroup>
+        ) : (
+          <Badge variant="default" className="bg-blue-500">Visão Pública</Badge>
+        )}
       </motion.div>
 
       {loading && <Card><CardContent className="pt-6 text-center text-muted-foreground">Carregando métricas...</CardContent></Card>}
