@@ -22,6 +22,7 @@ import Financeiro from "./pages/Financeiro";
 import MeuFinanceiro from "./pages/MeuFinanceiro";
 import PrecificacaoProjetos from "./pages/PrecificacaoProjetos";
 import AdminFinanceiro from "./pages/AdminFinanceiro";
+import MedicoesPrevistas from "./pages/MedicoesPrevistas";
 import Propostas from "./pages/Propostas";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
@@ -100,6 +101,13 @@ const App = () => (
                   <ProtectedRoute adminOnly>
                     <Layout>
                       <AdminFinanceiro />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/medicoes-previstas" element={
+                  <ProtectedRoute adminOnly>
+                    <Layout>
+                      <MedicoesPrevistas />
                     </Layout>
                   </ProtectedRoute>
                 } />

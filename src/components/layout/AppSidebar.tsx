@@ -10,7 +10,9 @@ import {
   Settings,
   ChevronDown,
   Wallet,
-  Calculator
+  Calculator,
+  TrendingUp,
+  CalendarClock
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -70,9 +72,23 @@ const menuItems = [
     restrictedEmails: ADMIN_FINANCIAL_EMAILS
   },
   {
+    title: 'Dashboard CEO',
+    url: '/financeiro',
+    icon: TrendingUp,
+    roles: ['admin'],
+    restrictedEmails: ADMIN_FINANCIAL_EMAILS
+  },
+  {
     title: 'Gestao Financeira',
     url: '/admin-financeiro',
     icon: DollarSign,
+    roles: ['admin'],
+    restrictedEmails: ADMIN_FINANCIAL_EMAILS
+  },
+  {
+    title: 'Medicoes Previstas',
+    url: '/medicoes-previstas',
+    icon: CalendarClock,
     roles: ['admin'],
     restrictedEmails: ADMIN_FINANCIAL_EMAILS
   },
